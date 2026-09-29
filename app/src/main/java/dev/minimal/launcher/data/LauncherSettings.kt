@@ -31,7 +31,7 @@ data class Favorite(
 const val MAIN_PAGE = "main"
 
 /** Eine Favoriten-Seite, z. B. „Start“, „Arbeit“, „Privat“. */
-data class FavoritePage(val id: String, val name: String)
+data class FavoritePage(val id: String, val name: String, val schedule: PageSchedule? = null)
 
 data class LauncherSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -65,6 +65,7 @@ data class LauncherSettings(
     val favorites: List<Favorite> = emptyList(),
     val pages: List<FavoritePage> = listOf(FavoritePage(MAIN_PAGE, "Start")),
     val currentPage: String = MAIN_PAGE,
+    val autoPages: Boolean = false,
     val widgets: List<Int> = emptyList(),
     val firstRunDone: Boolean = false,
 ) {
@@ -118,9 +119,22 @@ data class LauncherSettings(
             }
         })
         put("pages", JSONArray().apply {
-            pages.forEach { p -> put(JSONObject().apply { put("id", p.id); put("name", p.name) }) }
+            pages.forEach { p ->
+                put(JSONObject().apply {
+                    put("id", p.id)
+                    put("name", p.name)
+                    p.schedule?.let { sch ->
+                        put("schedule", JSONObject().apply {
+                            put("days", JSONArray(sch.days.sorted()))
+                            put("start", sch.start)
+                            put("end", sch.end)
+                        })
+                    }
+                })
+            }
         })
         put("currentPage", currentPage)
+        put("autoPages", autoPages)
         put("widgets", JSONArray(widgets))
         put("firstRunDone", firstRunDone)
     }
@@ -174,10 +188,19 @@ data class LauncherSettings(
                 pages = o.optJSONArray("pages")?.let { arr ->
                     (0 until arr.length()).mapNotNull { i ->
                         val p = arr.optJSONObject(i) ?: return@mapNotNull null
-                        FavoritePage(p.optString("id").ifEmpty { return@mapNotNull null }, p.optString("name", "Seite"))
+                        FavoritePage(
+                            id = p.optString("id").ifEmpty { return@mapNotNull null },
+                            name = p.optString("name", "Seite"),
+                            schedule = p.optJSONObject("schedule")?.let { sch ->
+                                val days = sch.optJSONArray("days")?.let { a -> (0 until a.length()).map { a.getInt(it) } }
+                                    ?.filter { it in 1..7 }?.toSet().orEmpty()
+                                PageSchedule(days, sch.optInt("start", 0).coerceIn(0, 1439), sch.optInt("end", 0).coerceIn(0, 1439))
+                            },
+                        )
                     }
                 }?.takeIf { it.isNotEmpty() } ?: d.pages,
                 currentPage = o.optString("currentPage", MAIN_PAGE).ifEmpty { MAIN_PAGE },
+                autoPages = o.optBoolean("autoPages", d.autoPages),
                 widgets = keepWidgets ?: o.optJSONArray("widgets")?.let { arr ->
                     (0 until arr.length()).map { arr.getInt(it) }
                 } ?: emptyList(),

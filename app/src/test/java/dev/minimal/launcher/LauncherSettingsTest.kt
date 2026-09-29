@@ -3,6 +3,7 @@ package dev.minimal.launcher
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.MAIN_PAGE
+import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ThemeMode
@@ -38,8 +39,12 @@ class LauncherSettingsTest {
             Favorite("2", listOf("p/q#0", "r/s#0"), name = "Social", page = "work"),
             Favorite("3", emptyList(), name = "Leer"),
         ),
-        pages = listOf(FavoritePage(MAIN_PAGE, "Start"), FavoritePage("work", "Arbeit")),
+        pages = listOf(
+            FavoritePage(MAIN_PAGE, "Start"),
+            FavoritePage("work", "Arbeit", PageSchedule(setOf(1, 2, 3, 4, 5), 8 * 60, 17 * 60)),
+        ),
         currentPage = "work",
+        autoPages = true,
         widgets = listOf(5, 7),
         firstRunDone = true,
     )

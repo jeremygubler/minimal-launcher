@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        vm.checkSchedule()
         try {
             widgetHost.startListening()
         } catch (_: Exception) {

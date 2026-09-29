@@ -1,6 +1,11 @@
 package dev.minimal.launcher.ui
 
 import android.Manifest
+import android.app.TimePickerDialog
+import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Arrangement
+import dev.minimal.launcher.data.FavoritePage
+import dev.minimal.launcher.data.PageSchedule
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
@@ -73,6 +78,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var dialog by remember { mutableStateOf(SettingsDialog.NONE) }
     var editFolderId by remember { mutableStateOf<String?>(null) }
     var renamePageId by remember { mutableStateOf<String?>(null) }
+    var schedulePageId by remember { mutableStateOf<String?>(null) }
     var deletePageId by remember { mutableStateOf<String?>(null) }
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
@@ -242,6 +248,20 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
 
             item { Section("Favoriten & Seiten") }
             item { Hint("Auf dem Startbildschirm nach links/rechts wischen oder den Seitennamen antippen, um die Seite zu wechseln.") }
+            if (s.pages.size > 1) {
+                item {
+                    SwitchRow("Seite automatisch nach Zeitplan wechseln", s.autoPages) { v -> vm.setAutoPages(v) }
+                }
+                if (s.autoPages) {
+                    item {
+                        Hint(
+                            "Mit ⏰ einer Seite Tage und Uhrzeit zuweisen. Außerhalb aller Zeitpläne gilt die erste " +
+                                "Seite ohne Zeitplan. Gewechselt wird nur zu Beginn und Ende eines Zeitfensters – " +
+                                "dazwischen kannst du frei wechseln."
+                        )
+                    }
+                }
+            }
             s.pages.forEachIndexed { pageIndex, page ->
                 item(key = "page_${page.id}") {
                     Row(
@@ -259,9 +279,13 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                         )
                         TextButton(onClick = { vm.movePage(page.id, -1) }, enabled = pageIndex > 0) { Text("↑") }
                         TextButton(onClick = { vm.movePage(page.id, 1) }, enabled = pageIndex < s.pages.lastIndex) { Text("↓") }
+                        if (s.autoPages && s.pages.size > 1) TextButton(onClick = { schedulePageId = page.id }) { Text("⏰") }
                         TextButton(onClick = { renamePageId = page.id }) { Text("✎") }
                         if (s.pages.size > 1) TextButton(onClick = { deletePageId = page.id }) { Text("✕") }
                     }
+                }
+                if (s.autoPages && page.schedule != null) {
+                    item(key = "page_schedule_${page.id}") { Hint("⏰ " + page.schedule.describe()) }
                 }
                 val pageFavs = s.pageFavorites(page.id)
                 if (pageFavs.isEmpty()) {
@@ -422,6 +446,18 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         )
     }
 
+    schedulePageId?.let { id ->
+        s.pages.firstOrNull { it.id == id }?.let { page ->
+            ScheduleDialog(
+                page = page,
+                onDismiss = { schedulePageId = null },
+                onSave = { schedule ->
+                    vm.setPageSchedule(id, schedule)
+                    schedulePageId = null
+                },
+            )
+        }
+    }
     renamePageId?.let { id ->
         s.pages.firstOrNull { it.id == id }?.let { page ->
             TextInputDialog(
@@ -572,4 +608,85 @@ private fun StatusRow(title: String, ok: Boolean, action: String, onClick: () ->
         Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         if (!ok) TextButton(onClick = onClick) { Text(action) }
     }
+}
+
+@Composable
+private fun ScheduleDialog(page: FavoritePage, onDismiss: () -> Unit, onSave: (PageSchedule?) -> Unit) {
+    val context = LocalContext.current
+    val initial = page.schedule ?: PageSchedule(setOf(1, 2, 3, 4, 5), 8 * 60, 17 * 60)
+    var days by remember { mutableStateOf(initial.days) }
+    var start by remember { mutableIntStateOf(initial.start) }
+    var end by remember { mutableIntStateOf(initial.end) }
+    val dayNames = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
+
+    fun pickTime(current: Int, set: (Int) -> Unit) {
+        TimePickerDialog(
+            context,
+            { _, hour, minute -> set(hour * 60 + minute) },
+            current / 60,
+            current % 60,
+            DateFormat.is24HourFormat(context),
+        ).show()
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Zeitplan: ${page.name}") },
+        text = {
+            Column {
+                Text("Tage", style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.size(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    dayNames.forEachIndexed { i, name ->
+                        val day = i + 1
+                        val on = day in days
+                        Box(
+                            Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (on) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .clickable { days = if (on) days - day else days + day },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                name,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (on) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.size(12.dp))
+                Row {
+                    TextButton(onClick = { pickTime(start) { start = it } }) { Text("Von ${PageSchedule.format(start)}") }
+                    TextButton(onClick = { pickTime(end) { end = it } }) { Text("Bis ${PageSchedule.format(end)}") }
+                }
+                if (end < start) {
+                    Text("Endet am nächsten Tag.", style = MaterialTheme.typography.bodySmall)
+                }
+                if (start == end) {
+                    Text(
+                        "Beginn und Ende müssen verschieden sein.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = days.isNotEmpty() && start != end,
+                onClick = { onSave(PageSchedule(days, start, end)) },
+            ) { Text("Speichern") }
+        },
+        dismissButton = {
+            Row {
+                if (page.schedule != null) TextButton(onClick = { onSave(null) }) { Text("Entfernen") }
+                TextButton(onClick = onDismiss) { Text("Abbrechen") }
+            }
+        },
+    )
 }

@@ -12,11 +12,14 @@ import androidx.lifecycle.viewModelScope
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
+import dev.minimal.launcher.data.PageSchedule
+import dev.minimal.launcher.data.PageScheduler
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.data.PrivateSpace
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,6 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.Collator
+import java.time.LocalDateTime
 import java.util.UUID
 
 class LauncherViewModel(application: Application) : AndroidViewModel(application) {
@@ -66,6 +70,13 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val homePressed: SharedFlow<Unit> = _homePressed
 
     init {
+        // Zeitplan jede Minute prüfen (zur vollen Minute).
+        viewModelScope.launch {
+            while (true) {
+                checkSchedule()
+                delay(60_000 - System.currentTimeMillis() % 60_000)
+            }
+        }
         viewModelScope.launch {
             store.state.map { it.iconPack to it.themedIcons }.distinctUntilChanged().collect { (pack, themed) ->
                 withContext(Dispatchers.IO) { app.icons.configure(pack, themed) }
@@ -96,6 +107,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun onHomePressed() {
+        checkSchedule()
         _homePressed.tryEmit(Unit)
     }
 
@@ -170,6 +182,38 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     // --- Seiten ------------------------------------------------------------
+
+    /** Zuletzt vom Zeitplan bestimmte Seite – gewechselt wird nur, wenn sich diese ändert. */
+    private var lastScheduledPage: String? = null
+
+    /**
+     * Wechselt automatisch die Seite, sobald ein Zeitfenster beginnt oder endet.
+     * Manuelles Wechseln bleibt dazwischen möglich.
+     */
+    fun checkSchedule(now: LocalDateTime = LocalDateTime.now()) {
+        val s = store.value
+        if (!s.autoPages || s.pages.size < 2) {
+            lastScheduledPage = null
+            return
+        }
+        val target = PageScheduler.pageFor(s, now)
+        if (target != lastScheduledPage) {
+            lastScheduledPage = target
+            setCurrentPage(target)
+        }
+    }
+
+    fun setPageSchedule(id: String, schedule: PageSchedule?) {
+        store.update { s -> s.copy(pages = s.pages.map { if (it.id == id) it.copy(schedule = schedule) else it }) }
+        lastScheduledPage = null
+        checkSchedule()
+    }
+
+    fun setAutoPages(enabled: Boolean) {
+        store.update { it.copy(autoPages = enabled) }
+        lastScheduledPage = null
+        checkSchedule()
+    }
 
     fun setCurrentPage(id: String) = store.update { if (it.currentPage == id) it else it.copy(currentPage = id) }
 

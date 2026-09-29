@@ -12,6 +12,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Mediensteuerung, wenn Musik oder Podcasts laufen (Titel, Zurück/Pause/Weiter)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
 - **Mehrere Favoriten-Seiten** (z. B. „Start“, „Arbeit“, „Privat“): links/rechts wischen oder Seitennamen antippen; verwalten unter *Einstellungen → Favoriten & Seiten*
+- **Automatischer Seitenwechsel nach Zeitplan** (z. B. „Arbeit“ Mo–Fr 08:00–17:00, auch über Mitternacht); gewechselt wird nur zu Beginn/Ende eines Zeitfensters
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
 - Ordner direkt aus dem App-Menü anlegen („Neuen Ordner mit dieser App“)
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
