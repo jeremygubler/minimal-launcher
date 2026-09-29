@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.IntentSender
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
@@ -15,6 +16,7 @@ import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
+import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -131,11 +133,19 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
     }
 
     fun openPrivateSpaceSettings() {
-        if (Build.VERSION.SDK_INT < 35) return
+        // getPrivateSpaceSettingsIntent() ist nicht im öffentlichen SDK 35 enthalten, daher per Reflection.
         try {
-            launcherApps.privateSpaceSettingsIntent?.let {
-                context.startIntentSender(it, null, Intent.FLAG_ACTIVITY_NEW_TASK, Intent.FLAG_ACTIVITY_NEW_TASK, 0)
+            val sender = LauncherApps::class.java.getMethod("getPrivateSpaceSettingsIntent")
+                .invoke(launcherApps) as? IntentSender
+            if (sender != null) {
+                context.startIntentSender(sender, null, Intent.FLAG_ACTIVITY_NEW_TASK, Intent.FLAG_ACTIVITY_NEW_TASK, 0)
+                return
             }
+        } catch (_: Exception) {
+        }
+        // Fallback: Auf dem Pixel liegt der private Bereich unter „Sicherheit & Datenschutz“.
+        try {
+            context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (_: Exception) {
         }
     }
