@@ -6,6 +6,8 @@ import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
+import dev.minimal.launcher.data.ScreenTime
+import kotlin.math.roundToInt
 import android.content.Intent
 import android.os.Build
 import android.widget.Toast
@@ -90,6 +92,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val isDefault = remember(resumeTick) { SystemActions.isDefaultLauncher(context) }
     val hasNotificationAccess = remember(resumeTick) { NotificationStore.hasAccess(context) }
     val accessibilityOn = remember(resumeTick) { LauncherAccessibilityService.isRunning }
+    val usageAccess = remember(resumeTick) { ScreenTime.hasAccess(context) }
     var crashLog by remember(resumeTick) { mutableStateOf(CrashLog.read(context)) }
     var calendarAllowed by remember(resumeTick) { mutableStateOf(CalendarEvents.hasPermission(context)) }
     val requestCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -223,6 +226,18 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item {
                 SwitchRow("Akku beim Laden und unter 20 % anzeigen", s.showBattery) { v -> vm.update { it.copy(showBattery = v) } }
             }
+            item {
+                SwitchRow("Bildschirmzeit unter der Uhr", s.showScreenTime) { v ->
+                    vm.update { it.copy(showScreenTime = v) }
+                    if (v && !ScreenTime.hasAccess(context)) SystemActions.openUsageAccess(context)
+                }
+            }
+            if (s.showScreenTime && !usageAccess) {
+                item {
+                    Hint("Dafür „Nutzungszugriff“ für Minimal Launcher erlauben. Die Daten bleiben auf dem Gerät.")
+                }
+                item { ClickRow("Nutzungszugriff erlauben", null) { SystemActions.openUsageAccess(context) } }
+            }
             item { SwitchRow("Buchstabenleiste links (Linkshänder)", s.alphabetLeft) { v -> vm.update { it.copy(alphabetLeft = v) } } }
 
             item { Section("Benachrichtigungen") }
@@ -330,6 +345,14 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { SwitchRow("Fokus-Modus jetzt aktiv", s.focusManual) { v -> vm.setFocusManual(v) } }
             item {
                 ClickRow("Zeitplan", s.focusSchedule?.describe() ?: "Kein Zeitplan – nur manuell") { editFocusSchedule = true }
+            }
+            item {
+                SliderRow(
+                    "Denkpause vor dem Öffnen",
+                    s.focusPauseSeconds.toFloat(),
+                    0f..30f,
+                    if (s.focusPauseSeconds == 0) "keine" else "${s.focusPauseSeconds} s",
+                ) { v -> vm.update { it.copy(focusPauseSeconds = v.roundToInt()) } }
             }
             s.focusApps.forEach { key ->
                 item(key = "focus_$key") {

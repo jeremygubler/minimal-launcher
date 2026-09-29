@@ -14,6 +14,7 @@ import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.PageScheduler
+import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
@@ -288,6 +289,11 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun setFocusManual(enabled: Boolean) = store.update { it.copy(focusManual = enabled) }
 
     fun setFocusSchedule(schedule: PageSchedule?) = store.update { it.copy(focusSchedule = schedule) }
+
+    fun setNote(text: String) = store.update { it.copy(note = text.trim()) }
+
+    suspend fun screenTimeToday(): Map<String, Long> =
+        withContext(Dispatchers.IO) { ScreenTime.today(getApplication()) }
 
     // --- Widgets -----------------------------------------------------------
 

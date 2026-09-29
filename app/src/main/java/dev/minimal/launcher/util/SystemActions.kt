@@ -91,6 +91,11 @@ object SystemActions {
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")),
     )
 
+    fun openUsageAccess(context: Context) {
+        val direct = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS, Uri.parse("package:${context.packageName}"))
+        if (!start(context, direct)) start(context, Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+    }
+
     fun openAccessibility(context: Context) = start(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 
     fun uninstall(context: Context, packageName: String) =

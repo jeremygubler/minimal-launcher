@@ -9,6 +9,8 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Vertikale Favoritenliste, einhändig bedienbar (unten ausgerichtet)
 - Uhr, Datum, nächster Wecker und nächster Termin (antippen öffnet Uhr, Kalender bzw. den Termin)
 - Akku-Hinweis beim Laden oder unter 20 %
+- **Bildschirmzeit** heute unter der Uhr (antippen: Top-Apps), Nutzung pro App im App-Menü – benötigt „Nutzungszugriff“, bleibt lokal
+- **Schnellnotiz** auf dem Startbildschirm (Home-Menü oder in der Suche `notiz …`)
 - Mediensteuerung, wenn Musik oder Podcasts laufen (Titel, Zurück/Pause/Weiter)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
 - **Mehrere Favoriten-Seiten** (z. B. „Start“, „Arbeit“, „Privat“): links/rechts wischen oder Seitennamen antippen; verwalten unter *Einstellungen → Favoriten & Seiten*
@@ -54,7 +56,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 
 **Fokus-Modus**
 - Apps als ablenkend markieren (App-Menü oder Einstellungen)
-- Wenn aktiv: ausgegraut, keine Benachrichtigungen/Punkte, 5 Sekunden Denkpause vor dem Öffnen
+- Wenn aktiv: ausgegraut, keine Benachrichtigungen/Punkte, einstellbare Denkpause (0–30 s) vor dem Öffnen
 - Manuell (lange auf den Startbildschirm drücken) oder per Zeitplan
 
 **Stabilität & Tempo**

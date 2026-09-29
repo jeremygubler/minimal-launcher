@@ -47,6 +47,10 @@ import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.LauncherSettings
+import dev.minimal.launcher.data.ScreenTime
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import dev.minimal.launcher.util.SystemActions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -84,9 +88,13 @@ fun AppActionsSheet(
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text(app.label, style = MaterialTheme.typography.titleLarge)
+                    val usageToday by produceState<Long?>(null, app.packageName, settings.showScreenTime) {
+                        value = if (settings.showScreenTime) vm.screenTimeToday()[app.packageName] ?: 0L else null
+                    }
                     val sub = listOfNotNull(
                         app.originalLabel.takeIf { it != app.label },
                         "Arbeitsprofil".takeIf { app.isWork },
+                        usageToday?.let { "Heute: " + ScreenTime.format(it) },
                     ).joinToString(" · ")
                     if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall)
                 }
@@ -248,6 +256,8 @@ fun SheetAction(text: String, onClick: () -> Unit) {
 @Composable
 fun HomeMenuSheet(
     hasWidgets: Boolean,
+    hasNote: Boolean,
+    onEditNote: () -> Unit,
     focusOn: Boolean,
     onToggleFocus: () -> Unit,
     onDismiss: () -> Unit,
@@ -264,6 +274,7 @@ fun HomeMenuSheet(
                 .navigationBarsPadding()
         ) {
             SheetAction(if (focusOn) "Fokus-Modus ausschalten" else "Fokus-Modus einschalten", onToggleFocus)
+            SheetAction(if (hasNote) "Notiz bearbeiten" else "Notiz hinzufügen", onEditNote)
             SheetAction("Widget hinzufügen", onAddWidget)
             if (hasWidgets) SheetAction("Widgets bearbeiten", onEditWidgets)
             SheetAction("Hintergrundbild ändern") {
@@ -406,4 +417,46 @@ private fun appLabel(pm: PackageManager, packageName: String): String = try {
     pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
 } catch (e: Exception) {
     packageName
+}
+
+@Composable
+fun ScreenTimeDialog(usage: Map<String, Long>, appsByPackage: Map<String, AppInfo>, onDismiss: () -> Unit) {
+    val top = usage.entries.filter { it.value >= 60_000 }.sortedByDescending { it.value }.take(12)
+    val max = top.firstOrNull()?.value ?: 1L
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Bildschirmzeit heute · " + ScreenTime.format(usage.values.sum())) },
+        text = {
+            LazyColumn(Modifier.heightIn(max = 420.dp)) {
+                items(top, key = { it.key }) { (pkg, ms) ->
+                    val app = appsByPackage[pkg]
+                    Column(Modifier.padding(vertical = 6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (app != null) {
+                                AppIcon(app, 24.dp)
+                                Spacer(Modifier.width(10.dp))
+                            }
+                            Text(
+                                app?.label ?: pkg,
+                                modifier = Modifier.weight(1f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(ScreenTime.format(ms), style = MaterialTheme.typography.bodySmall)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Box(
+                            Modifier
+                                .fillMaxWidth(ms.toFloat() / max)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+                if (top.isEmpty()) item { Text("Heute noch keine App länger als eine Minute genutzt.") }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Schließen") } },
+    )
 }

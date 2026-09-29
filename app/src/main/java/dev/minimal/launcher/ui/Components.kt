@@ -236,8 +236,8 @@ fun <T> ChoiceDialog(
 
 /** Kurze Denkpause, bevor eine ablenkende App im Fokus-Modus geöffnet wird. */
 @Composable
-fun FocusPauseDialog(app: AppInfo, onOpen: () -> Unit, onDismiss: () -> Unit) {
-    var remaining by remember { mutableIntStateOf(5) }
+fun FocusPauseDialog(app: AppInfo, seconds: Int, onOpen: () -> Unit, onDismiss: () -> Unit) {
+    var remaining by remember { mutableIntStateOf(seconds) }
     LaunchedEffect(Unit) {
         while (remaining > 0) {
             delay(1000)

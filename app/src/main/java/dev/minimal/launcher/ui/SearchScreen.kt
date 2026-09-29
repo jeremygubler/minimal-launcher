@@ -77,6 +77,7 @@ fun SearchScreen(
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
     onContactsDenied: () -> Unit,
+    onSetNote: (String) -> Unit,
     usage: Map<String, Double>,
     loadShortcuts: suspend () -> List<ShortcutInfo>,
     shortcutIcon: (ShortcutInfo) -> Drawable?,
@@ -181,6 +182,15 @@ fun SearchScreen(
                             }
                             .padding(vertical = 12.dp),
                     )
+                }
+            }
+            val noteText = Regex("^notiz\\s+(.+)$", RegexOption.IGNORE_CASE).find(query.trim())?.groupValues?.get(1)
+            if (noteText != null) {
+                item(key = "note") {
+                    ActionLine("📝  Als Notiz auf den Startbildschirm: „$noteText“") {
+                        onSetNote(noteText)
+                        Toast.makeText(context, "Notiz gespeichert", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             items(quickActions, key = { "qa_" + it.title }) { action ->

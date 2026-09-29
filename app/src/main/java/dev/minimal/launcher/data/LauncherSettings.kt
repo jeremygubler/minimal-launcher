@@ -70,6 +70,11 @@ data class LauncherSettings(
     val focusApps: Set<String> = emptySet(),
     val focusManual: Boolean = false,
     val focusSchedule: PageSchedule? = null,
+    /** Dauer der Denkpause im Fokus-Modus in Sekunden (0 = keine). */
+    val focusPauseSeconds: Int = 5,
+    val showScreenTime: Boolean = false,
+    /** Schnellnotiz auf dem Startbildschirm. */
+    val note: String = "",
     val widgets: List<Int> = emptyList(),
     val firstRunDone: Boolean = false,
 ) {
@@ -138,6 +143,9 @@ data class LauncherSettings(
         put("focusApps", JSONArray(focusApps.toList()))
         put("focusManual", focusManual)
         focusSchedule?.let { put("focusSchedule", scheduleToJson(it)) }
+        put("focusPauseSeconds", focusPauseSeconds)
+        put("showScreenTime", showScreenTime)
+        put("note", note)
         put("widgets", JSONArray(widgets))
         put("firstRunDone", firstRunDone)
     }
@@ -203,6 +211,9 @@ data class LauncherSettings(
                 focusApps = o.optJSONArray("focusApps")?.strings()?.toSet() ?: emptySet(),
                 focusManual = o.optBoolean("focusManual", false),
                 focusSchedule = o.optJSONObject("focusSchedule")?.let(::scheduleFromJson),
+                focusPauseSeconds = o.optInt("focusPauseSeconds", d.focusPauseSeconds).coerceIn(0, 60),
+                showScreenTime = o.optBoolean("showScreenTime", d.showScreenTime),
+                note = o.optString("note", ""),
                 widgets = keepWidgets ?: o.optJSONArray("widgets")?.let { arr ->
                     (0 until arr.length()).map { arr.getInt(it) }
                 } ?: emptyList(),

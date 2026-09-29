@@ -18,6 +18,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -63,6 +64,11 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = LocalDateTime.now() }
+    val screenTime by produceState(emptyMap<String, Long>(), now, settings.showScreenTime) {
+        value = if (settings.showScreenTime) vm.screenTimeToday() else emptyMap()
+    }
+    var showScreenTimeDialog by remember { mutableStateOf(false) }
+    var editingNote by remember { mutableStateOf(false) }
     val focusActive = Focus.isActive(settings, now)
     val blockedKeys = if (focusActive) settings.focusApps else emptySet()
 
@@ -153,6 +159,9 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onHomeLongPress = { showHomeMenu = true },
                 onReorderFavorites = vm::setFavoriteOrder,
                 onPageChange = vm::setCurrentPage,
+                screenTimeTotal = if (settings.showScreenTime && screenTime.isNotEmpty()) screenTime.values.sum() else null,
+                onScreenTimeClick = { showScreenTimeDialog = true },
+                onNoteClick = { editingNote = true },
                 perform = perform,
             )
         }
@@ -183,6 +192,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onLaunch = launch,
                 onLongPress = longPress,
                 onContactsDenied = { vm.update { it.copy(searchContacts = false) } },
+                onSetNote = { vm.setNote(it) },
                 usage = usage,
                 loadShortcuts = vm::allShortcuts,
                 shortcutIcon = vm::shortcutIcon,
@@ -209,7 +219,33 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
 
     focusPauseFor?.let { app ->
-        FocusPauseDialog(app = app, onOpen = { vm.launch(app) }, onDismiss = { focusPauseFor = null })
+        FocusPauseDialog(
+            app = app,
+            seconds = settings.focusPauseSeconds,
+            onOpen = { vm.launch(app) },
+            onDismiss = { focusPauseFor = null },
+        )
+    }
+
+    if (showScreenTimeDialog) {
+        ScreenTimeDialog(
+            usage = screenTime,
+            appsByPackage = remember(allApps) { allApps.filter { !it.isWork }.associateBy { it.packageName } },
+            onDismiss = { showScreenTimeDialog = false },
+        )
+    }
+
+    if (editingNote) {
+        TextInputDialog(
+            title = "Notiz",
+            initial = settings.note,
+            hint = "z. B. Milch kaufen",
+            onDismiss = { editingNote = false },
+            onConfirm = {
+                vm.setNote(it)
+                editingNote = false
+            },
+        )
     }
 
     actionsFor?.let { app ->
@@ -238,6 +274,11 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     if (showHomeMenu) {
         HomeMenuSheet(
             hasWidgets = settings.widgets.isNotEmpty(),
+            hasNote = settings.note.isNotBlank(),
+            onEditNote = {
+                showHomeMenu = false
+                editingNote = true
+            },
             focusOn = settings.focusManual,
             onToggleFocus = {
                 showHomeMenu = false

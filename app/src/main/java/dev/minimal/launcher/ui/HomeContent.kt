@@ -88,6 +88,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
 import dev.minimal.launcher.data.NowPlaying
+import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.util.CalendarEvent
 import dev.minimal.launcher.util.CalendarEvents
 import kotlinx.coroutines.Dispatchers
@@ -121,6 +122,9 @@ fun HomeContent(
     onHomeLongPress: () -> Unit,
     onReorderFavorites: (List<String>) -> Unit,
     onPageChange: (String) -> Unit,
+    screenTimeTotal: Long?,
+    onScreenTimeClick: () -> Unit,
+    onNoteClick: () -> Unit,
     perform: (GestureAction) -> Unit,
 ) {
     val currentPageChange by rememberUpdatedState(onPageChange)
@@ -180,7 +184,8 @@ fun HomeContent(
                 .then(sidePadding)
         ) {
             Spacer(Modifier.height(32.dp))
-            ClockBlock(settings)
+            ClockBlock(settings, screenTimeTotal, onScreenTimeClick)
+            if (settings.note.isNotBlank()) NoteLine(settings.note, onNoteClick)
             if (settings.showMedia) MediaBlock()
             if (settings.widgets.isNotEmpty()) {
                 WidgetsArea(
@@ -225,7 +230,23 @@ fun HomeContent(
 }
 
 @Composable
-private fun ClockBlock(settings: LauncherSettings) {
+private fun NoteLine(note: String, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .padding(top = 16.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text("📝", style = homeTextStyle(16.sp))
+        Spacer(Modifier.width(8.dp))
+        Text(note, style = homeTextStyle(16.sp), maxLines = 3, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun ClockBlock(settings: LauncherSettings, screenTimeTotal: Long?, onScreenTimeClick: () -> Unit) {
     val context = LocalContext.current
     val colors = LocalHomeColors.current
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -275,6 +296,15 @@ private fun ClockBlock(settings: LauncherSettings) {
                 "Fokus aktiv",
                 style = homeTextStyle(15.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium),
                 modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        if (screenTimeTotal != null) {
+            Text(
+                "Bildschirmzeit heute · " + ScreenTime.format(screenTimeTotal),
+                style = homeTextStyle(15.sp).copy(color = colors.secondary),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null, onClick = onScreenTimeClick),
             )
         }
         if (settings.showBattery) BatteryLine()
