@@ -285,10 +285,11 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             initial = "",
             hint = "z. B. Social, Arbeit, Tools",
             onDismiss = { dialog = SettingsDialog.NONE },
-        ) { name ->
-            vm.createFolder(name.ifBlank { "Ordner" }, emptyList())
-            dialog = SettingsDialog.NONE
-        }
+            onConfirm = { name ->
+                vm.createFolder(name.ifBlank { "Ordner" }, emptyList())
+                dialog = SettingsDialog.NONE
+            },
+        )
     }
 
     editFolderId?.let { id ->
