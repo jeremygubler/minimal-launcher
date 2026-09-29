@@ -1,0 +1,67 @@
+package dev.minimal.launcher.service
+
+import android.app.Notification
+import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
+import dev.minimal.launcher.data.AppInfo
+import dev.minimal.launcher.data.NotificationPreview
+import dev.minimal.launcher.data.NotificationStore
+
+class NotificationListener : NotificationListenerService() {
+
+    override fun onListenerConnected() {
+        NotificationStore.service = this
+        publish()
+    }
+
+    override fun onListenerDisconnected() {
+        NotificationStore.service = null
+        NotificationStore.publish(emptyList())
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) = publish()
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) = publish()
+
+    private fun publish() {
+        val active = try {
+            activeNotifications
+        } catch (e: Exception) {
+            null
+        } ?: return
+
+        val relevant = active.filter { !it.isOngoing }
+        // Gruppen-Zusammenfassungen nur anzeigen, wenn es keine Einzel-Benachrichtigungen der Gruppe gibt.
+        val groupsWithChildren = relevant
+            .filter { it.notification.flags and Notification.FLAG_GROUP_SUMMARY == 0 }
+            .mapNotNull { it.groupKey }
+            .toSet()
+
+        val list = relevant
+            .filter { sbn ->
+                val isSummary = sbn.notification.flags and Notification.FLAG_GROUP_SUMMARY != 0
+                !isSummary || sbn.groupKey !in groupsWithChildren
+            }
+            .map { sbn ->
+                val extras = sbn.notification.extras
+                val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+                val text = (extras.getCharSequence(Notification.EXTRA_TEXT)
+                    ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT))?.toString().orEmpty()
+                NotificationPreview(
+                    key = sbn.key,
+                    appKey = AppInfo.notificationKey(sbn.packageName, sbn.user),
+                    title = title,
+                    text = text,
+                    postTime = sbn.postTime,
+                    intent = sbn.notification.contentIntent,
+                    autoCancel = sbn.notification.flags and Notification.FLAG_AUTO_CANCEL != 0,
+                    clearable = sbn.isClearable,
+                )
+            }
+            .filter { it.title.isNotBlank() || it.text.isNotBlank() }
+            .distinctBy { Triple(it.appKey, it.title, it.text) }
+            .sortedByDescending { it.postTime }
+
+        NotificationStore.publish(list)
+    }
+}

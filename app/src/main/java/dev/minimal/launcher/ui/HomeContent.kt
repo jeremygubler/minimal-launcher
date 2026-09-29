@@ -1,0 +1,509 @@
+package dev.minimal.launcher.ui
+
+import android.appwidget.AppWidgetHost
+import android.appwidget.AppWidgetManager
+import android.text.format.DateFormat
+import android.text.format.DateUtils
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import dev.minimal.launcher.data.AppInfo
+import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.GestureAction
+import dev.minimal.launcher.data.LauncherSettings
+import dev.minimal.launcher.data.NotificationPreview
+import dev.minimal.launcher.data.NotificationStore
+import dev.minimal.launcher.util.SystemActions
+import kotlinx.coroutines.delay
+import java.util.Date
+import kotlin.math.min
+import kotlin.math.roundToInt
+
+@Composable
+fun HomeContent(
+    settings: LauncherSettings,
+    appsByKey: Map<String, AppInfo>,
+    notifications: Map<String, List<NotificationPreview>>,
+    widgetHost: AppWidgetHost,
+    editWidgets: Boolean,
+    onEditWidgetsDone: () -> Unit,
+    onRemoveWidget: (Int) -> Unit,
+    onMoveWidget: (Int, Int) -> Unit,
+    onLaunch: (AppInfo) -> Unit,
+    onLongPress: (AppInfo) -> Unit,
+    onFolderLongPress: (Favorite) -> Unit,
+    onHomeLongPress: () -> Unit,
+    perform: (GestureAction) -> Unit,
+) {
+    val currentPerform by rememberUpdatedState(perform)
+    val currentHomeLongPress by rememberUpdatedState(onHomeLongPress)
+    val swipeThreshold = with(LocalDensity.current) { 64.dp.toPx() }
+    val sidePadding = if (settings.alphabetLeft) {
+        Modifier.padding(start = 72.dp, end = 28.dp)
+    } else {
+        Modifier.padding(start = 28.dp, end = 72.dp)
+    }
+
+    Box(
+        Modifier
+            .fillMaxSize()
+            .pointerInput(settings.doubleTap) {
+                detectTapGestures(
+                    onDoubleTap = { currentPerform(settings.doubleTap) },
+                    onLongPress = { currentHomeLongPress() },
+                )
+            }
+            .pointerInput(settings.swipeDown, settings.swipeUp) {
+                var total = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { total = 0f },
+                    onDragEnd = {
+                        when {
+                            total > swipeThreshold -> currentPerform(settings.swipeDown)
+                            total < -swipeThreshold -> currentPerform(settings.swipeUp)
+                        }
+                    },
+                ) { _, dy -> total += dy }
+            }
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .then(sidePadding)
+        ) {
+            Spacer(Modifier.height(32.dp))
+            if (settings.showClock || settings.showDate) ClockBlock(settings)
+            if (settings.widgets.isNotEmpty()) {
+                WidgetsArea(
+                    ids = settings.widgets,
+                    host = widgetHost,
+                    edit = editWidgets,
+                    onRemove = onRemoveWidget,
+                    onMove = onMoveWidget,
+                    onDone = onEditWidgetsDone,
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            FavoritesList(
+                settings = settings,
+                appsByKey = appsByKey,
+                notifications = notifications,
+                onLaunch = onLaunch,
+                onLongPress = onLongPress,
+                onFolderLongPress = onFolderLongPress,
+            )
+            Spacer(Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+private fun ClockBlock(settings: LauncherSettings) {
+    val context = LocalContext.current
+    val colors = LocalHomeColors.current
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(60_000 - now % 60_000)
+        }
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = System.currentTimeMillis() }
+
+    val timeFormat = remember(now) { DateFormat.getTimeFormat(context) }
+    val alarm = remember(now, settings.showAlarm) {
+        if (settings.showAlarm) SystemActions.nextAlarm(context)?.takeIf { it - now < DateUtils.DAY_IN_MILLIS } else null
+    }
+    val noRipple = remember { MutableInteractionSource() }
+
+    Column {
+        if (settings.showClock) {
+            Text(
+                timeFormat.format(Date(now)),
+                style = homeTextStyle(60.sp).copy(fontWeight = FontWeight.Light),
+                modifier = Modifier.clickable(noRipple, null) { SystemActions.openClock(context) },
+            )
+        }
+        if (settings.showDate) {
+            Text(
+                DateUtils.formatDateTime(
+                    context, now,
+                    DateUtils.FORMAT_SHOW_WEEKDAY or DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_NO_YEAR,
+                ),
+                style = homeTextStyle(18.sp).copy(color = colors.secondary),
+                modifier = Modifier.clickable(noRipple, null) { SystemActions.openCalendar(context) },
+            )
+        }
+        if (alarm != null) {
+            Text(
+                "Wecker · " + timeFormat.format(Date(alarm)),
+                style = homeTextStyle(15.sp).copy(color = colors.secondary),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null) { SystemActions.openClock(context) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun WidgetsArea(
+    ids: List<Int>,
+    host: AppWidgetHost,
+    edit: Boolean,
+    onRemove: (Int) -> Unit,
+    onMove: (Int, Int) -> Unit,
+    onDone: () -> Unit,
+) {
+    val context = LocalContext.current
+    val manager = remember { AppWidgetManager.getInstance(context) }
+    val density = LocalDensity.current
+    val colors = LocalHomeColors.current
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        ids.forEach { id ->
+            key(id) {
+                val info = remember(id) { manager.getAppWidgetInfo(id) }
+                if (info != null) {
+                    val height = with(density) { info.minHeight.toDp() }.coerceAtLeast(64.dp)
+                    Box(Modifier.fillMaxWidth()) {
+                        AndroidView(
+                            factory = { ctx -> host.createView(ctx, id, info) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(height),
+                        )
+                        if (edit) {
+                            Row(
+                                Modifier
+                                    .align(Alignment.TopEnd)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(colors.scrim.copy(alpha = 0.75f))
+                            ) {
+                                TextButton(onClick = { onMove(id, -1) }) { Text("↑") }
+                                TextButton(onClick = { onMove(id, 1) }) { Text("↓") }
+                                TextButton(onClick = { onRemove(id) }) { Text("Entfernen") }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (edit) {
+            TextButton(onClick = onDone) { Text("Fertig") }
+        }
+    }
+}
+
+@Composable
+private fun FavoritesList(
+    settings: LauncherSettings,
+    appsByKey: Map<String, AppInfo>,
+    notifications: Map<String, List<NotificationPreview>>,
+    onLaunch: (AppInfo) -> Unit,
+    onLongPress: (AppInfo) -> Unit,
+    onFolderLongPress: (Favorite) -> Unit,
+) {
+    var expanded by remember { mutableStateOf<String?>(null) }
+    val fontSize = (26 * settings.textScale).sp
+
+    Column {
+        if (settings.favorites.isEmpty()) {
+            Text(
+                "Halte eine App gedrückt, um sie zu den Favoriten hinzuzufügen. " +
+                    "Ziehe an der Buchstabenleiste, um alle Apps zu sehen.",
+                style = homeTextStyle(15.sp).copy(color = LocalHomeColors.current.secondary),
+            )
+        }
+        settings.favorites.forEach { fav ->
+            key(fav.id) {
+                val favApps = fav.apps.mapNotNull { appsByKey[it] }
+                if (fav.isFolder) {
+                    FolderEntry(
+                        folder = fav,
+                        apps = favApps,
+                        expanded = expanded == fav.id,
+                        settings = settings,
+                        fontSize = fontSize,
+                        notifications = notifications,
+                        onToggle = { expanded = if (expanded == fav.id) null else fav.id },
+                        onLaunch = onLaunch,
+                        onLongPress = onLongPress,
+                        onFolderLongPress = { onFolderLongPress(fav) },
+                    )
+                } else {
+                    favApps.firstOrNull()?.let { app ->
+                        FavoriteEntry(
+                            app = app,
+                            swipeApp = fav.swipeApp?.let { appsByKey[it] },
+                            notifications = notifications[app.notificationKey].orEmpty(),
+                            settings = settings,
+                            fontSize = fontSize,
+                            onLaunch = onLaunch,
+                            onLongPress = onLongPress,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FavoriteEntry(
+    app: AppInfo,
+    swipeApp: AppInfo?,
+    notifications: List<NotificationPreview>,
+    settings: LauncherSettings,
+    fontSize: TextUnit,
+    onLaunch: (AppInfo) -> Unit,
+    onLongPress: (AppInfo) -> Unit,
+) {
+    val threshold = with(LocalDensity.current) { 96.dp.toPx() }
+    var dragX by remember { mutableFloatStateOf(0f) }
+    var dragging by remember { mutableStateOf(false) }
+    val shownX by animateFloatAsState(
+        dragX,
+        animationSpec = if (dragging) snap() else spring(),
+        label = "swipe",
+    )
+    val currentSwipe by rememberUpdatedState(swipeApp)
+    val currentLaunch by rememberUpdatedState(onLaunch)
+
+    Column {
+        Box {
+            if (swipeApp != null && shownX > 1f) {
+                Row(
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .alpha(min(1f, shownX / threshold)),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AppIcon(swipeApp, 24.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(swipeApp.label, style = homeTextStyle(13.sp), maxLines = 1)
+                }
+            }
+            AppRow(
+                app = app,
+                showIcon = settings.showIcons,
+                iconSize = settings.iconSize.dp,
+                fontSize = fontSize,
+                hasNotification = settings.notificationDots && notifications.isNotEmpty(),
+                onClick = { onLaunch(app) },
+                onLongClick = { onLongPress(app) },
+                modifier = Modifier
+                    .offset { IntOffset(shownX.roundToInt(), 0) }
+                    .pointerInput(swipeApp?.key) {
+                        if (swipeApp == null) return@pointerInput
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragging = true },
+                            onDragEnd = {
+                                if (dragX >= threshold) currentSwipe?.let(currentLaunch)
+                                dragging = false
+                                dragX = 0f
+                            },
+                            onDragCancel = {
+                                dragging = false
+                                dragX = 0f
+                            },
+                        ) { change, dx ->
+                            change.consume()
+                            dragX = (dragX + dx).coerceIn(0f, threshold * 1.6f)
+                        }
+                    },
+            )
+        }
+        if (settings.notificationPreview && notifications.isNotEmpty()) {
+            NotificationPreviewBlock(
+                items = notifications,
+                startPadding = if (settings.showIcons) settings.iconSize.dp + 16.dp else 0.dp,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun NotificationPreviewBlock(items: List<NotificationPreview>, startPadding: Dp) {
+    val context = LocalContext.current
+    val colors = LocalHomeColors.current
+    val first = items.first()
+    Column(
+        Modifier
+            .padding(start = startPadding, bottom = 8.dp)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .combinedClickable(
+                onClick = { NotificationStore.open(context, first) },
+                onLongClick = { NotificationStore.dismiss(first) },
+            )
+    ) {
+        if (first.title.isNotBlank()) {
+            Text(
+                first.title,
+                style = homeTextStyle(14.sp).copy(fontWeight = FontWeight.SemiBold),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (first.text.isNotBlank()) {
+            Text(
+                first.text,
+                style = homeTextStyle(13.sp).copy(color = colors.secondary),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (items.size > 1) {
+            Text(
+                "+${items.size - 1} weitere",
+                style = homeTextStyle(12.sp).copy(color = colors.secondary),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FolderEntry(
+    folder: Favorite,
+    apps: List<AppInfo>,
+    expanded: Boolean,
+    settings: LauncherSettings,
+    fontSize: TextUnit,
+    notifications: Map<String, List<NotificationPreview>>,
+    onToggle: () -> Unit,
+    onLaunch: (AppInfo) -> Unit,
+    onLongPress: (AppInfo) -> Unit,
+    onFolderLongPress: () -> Unit,
+) {
+    val colors = LocalHomeColors.current
+    val hasNotification = settings.notificationDots && apps.any { it.notificationKey in notifications }
+    Column {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = onToggle, onLongClick = onFolderLongPress)
+                .heightIn(min = 48.dp)
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (settings.showIcons) {
+                FolderIcon(apps, settings.iconSize.dp)
+                Spacer(Modifier.width(16.dp))
+            }
+            Text(
+                folder.name ?: "Ordner",
+                style = homeTextStyle(fontSize),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Text(if (expanded) "  ▾" else "  ▸", style = homeTextStyle(16.sp).copy(color = colors.secondary))
+            if (hasNotification) {
+                Spacer(Modifier.width(10.dp))
+                NotificationDot()
+            }
+        }
+        AnimatedVisibility(expanded) {
+            Column(Modifier.padding(start = if (settings.showIcons) settings.iconSize.dp / 2 else 16.dp)) {
+                apps.forEach { app ->
+                    AppRow(
+                        app = app,
+                        showIcon = settings.showIcons,
+                        iconSize = settings.iconSize.dp * 0.8f,
+                        fontSize = fontSize * 0.8f,
+                        hasNotification = settings.notificationDots && app.notificationKey in notifications,
+                        onClick = { onLaunch(app) },
+                        onLongClick = { onLongPress(app) },
+                    )
+                }
+                if (apps.isEmpty()) {
+                    Text("Leer – lange drücken zum Bearbeiten", style = homeTextStyle(14.sp).copy(color = colors.secondary))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderIcon(apps: List<AppInfo>, size: Dp) {
+    val colors = LocalHomeColors.current
+    val cell = size / 2 - 2.dp
+    Box(
+        Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(colors.text.copy(alpha = 0.15f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(verticalArrangement = Arrangement.Center) {
+            apps.take(4).chunked(2).forEach { row ->
+                Row {
+                    row.forEach { AppIcon(it, cell * 0.8f, Modifier.padding(1.dp)) }
+                }
+            }
+        }
+    }
+}
