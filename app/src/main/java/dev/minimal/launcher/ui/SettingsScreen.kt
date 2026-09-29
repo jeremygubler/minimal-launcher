@@ -291,7 +291,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
             item { ClickRow("Seite hinzufügen", "z. B. „Arbeit“ oder „Privat“") { dialog = SettingsDialog.NEW_PAGE } }
-            item { ClickRow("Ordner erstellen", "Mehrere Apps unter einem Favoriten") { dialog = SettingsDialog.NEW_FOLDER, NEW_PAGE } }
+            item { ClickRow("Ordner erstellen", "Mehrere Apps unter einem Favoriten") { dialog = SettingsDialog.NEW_FOLDER } }
 
             item { Section("Ausgeblendete Apps") }
             if (s.hidden.isEmpty()) {
