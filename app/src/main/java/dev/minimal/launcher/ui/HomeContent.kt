@@ -69,6 +69,13 @@ import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.util.SystemActions
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.produceState
+import dev.minimal.launcher.data.NowPlaying
+import dev.minimal.launcher.util.CalendarEvent
+import dev.minimal.launcher.util.CalendarEvents
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.Date
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.runtime.mutableStateMapOf
@@ -137,7 +144,8 @@ fun HomeContent(
                 .then(sidePadding)
         ) {
             Spacer(Modifier.height(32.dp))
-            if (settings.showClock || settings.showDate) ClockBlock(settings)
+            ClockBlock(settings)
+            if (settings.showMedia) MediaBlock()
             if (settings.widgets.isNotEmpty()) {
                 WidgetsArea(
                     ids = settings.widgets,
@@ -209,6 +217,79 @@ private fun ClockBlock(settings: LauncherSettings) {
                     .clickable(noRipple, null) { SystemActions.openClock(context) },
             )
         }
+        val event by produceState<CalendarEvent?>(null, now, settings.showEvents) {
+            value = if (settings.showEvents) withContext(Dispatchers.IO) { CalendarEvents.next(context, now) } else null
+        }
+        event?.let { e ->
+            val whenText = when {
+                e.allDay -> "Heute"
+                e.begin <= now -> "Jetzt"
+                DateUtils.isToday(e.begin) -> timeFormat.format(Date(e.begin))
+                else -> "Morgen " + timeFormat.format(Date(e.begin))
+            }
+            Text(
+                "$whenText · ${e.title}",
+                style = homeTextStyle(15.sp).copy(color = colors.secondary),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null) { CalendarEvents.open(context, e) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun MediaBlock() {
+    val context = LocalContext.current
+    val colors = LocalHomeColors.current
+    val media by NowPlaying.state.collectAsState()
+    val info = media ?: return
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            Modifier
+                .weight(1f)
+                .clickable { NowPlaying.open(context) }
+        ) {
+            Text(
+                info.title,
+                style = homeTextStyle(16.sp).copy(fontWeight = FontWeight.Medium),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (info.artist.isNotBlank()) {
+                Text(
+                    info.artist,
+                    style = homeTextStyle(14.sp).copy(color = colors.secondary),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        MediaButton("⏮\uFE0E", "Zurück") { NowPlaying.previous() }
+        MediaButton(if (info.playing) "⏸\uFE0E" else "▶\uFE0E", if (info.playing) "Pause" else "Abspielen") {
+            NowPlaying.playPause()
+        }
+        MediaButton("⏭\uFE0E", "Weiter") { NowPlaying.next() }
+    }
+}
+
+@Composable
+private fun MediaButton(symbol: String, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .clickable(onClickLabel = description, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(symbol, style = homeTextStyle(20.sp))
     }
 }
 

@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import android.Manifest
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,6 +55,7 @@ import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.data.ThemeMode
 import dev.minimal.launcher.launcherApp
 import dev.minimal.launcher.service.LauncherAccessibilityService
+import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.SystemActions
 
 private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER }
@@ -76,6 +78,12 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val hasNotificationAccess = remember(resumeTick) { NotificationStore.hasAccess(context) }
     val accessibilityOn = remember(resumeTick) { LauncherAccessibilityService.isRunning }
     var crashLog by remember(resumeTick) { mutableStateOf(CrashLog.read(context)) }
+    var calendarAllowed by remember(resumeTick) { mutableStateOf(CalendarEvents.hasPermission(context)) }
+    val requestCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        calendarAllowed = granted
+        vm.update { it.copy(showEvents = granted) }
+        if (!granted) Toast.makeText(context, "Ohne Kalenderzugriff können keine Termine angezeigt werden", Toast.LENGTH_SHORT).show()
+    }
 
     val store = context.launcherApp.settings
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -170,6 +178,18 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { SwitchRow("Uhr anzeigen", s.showClock) { v -> vm.update { it.copy(showClock = v) } } }
             item { SwitchRow("Datum anzeigen", s.showDate) { v -> vm.update { it.copy(showDate = v) } } }
             item { SwitchRow("Nächsten Wecker anzeigen", s.showAlarm) { v -> vm.update { it.copy(showAlarm = v) } } }
+            item {
+                SwitchRow("Nächsten Termin anzeigen", s.showEvents && calendarAllowed) { v ->
+                    if (v && !CalendarEvents.hasPermission(context)) {
+                        requestCalendar.launch(Manifest.permission.READ_CALENDAR)
+                    } else {
+                        vm.update { it.copy(showEvents = v) }
+                    }
+                }
+            }
+            item {
+                SwitchRow("Mediensteuerung (Musik, Podcasts)", s.showMedia) { v -> vm.update { it.copy(showMedia = v) } }
+            }
             item { SwitchRow("Buchstabenleiste links (Linkshänder)", s.alphabetLeft) { v -> vm.update { it.copy(alphabetLeft = v) } } }
 
             item { Section("Benachrichtigungen") }

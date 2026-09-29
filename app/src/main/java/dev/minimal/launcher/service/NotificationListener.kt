@@ -6,17 +6,20 @@ import android.service.notification.StatusBarNotification
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
+import dev.minimal.launcher.data.NowPlaying
 
 class NotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         NotificationStore.service = this
         publish()
+        NowPlaying.start(this)
     }
 
     override fun onListenerDisconnected() {
         NotificationStore.service = null
         NotificationStore.publish(emptyList())
+        NowPlaying.stop()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) = publish()

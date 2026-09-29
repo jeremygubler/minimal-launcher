@@ -66,6 +66,7 @@ fun AppActionsSheet(
     var renaming by remember { mutableStateOf(false) }
     var pickingSwipe by remember { mutableStateOf(false) }
     var pickingFolder by remember { mutableStateOf(false) }
+    var creatingFolder by remember { mutableStateOf(false) }
     val isFavorite = settings.isFavorite(app.key)
     val favorite = settings.favorites.firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
     val folders = settings.favorites.filter { it.isFolder }
@@ -112,6 +113,7 @@ fun AppActionsSheet(
             if (folders.isNotEmpty()) {
                 SheetAction("Zu Ordner hinzufügen") { pickingFolder = true }
             }
+            SheetAction("Neuen Ordner mit dieser App") { creatingFolder = true }
             SheetAction("Umbenennen") { renaming = true }
             SheetAction("Ausblenden") {
                 vm.hide(app)
@@ -150,6 +152,19 @@ fun AppActionsSheet(
             onPick = {
                 vm.setSwipeApp(app.key, it?.key)
                 pickingSwipe = false
+                onDismiss()
+            },
+        )
+    }
+    if (creatingFolder) {
+        TextInputDialog(
+            title = "Neuer Ordner",
+            initial = "",
+            hint = "z. B. Social, Arbeit, Tools",
+            onDismiss = { creatingFolder = false },
+            onConfirm = { name ->
+                vm.createFolder(name.ifBlank { "Ordner" }, listOf(app.key))
+                creatingFolder = false
                 onDismiss()
             },
         )

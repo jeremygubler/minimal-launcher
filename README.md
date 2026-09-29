@@ -7,9 +7,11 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 
 **Startbildschirm**
 - Vertikale Favoritenliste, einhändig bedienbar (unten ausgerichtet)
-- Uhr, Datum und nächster Wecker (antippen öffnet Uhr bzw. Kalender)
+- Uhr, Datum, nächster Wecker und nächster Termin (antippen öffnet Uhr, Kalender bzw. den Termin)
+- Mediensteuerung, wenn Musik oder Podcasts laufen (Titel, Zurück/Pause/Weiter)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
+- Ordner direkt aus dem App-Menü anlegen („Neuen Ordner mit dieser App“)
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
 - **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal)
 

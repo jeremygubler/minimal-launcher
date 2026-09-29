@@ -38,6 +38,8 @@ data class LauncherSettings(
     val showClock: Boolean = true,
     val showDate: Boolean = true,
     val showAlarm: Boolean = true,
+    val showEvents: Boolean = false,
+    val showMedia: Boolean = true,
     val alphabetLeft: Boolean = false,
     val notificationDots: Boolean = true,
     val notificationPreview: Boolean = true,
@@ -67,6 +69,8 @@ data class LauncherSettings(
         put("showClock", showClock)
         put("showDate", showDate)
         put("showAlarm", showAlarm)
+        put("showEvents", showEvents)
+        put("showMedia", showMedia)
         put("alphabetLeft", alphabetLeft)
         put("notificationDots", notificationDots)
         put("notificationPreview", notificationPreview)
@@ -107,6 +111,8 @@ data class LauncherSettings(
                 showClock = o.optBoolean("showClock", d.showClock),
                 showDate = o.optBoolean("showDate", d.showDate),
                 showAlarm = o.optBoolean("showAlarm", d.showAlarm),
+                showEvents = o.optBoolean("showEvents", d.showEvents),
+                showMedia = o.optBoolean("showMedia", d.showMedia),
                 alphabetLeft = o.optBoolean("alphabetLeft", d.alphabetLeft),
                 notificationDots = o.optBoolean("notificationDots", d.notificationDots),
                 notificationPreview = o.optBoolean("notificationPreview", d.notificationPreview),
