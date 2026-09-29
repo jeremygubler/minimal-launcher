@@ -42,6 +42,7 @@ data class LauncherSettings(
     val notificationDots: Boolean = true,
     val notificationPreview: Boolean = true,
     val autoKeyboard: Boolean = true,
+    val searchContacts: Boolean = true,
     val doubleTap: GestureAction = GestureAction.LOCK,
     val swipeDown: GestureAction = GestureAction.NOTIFICATIONS,
     val swipeUp: GestureAction = GestureAction.SEARCH,
@@ -70,6 +71,7 @@ data class LauncherSettings(
         put("notificationDots", notificationDots)
         put("notificationPreview", notificationPreview)
         put("autoKeyboard", autoKeyboard)
+        put("searchContacts", searchContacts)
         put("doubleTap", doubleTap.name)
         put("swipeDown", swipeDown.name)
         put("swipeUp", swipeUp.name)
@@ -109,6 +111,7 @@ data class LauncherSettings(
                 notificationDots = o.optBoolean("notificationDots", d.notificationDots),
                 notificationPreview = o.optBoolean("notificationPreview", d.notificationPreview),
                 autoKeyboard = o.optBoolean("autoKeyboard", d.autoKeyboard),
+                searchContacts = o.optBoolean("searchContacts", d.searchContacts),
                 doubleTap = enumOr(str("doubleTap"), d.doubleTap),
                 swipeDown = enumOr(str("swipeDown"), d.swipeDown),
                 swipeUp = enumOr(str("swipeUp"), d.swipeUp),

@@ -20,6 +20,7 @@ class LauncherSettingsTest {
         textScale = 1.1f,
         wallpaperDim = 0.35f,
         alphabetLeft = true,
+        searchContacts = false,
         doubleTap = GestureAction.NONE,
         swipeUp = GestureAction.DRAWER,
         hidden = setOf("a/b#0", "c/d#10"),

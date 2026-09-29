@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -46,6 +47,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.LauncherViewModel
+import dev.minimal.launcher.data.CrashLog
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.IconPack
 import dev.minimal.launcher.data.NotificationStore
@@ -73,6 +75,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val isDefault = remember(resumeTick) { SystemActions.isDefaultLauncher(context) }
     val hasNotificationAccess = remember(resumeTick) { NotificationStore.hasAccess(context) }
     val accessibilityOn = remember(resumeTick) { LauncherAccessibilityService.isRunning }
+    var crashLog by remember(resumeTick) { mutableStateOf(CrashLog.read(context)) }
 
     val store = context.launcherApp.settings
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
@@ -182,6 +185,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { ClickRow("Nach unten wischen", s.swipeDown.label) { dialog = SettingsDialog.SWIPE_DOWN } }
             item { ClickRow("Nach oben wischen", s.swipeUp.label) { dialog = SettingsDialog.SWIPE_UP } }
             item { SwitchRow("Tastatur bei Suche automatisch öffnen", s.autoKeyboard) { v -> vm.update { it.copy(autoKeyboard = v) } } }
+            item { SwitchRow("Kontakte in der Suche", s.searchContacts) { v -> vm.update { it.copy(searchContacts = v) } } }
 
             item { Section("Favoriten") }
             s.favorites.forEachIndexed { index, fav ->
@@ -243,6 +247,29 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                             )
                             TextButton(onClick = { appsByKey[key]?.let { vm.rename(it, null) } }) { Text("Zurücksetzen") }
                         }
+                    }
+                }
+            }
+
+            item { Section("Fehlerprotokoll") }
+            val log = crashLog
+            if (log == null) {
+                item { Hint("Keine Abstürze aufgezeichnet.") }
+            } else {
+                item { Hint(log.lineSequence().take(2).joinToString("\n")) }
+                item {
+                    ClickRow("Protokoll teilen", "Zum Beispiel per E-Mail oder Chat senden") {
+                        val send = Intent(Intent.ACTION_SEND)
+                            .setType("text/plain")
+                            .putExtra(Intent.EXTRA_SUBJECT, "Minimal Launcher – Fehlerprotokoll")
+                            .putExtra(Intent.EXTRA_TEXT, log)
+                        SystemActions.start(context, Intent.createChooser(send, "Protokoll teilen"))
+                    }
+                }
+                item {
+                    ClickRow("Protokoll löschen", null) {
+                        CrashLog.clear(context)
+                        crashLog = null
                     }
                 }
             }

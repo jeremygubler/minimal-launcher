@@ -116,6 +116,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onLongPress = longPress,
                 onFolderLongPress = { editFolder = it },
                 onHomeLongPress = { showHomeMenu = true },
+                onReorderFavorites = vm::setFavoriteOrder,
                 perform = perform,
             )
         }
@@ -141,6 +142,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 notifications = notificationKeys,
                 onLaunch = launch,
                 onLongPress = longPress,
+                onContactsDenied = { vm.update { it.copy(searchContacts = false) } },
             )
         }
         if (overlay != Overlay.SEARCH) {

@@ -143,6 +143,12 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         s.copy(favorites = list)
     }
 
+    fun setFavoriteOrder(ids: List<String>) = store.update { s ->
+        val byId = s.favorites.associateBy { it.id }
+        val ordered = ids.mapNotNull { byId[it] }
+        s.copy(favorites = ordered + s.favorites.filter { it.id !in ids })
+    }
+
     // --- Apps --------------------------------------------------------------
 
     fun hide(appInfo: AppInfo) = store.update { s ->

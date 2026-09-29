@@ -70,6 +70,15 @@ import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.util.SystemActions
 import kotlinx.coroutines.delay
 import java.util.Date
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.zIndex
+import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -87,6 +96,7 @@ fun HomeContent(
     onLongPress: (AppInfo) -> Unit,
     onFolderLongPress: (Favorite) -> Unit,
     onHomeLongPress: () -> Unit,
+    onReorderFavorites: (List<String>) -> Unit,
     perform: (GestureAction) -> Unit,
 ) {
     val currentPerform by rememberUpdatedState(perform)
@@ -146,6 +156,7 @@ fun HomeContent(
                 onLaunch = onLaunch,
                 onLongPress = onLongPress,
                 onFolderLongPress = onFolderLongPress,
+                onReorder = onReorderFavorites,
             )
             Spacer(Modifier.height(40.dp))
         }
@@ -263,45 +274,136 @@ private fun FavoritesList(
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
     onFolderLongPress: (Favorite) -> Unit,
+    onReorder: (List<String>) -> Unit,
 ) {
     var expanded by remember { mutableStateOf<String?>(null) }
     val fontSize = (26 * settings.textScale).sp
+    val favorites = settings.favorites
+    val haptics = LocalHapticFeedback.current
+    val touchSlop = LocalViewConfiguration.current.touchSlop
+
+    // Lange drücken und ziehen sortiert Favoriten um; lange drücken ohne Ziehen öffnet das Menü.
+    var order by remember { mutableStateOf(favorites.map { it.id }) }
+    var draggingId by remember { mutableStateOf<String?>(null) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    var dragDistance by remember { mutableFloatStateOf(0f) }
+    val heights = remember { mutableStateMapOf<String, Int>() }
+    LaunchedEffect(favorites) { if (draggingId == null) order = favorites.map { it.id } }
+
+    val currentFavorites by rememberUpdatedState(favorites)
+    val currentAppsByKey by rememberUpdatedState(appsByKey)
+    val currentLongPress by rememberUpdatedState(onLongPress)
+    val currentFolderLongPress by rememberUpdatedState(onFolderLongPress)
+    val currentReorder by rememberUpdatedState(onReorder)
+
+    fun moveBy(dy: Float) {
+        val id = draggingId ?: return
+        dragOffset += dy
+        dragDistance += abs(dy)
+        val idx = order.indexOf(id)
+        if (idx < 0) return
+        if (dragOffset > 0 && idx < order.lastIndex) {
+            val h = heights[order[idx + 1]] ?: return
+            if (dragOffset > h / 2f) {
+                order = order.toMutableList().apply { add(idx + 1, removeAt(idx)) }
+                dragOffset -= h
+                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        } else if (dragOffset < 0 && idx > 0) {
+            val h = heights[order[idx - 1]] ?: return
+            if (-dragOffset > h / 2f) {
+                order = order.toMutableList().apply { add(idx - 1, removeAt(idx)) }
+                dragOffset += h
+                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            }
+        }
+    }
+
+    fun finishDrag() {
+        val id = draggingId ?: return
+        draggingId = null
+        dragOffset = 0f
+        if (dragDistance < touchSlop) {
+            val fav = currentFavorites.firstOrNull { it.id == id } ?: return
+            if (fav.isFolder) {
+                currentFolderLongPress(fav)
+            } else {
+                fav.apps.firstOrNull()?.let { currentAppsByKey[it] }?.let(currentLongPress)
+            }
+        } else {
+            currentReorder(order)
+        }
+    }
+
+    fun reorderModifier(id: String) = Modifier.pointerInput(id) {
+        detectDragGesturesAfterLongPress(
+            onDragStart = {
+                draggingId = id
+                dragOffset = 0f
+                dragDistance = 0f
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            },
+            onDragEnd = { finishDrag() },
+            onDragCancel = { finishDrag() },
+        ) { change, amount ->
+            change.consume()
+            moveBy(amount.y)
+        }
+    }
+
+    val byId = favorites.associateBy { it.id }
+    val shown = order.mapNotNull { byId[it] } + favorites.filter { it.id !in order }
 
     Column {
-        if (settings.favorites.isEmpty()) {
+        if (favorites.isEmpty()) {
             Text(
                 "Halte eine App gedrückt, um sie zu den Favoriten hinzuzufügen. " +
                     "Ziehe an der Buchstabenleiste, um alle Apps zu sehen.",
                 style = homeTextStyle(15.sp).copy(color = LocalHomeColors.current.secondary),
             )
         }
-        settings.favorites.forEach { fav ->
+        shown.forEach { fav ->
             key(fav.id) {
                 val favApps = fav.apps.mapNotNull { appsByKey[it] }
-                if (fav.isFolder) {
-                    FolderEntry(
-                        folder = fav,
-                        apps = favApps,
-                        expanded = expanded == fav.id,
-                        settings = settings,
-                        fontSize = fontSize,
-                        notifications = notifications,
-                        onToggle = { expanded = if (expanded == fav.id) null else fav.id },
-                        onLaunch = onLaunch,
-                        onLongPress = onLongPress,
-                        onFolderLongPress = { onFolderLongPress(fav) },
-                    )
-                } else {
-                    favApps.firstOrNull()?.let { app ->
-                        FavoriteEntry(
-                            app = app,
-                            swipeApp = fav.swipeApp?.let { appsByKey[it] },
-                            notifications = notifications[app.notificationKey].orEmpty(),
+                val isDragged = draggingId == fav.id
+                Box(
+                    Modifier
+                        .onSizeChanged { heights[fav.id] = it.height }
+                        .zIndex(if (isDragged) 1f else 0f)
+                        .graphicsLayer {
+                            if (isDragged) {
+                                translationY = dragOffset
+                                scaleX = 1.04f
+                                scaleY = 1.04f
+                                alpha = 0.9f
+                            }
+                        }
+                ) {
+                    if (fav.isFolder) {
+                        FolderEntry(
+                            folder = fav,
+                            apps = favApps,
+                            expanded = expanded == fav.id,
                             settings = settings,
                             fontSize = fontSize,
+                            notifications = notifications,
+                            reorder = reorderModifier(fav.id),
+                            onToggle = { expanded = if (expanded == fav.id) null else fav.id },
                             onLaunch = onLaunch,
                             onLongPress = onLongPress,
                         )
+                    } else {
+                        favApps.firstOrNull()?.let { app ->
+                            FavoriteEntry(
+                                app = app,
+                                swipeApp = fav.swipeApp?.let { appsByKey[it] },
+                                notifications = notifications[app.notificationKey].orEmpty(),
+                                settings = settings,
+                                fontSize = fontSize,
+                                reorder = reorderModifier(fav.id),
+                                onLaunch = onLaunch,
+                            )
+                        }
                     }
                 }
             }
@@ -316,8 +418,8 @@ private fun FavoriteEntry(
     notifications: List<NotificationPreview>,
     settings: LauncherSettings,
     fontSize: TextUnit,
+    reorder: Modifier,
     onLaunch: (AppInfo) -> Unit,
-    onLongPress: (AppInfo) -> Unit,
 ) {
     val threshold = with(LocalDensity.current) { 96.dp.toPx() }
     var dragX by remember { mutableFloatStateOf(0f) }
@@ -331,7 +433,7 @@ private fun FavoriteEntry(
     val currentLaunch by rememberUpdatedState(onLaunch)
 
     Column {
-        Box {
+        Box(reorder) {
             if (swipeApp != null && shownX > 1f) {
                 Row(
                     Modifier
@@ -351,7 +453,7 @@ private fun FavoriteEntry(
                 fontSize = fontSize,
                 hasNotification = settings.notificationDots && notifications.isNotEmpty(),
                 onClick = { onLaunch(app) },
-                onLongClick = { onLongPress(app) },
+                onLongClick = null,
                 modifier = Modifier
                     .offset { IntOffset(shownX.roundToInt(), 0) }
                     .pointerInput(swipeApp?.key) {
@@ -433,10 +535,10 @@ private fun FolderEntry(
     settings: LauncherSettings,
     fontSize: TextUnit,
     notifications: Map<String, List<NotificationPreview>>,
+    reorder: Modifier,
     onToggle: () -> Unit,
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
-    onFolderLongPress: () -> Unit,
 ) {
     val colors = LocalHomeColors.current
     val hasNotification = settings.notificationDots && apps.any { it.notificationKey in notifications }
@@ -444,7 +546,8 @@ private fun FolderEntry(
         Row(
             Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = onToggle, onLongClick = onFolderLongPress)
+                .then(reorder)
+                .combinedClickable(onClick = onToggle)
                 .heightIn(min = 48.dp)
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

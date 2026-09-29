@@ -1,6 +1,7 @@
 package dev.minimal.launcher.data
 
 import android.content.Context
+import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.Rect
@@ -20,19 +21,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class AppRepository(private val context: Context) {
+class AppRepository(private val context: Context, private val icons: IconLoader) {
     private val launcherApps = context.getSystemService(LauncherApps::class.java)
     private val userManager = context.getSystemService(UserManager::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var refreshJob: Job? = null
 
+    /** App-Namen vom letzten Start: Das Laden echter Namen ist der langsame Teil beim Start. */
+    private val labelCache = context.getSharedPreferences("label_cache", Context.MODE_PRIVATE)
+
     private val _apps = MutableStateFlow<List<AppInfo>>(emptyList())
     val apps: StateFlow<List<AppInfo>> = _apps.asStateFlow()
 
     private val callback = object : LauncherApps.Callback() {
-        override fun onPackageRemoved(packageName: String?, user: UserHandle?) = refresh()
-        override fun onPackageAdded(packageName: String?, user: UserHandle?) = refresh()
-        override fun onPackageChanged(packageName: String?, user: UserHandle?) = refresh()
+        override fun onPackageRemoved(packageName: String?, user: UserHandle?) = changed(packageName)
+        override fun onPackageAdded(packageName: String?, user: UserHandle?) = changed(packageName)
+        override fun onPackageChanged(packageName: String?, user: UserHandle?) = changed(packageName)
         override fun onPackagesAvailable(packageNames: Array<out String>?, user: UserHandle?, replacing: Boolean) = refresh()
         override fun onPackagesUnavailable(packageNames: Array<out String>?, user: UserHandle?, replacing: Boolean) = refresh()
     }
@@ -42,29 +46,49 @@ class AppRepository(private val context: Context) {
         refresh()
     }
 
-    fun refresh() {
-        refreshJob?.cancel()
-        refreshJob = scope.launch { _apps.value = load() }
+    private fun changed(packageName: String?) {
+        packageName?.let { icons.invalidatePackage(it) }
+        refresh()
     }
 
-    private fun load(): List<AppInfo> {
-        val me = Process.myUserHandle()
-        return userManager.userProfiles.flatMap { user ->
-            launcherApps.getActivityList(null, user).mapNotNull { info ->
-                if (info.componentName.packageName == context.packageName) return@mapNotNull null
-                val label = info.label?.toString()?.trim().orEmpty().ifEmpty { info.componentName.packageName }
-                AppInfo(
-                    key = AppInfo.key(info.componentName, user),
-                    label = label,
-                    originalLabel = label,
-                    packageName = info.componentName.packageName,
-                    component = info.componentName,
-                    user = user,
-                    isWork = user != me,
-                    info = info,
-                )
-            }
+    fun refresh() {
+        refreshJob?.cancel()
+        refreshJob = scope.launch {
+            val entries = activities()
+            // 1. Sofort mit zwischengespeicherten Namen anzeigen.
+            val cached = entries.map { (info, user) -> build(info, user, labelCache.getString(key(info, user), null)) }
+            _apps.value = cached
+            // 2. Echte Namen im Hintergrund laden und nur bei Änderungen neu anzeigen.
+            val fresh = entries.map { (info, user) -> build(info, user, null) }
+            if (fresh.map { it.label } != cached.map { it.label }) _apps.value = fresh
+            labelCache.edit().clear().apply {
+                fresh.forEach { putString(it.key, it.originalLabel) }
+            }.apply()
         }
+    }
+
+    private fun activities(): List<Pair<LauncherActivityInfo, UserHandle>> =
+        userManager.userProfiles.flatMap { user ->
+            launcherApps.getActivityList(null, user)
+                .filter { it.componentName.packageName != context.packageName }
+                .map { it to user }
+        }
+
+    private fun key(info: LauncherActivityInfo, user: UserHandle) = AppInfo.key(info.componentName, user)
+
+    private fun build(info: LauncherActivityInfo, user: UserHandle, cachedLabel: String?): AppInfo {
+        val label = cachedLabel
+            ?: info.label?.toString()?.trim().orEmpty().ifEmpty { info.componentName.packageName }
+        return AppInfo(
+            key = key(info, user),
+            label = label,
+            originalLabel = label,
+            packageName = info.componentName.packageName,
+            component = info.componentName,
+            user = user,
+            isWork = user != Process.myUserHandle(),
+            info = info,
+        )
     }
 
     fun launch(app: AppInfo, bounds: Rect? = null) {

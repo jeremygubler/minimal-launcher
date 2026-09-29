@@ -10,6 +10,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Uhr, Datum und nächster Wecker (antippen öffnet Uhr bzw. Kalender)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
+- Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
 - **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal)
 
 **Alle Apps**
@@ -20,6 +21,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 **Suche**
 - Unscharfe Suche (Anfang, Wortanfang, Initialen, Teilstring, Buchstabenfolge; ignoriert Umlaute/Akzente)
 - Integrierter Taschenrechner (`12*3,5+4`, Ergebnis antippen zum Kopieren)
+- **Kontakte** in den Suchergebnissen (fragt beim ersten Mal nach der Berechtigung, abschaltbar)
 - Websuche und Play-Store-Suche als Fallback; Enter öffnet den ersten Treffer
 
 **Benachrichtigungen**
@@ -39,6 +41,10 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Ausgeblendete und umbenannte Apps verwalten
 - Sicherung/Wiederherstellung aller Einstellungen als JSON-Datei
 
+**Stabilität & Tempo**
+- App-Namen und Icons werden zwischengespeichert – der Launcher ist nach einem Neustart sofort da
+- Lokales Absturzprotokoll unter *Einstellungen → Fehlerprotokoll* (teilen oder löschen); es werden keine Daten automatisch gesendet
+
 ## Bedienung
 
 | Geste | Standard |
@@ -49,6 +55,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 | Doppeltippen | Bildschirm sperren |
 | Leeren Bereich lange drücken | Menü (Widgets, Hintergrund, Einstellungen) |
 | App lange drücken | App-Menü |
+| Favorit lange drücken und ziehen | Favoriten umsortieren |
 
 ## Einrichtung
 

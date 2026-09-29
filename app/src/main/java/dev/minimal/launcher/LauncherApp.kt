@@ -3,6 +3,7 @@ package dev.minimal.launcher
 import android.app.Application
 import android.content.Context
 import dev.minimal.launcher.data.AppRepository
+import dev.minimal.launcher.data.CrashLog
 import dev.minimal.launcher.data.IconLoader
 import dev.minimal.launcher.data.SettingsStore
 
@@ -16,9 +17,10 @@ class LauncherApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this)
         settings = SettingsStore(this)
-        apps = AppRepository(this)
         icons = IconLoader(this)
+        apps = AppRepository(this, icons)
     }
 }
 

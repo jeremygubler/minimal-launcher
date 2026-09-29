@@ -1,5 +1,23 @@
 package dev.minimal.launcher.ui
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
+import dev.minimal.launcher.util.ContactResult
+import dev.minimal.launcher.util.ContactSearch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.widget.Toast
@@ -50,6 +68,7 @@ fun SearchScreen(
     notifications: Set<String>,
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
+    onContactsDenied: () -> Unit,
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -58,6 +77,20 @@ fun SearchScreen(
     val focus = remember { FocusRequester() }
     val results = remember(query, apps) { AppSearch.search(apps, query) }
     val calc = remember(query) { Calculator.evaluate(query) }
+
+    var contactsAllowed by remember { mutableStateOf(ContactSearch.hasPermission(context)) }
+    val requestContacts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        contactsAllowed = granted
+        if (!granted) onContactsDenied()
+    }
+    val contacts by produceState(emptyList<ContactResult>(), query, contactsAllowed, settings.searchContacts) {
+        value = if (!settings.searchContacts || !contactsAllowed || query.trim().length < 2) {
+            emptyList()
+        } else {
+            delay(150) // Entprellen beim Tippen
+            withContext(Dispatchers.IO) { ContactSearch.search(context, query) }
+        }
+    }
 
     LaunchedEffect(Unit) {
         if (settings.autoKeyboard) {
@@ -131,6 +164,25 @@ fun SearchScreen(
                     onLongClick = { onLongPress(app) },
                 )
             }
+            if (contacts.isNotEmpty()) {
+                item(key = "contacts_header") {
+                    Text(
+                        "Kontakte",
+                        style = homeTextStyle(13.sp).copy(color = colors.secondary, fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+                    )
+                }
+                items(contacts, key = { "contact_${it.id}" }) { contact ->
+                    ContactRow(contact, (22 * settings.textScale).sp) { ContactSearch.open(context, contact) }
+                }
+            }
+            if (settings.searchContacts && !contactsAllowed && query.trim().length >= 2) {
+                item(key = "contacts_permission") {
+                    ActionLine("Auch Kontakte durchsuchen – Zugriff erlauben") {
+                        requestContacts.launch(Manifest.permission.READ_CONTACTS)
+                    }
+                }
+            }
             if (query.isNotBlank()) {
                 item(key = "web") {
                     ActionLine("Im Web suchen: „$query“") { SystemActions.webSearch(context, query) }
@@ -153,4 +205,30 @@ private fun ActionLine(text: String, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .padding(vertical = 14.dp),
     )
+}
+
+@Composable
+private fun ContactRow(contact: ContactResult, fontSize: TextUnit, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                contact.name.take(1).uppercase(),
+                style = homeTextStyle(15.sp).copy(fontWeight = FontWeight.Bold),
+            )
+        }
+        Spacer(Modifier.width(16.dp))
+        Text(contact.name, style = homeTextStyle(fontSize), maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
 }

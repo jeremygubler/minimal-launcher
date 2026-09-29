@@ -76,7 +76,7 @@ fun AppRow(
     fontSize: TextUnit,
     hasNotification: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     textColor: Color? = null,
 ) {
