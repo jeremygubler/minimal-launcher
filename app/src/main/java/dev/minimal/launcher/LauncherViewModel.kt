@@ -47,7 +47,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         apps.filter { it.key !in s.hidden && !it.isPrivate }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    /** Apps im privaten Bereich – nur vorhanden, solange er entsperrt ist. */
+    /** Apps im vertraulichen Profil – nur vorhanden, solange es entsperrt ist. */
     val privateApps: StateFlow<List<AppInfo>> = allApps.map { apps -> apps.filter { it.isPrivate } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 

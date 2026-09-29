@@ -42,7 +42,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
     private val _apps = MutableStateFlow<List<AppInfo>>(emptyList())
     val apps: StateFlow<List<AppInfo>> = _apps.asStateFlow()
 
-    /** Privater Bereich (Android 15+); null, wenn keiner eingerichtet ist oder er ausgeblendet ist. */
+    /** Vertrauliches Profil (Android 15+); null, wenn keins eingerichtet oder es ausgeblendet ist. */
     private val _privateSpace = MutableStateFlow<PrivateSpace?>(null)
     val privateSpace: StateFlow<PrivateSpace?> = _privateSpace.asStateFlow()
 
@@ -118,7 +118,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         privateUsers = setOfNotNull(privateUser)
         _privateSpace.value = privateUser?.let { PrivateSpace(it, userManager.isQuietModeEnabled(it)) }
         return profiles
-            // Gesperrter privater Bereich: Apps komplett ausblenden.
+            // Gesperrtes vertrauliches Profil: Apps komplett ausblenden.
             .filterNot { it == privateUser && userManager.isQuietModeEnabled(it) }
             .flatMap { user ->
                 launcherApps.getActivityList(null, user)
@@ -127,13 +127,13 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
             }
     }
 
-    /** Sperrt/entsperrt den privaten Bereich. Beim Entsperren fragt das System nach PIN/Fingerabdruck. */
+    /** Sperrt/entsperrt das vertrauliche Profil. Beim Entsperren fragt das System nach PIN/Fingerabdruck. */
     fun setPrivateSpaceLocked(locked: Boolean) {
         val space = _privateSpace.value ?: return
         try {
             userManager.requestQuietModeEnabled(locked, space.user)
         } catch (e: Exception) {
-            Toast.makeText(context, "Privater Bereich konnte nicht geändert werden", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Vertrauliches Profil konnte nicht geändert werden", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -183,7 +183,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
             val count = runCatching { launcherApps.getActivityList(null, user).size }.getOrNull()
             appendLine("• Profil $user: Typ=$type, gesperrt=$quiet, Apps=$count")
         }
-        appendLine("Privater Bereich erkannt: ${_privateSpace.value?.let { if (it.locked) "ja, gesperrt" else "ja, entsperrt" } ?: "nein"}")
+        appendLine("Vertrauliches Profil erkannt: ${_privateSpace.value?.let { if (it.locked) "ja, gesperrt" else "ja, entsperrt" } ?: "nein"}")
     }
 
     private fun key(info: LauncherActivityInfo, user: UserHandle) = AppInfo.key(info.componentName, user)

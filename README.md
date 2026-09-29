@@ -19,7 +19,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Buchstabenleiste am Rand mit „Wellen“-Effekt und haptischem Feedback – ziehen springt direkt zum Buchstaben
 - Alphabetische Liste mit Abschnitts-Überschriften, Arbeitsprofil-Apps inklusive
 - Linkshänder-Modus (Leiste links)
-- **Privater Bereich** (Android 15+): eigener Abschnitt am Ende der Liste (🔒 in der Buchstabenleiste), entsperren/sperren direkt im Launcher
+- **Vertrauliches Profil** (Android 15+, früher „Privater Bereich“): eigener Abschnitt am Ende der Liste (🔒 in der Buchstabenleiste), entsperren/sperren direkt im Launcher
 - Pausiertes Arbeitsprofil: Antippen einer Arbeits-App bietet an, das Profil fortzusetzen
 
 **Suche**

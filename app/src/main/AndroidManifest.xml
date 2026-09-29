@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
-    <!-- Privater Bereich (Android 15+) -->
+    <!-- Vertrauliches Profil (Android 15+) -->
     <uses-permission android:name="android.permission.ACCESS_HIDDEN_PROFILES" />
 
     <queries>

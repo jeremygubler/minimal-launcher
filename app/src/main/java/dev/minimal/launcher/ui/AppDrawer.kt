@@ -33,7 +33,7 @@ private sealed interface DrawerItem {
     data object PrivateHeader : DrawerItem { override val key = "private_header" }
 }
 
-/** Buchstabe in der Leiste, der zum privaten Bereich springt. */
+/** Buchstabe in der Leiste, der zum vertraulichen Profil springt. */
 const val PRIVATE_LETTER = "🔒"
 
 @Composable
@@ -138,7 +138,7 @@ private fun PrivateSpaceHeader(locked: Boolean, padding: PaddingValues, onToggle
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Privater Bereich",
+                "Vertrauliches Profil",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.secondary,
