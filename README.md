@@ -65,6 +65,18 @@ Voraussetzung: JDK 17 und Android SDK (oder einfach Android Studio öffnen).
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Jeder Push baut die APK automatisch über GitHub Actions (Reiter **Actions → Build APK → Artifacts**).
+Jeder Push auf `main` führt die Unit-Tests aus und baut die APK über GitHub Actions
+(Reiter **Actions → Build APK → Artifacts**). Die Datei ohne `-debug` ist die optimierte Release-Version.
+
+## Releases & automatische Updates
+
+Ein Tag `v*` (z. B. `v1.1.0`) erstellt automatisch ein GitHub-Release mit der APK.
+Mit [Obtainium](https://github.com/ImranR98/Obtainium) lässt sich das Repo als Quelle eintragen –
+dann kommen Updates direkt aufs Handy.
+
+Alle Builds sind mit demselben Schlüssel (`keystore/launcher.keystore`) signiert, daher lassen sich neue
+Versionen einfach über alte installieren, ohne Einstellungen zu verlieren. Für eine Veröffentlichung im
+Play Store einen eigenen, geheimen Schlüssel verwenden und über `SIGNING_KEYSTORE_PATH`,
+`SIGNING_STORE_PASSWORD`, `SIGNING_KEY_ALIAS` und `SIGNING_KEY_PASSWORD` setzen.
 
 Mindestversion: Android 8.0 (API 26).

@@ -12,17 +12,33 @@ android {
         applicationId = "dev.minimal.launcher"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        // Auf GitHub Actions steigt die Versionsnummer mit jedem Build, damit Updates sauber installieren.
+        val build = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionCode = build
+        versionName = "1.0.$build"
+    }
+
+    signingConfigs {
+        // Fester Schlüssel, damit neue Builds über alte installiert werden können.
+        // Für den Play Store eigenen Schlüssel über die SIGNING_*-Umgebungsvariablen setzen.
+        create("shared") {
+            storeFile = System.getenv("SIGNING_KEYSTORE_PATH")?.let { file(it) }
+                ?: rootProject.file("keystore/launcher.keystore")
+            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: "android"
+            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: "launcher"
+            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: "android"
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("shared")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Zum Testen mit dem Debug-Schlüssel signiert – für den Play Store eigenen Schlüssel verwenden.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("shared")
         }
     }
 
@@ -51,4 +67,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }
