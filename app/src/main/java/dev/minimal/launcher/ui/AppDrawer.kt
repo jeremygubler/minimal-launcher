@@ -21,12 +21,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.LauncherSettings
+import dev.minimal.launcher.data.PrivateSpace
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Alignment
 
 private sealed interface DrawerItem {
     val key: String
     data class Header(val letter: String) : DrawerItem { override val key = "h_$letter" }
     data class App(val app: AppInfo) : DrawerItem { override val key = app.key }
+    data object PrivateHeader : DrawerItem { override val key = "private_header" }
 }
+
+/** Buchstabe in der Leiste, der zum privaten Bereich springt. */
+const val PRIVATE_LETTER = "🔒"
 
 @Composable
 fun AppDrawer(
@@ -35,10 +43,14 @@ fun AppDrawer(
     notifications: Set<String>,
     targetLetter: String?,
     scrollerDragging: Boolean,
+    privateSpace: PrivateSpace?,
+    privateApps: List<AppInfo>,
+    onTogglePrivateSpace: () -> Unit,
+    onPrivateSpaceSettings: () -> Unit,
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
 ) {
-    val rows = remember(apps) {
+    val rows = remember(apps, privateSpace, privateApps) {
         buildList {
             var last: String? = null
             apps.forEach { app ->
@@ -48,11 +60,16 @@ fun AppDrawer(
                 }
                 add(DrawerItem.App(app))
             }
+            if (privateSpace != null) {
+                add(DrawerItem.PrivateHeader)
+                if (!privateSpace.locked) privateApps.forEach { add(DrawerItem.App(it)) }
+            }
         }
     }
     val headerIndex = remember(rows) {
         rows.withIndex().filter { it.value is DrawerItem.Header }
-            .associate { (it.value as DrawerItem.Header).letter to it.index }
+            .associate { (it.value as DrawerItem.Header).letter to it.index } +
+            listOfNotNull(rows.indexOf(DrawerItem.PrivateHeader).takeIf { it >= 0 }?.let { PRIVATE_LETTER to it })
     }
     val state = rememberLazyListState()
 
@@ -89,6 +106,12 @@ fun AppDrawer(
                         color = if (active) MaterialTheme.colorScheme.primary else LocalHomeColors.current.secondary,
                     )
                 }
+                DrawerItem.PrivateHeader -> PrivateSpaceHeader(
+                    locked = privateSpace?.locked ?: true,
+                    padding = side,
+                    onToggle = onTogglePrivateSpace,
+                    onSettings = onPrivateSpaceSettings,
+                )
                 is DrawerItem.App -> AppRow(
                     app = item.app,
                     showIcon = settings.showIcons,
@@ -100,6 +123,35 @@ fun AppDrawer(
                     modifier = Modifier.padding(side),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun PrivateSpaceHeader(locked: Boolean, padding: PaddingValues, onToggle: () -> Unit, onSettings: () -> Unit) {
+    val colors = LocalHomeColors.current
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(padding)
+            .padding(top = 32.dp, bottom = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Privater Bereich",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.secondary,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onSettings) { Text("Einstellungen") }
+            TextButton(onClick = onToggle) { Text(if (locked) "Entsperren" else "Sperren") }
+        }
+        if (locked) {
+            Text(
+                "Gesperrt – Apps sind ausgeblendet.",
+                style = homeTextStyle(14.sp).copy(color = colors.secondary),
+            )
         }
     }
 }

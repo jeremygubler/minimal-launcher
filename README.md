@@ -19,6 +19,8 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Buchstabenleiste am Rand mit „Wellen“-Effekt und haptischem Feedback – ziehen springt direkt zum Buchstaben
 - Alphabetische Liste mit Abschnitts-Überschriften, Arbeitsprofil-Apps inklusive
 - Linkshänder-Modus (Leiste links)
+- **Privater Bereich** (Android 15+): eigener Abschnitt am Ende der Liste (🔒 in der Buchstabenleiste), entsperren/sperren direkt im Launcher
+- Pausiertes Arbeitsprofil: Antippen einer Arbeits-App bietet an, das Profil fortzusetzen
 
 **Suche**
 - Unscharfe Suche (Anfang, Wortanfang, Initialen, Teilstring, Buchstabenfolge; ignoriert Umlaute/Akzente)
@@ -37,9 +39,10 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 
 **Anpassung**
 - Hell/Dunkel/System, Akzentfarbe inkl. Material You
+- **Designsymbole** (Themed Icons): einfarbige Icons in den Systemfarben, wie beim Pixel Launcher (Android 13+)
 - Icon-Packs (ADW/Nova-Format), Icons an/aus, Icon- und Schriftgröße
 - Hintergrund abdunkeln und weichzeichnen (Android 12+)
-- Gesten: Doppeltippen, nach oben/unten wischen – frei belegbar (Sperren, Benachrichtigungen, Schnelleinstellungen, Suche, Alle Apps)
+- Gesten: Doppeltippen, nach oben/unten wischen – frei belegbar (Sperren, Benachrichtigungen, Schnelleinstellungen, Suche, Alle Apps, Gemini/Assistant)
 - Ausgeblendete und umbenannte Apps verwalten
 - Sicherung/Wiederherstellung aller Einstellungen als JSON-Datei
 

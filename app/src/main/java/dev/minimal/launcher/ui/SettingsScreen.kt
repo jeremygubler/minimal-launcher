@@ -2,6 +2,7 @@ package dev.minimal.launcher.ui
 
 import android.Manifest
 import android.content.Intent
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -159,6 +160,13 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
             item { SwitchRow("App-Icons anzeigen", s.showIcons) { v -> vm.update { it.copy(showIcons = v) } } }
+            if (Build.VERSION.SDK_INT >= 33) {
+                item {
+                    SwitchRow("Designsymbole (einfarbig in Systemfarbe)", s.themedIcons) { v ->
+                        vm.update { it.copy(themedIcons = v) }
+                    }
+                }
+            }
             item {
                 SliderRow("Icon-Größe", s.iconSize.toFloat(), 24f..56f, "${s.iconSize} dp") { v ->
                     vm.update { it.copy(iconSize = v.toInt()) }

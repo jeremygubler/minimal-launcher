@@ -39,6 +39,13 @@ object SystemActions {
         start(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
 
+    /** Öffnet den Standard-Assistenten (auf dem Pixel: Gemini). */
+    fun openAssistant(context: Context) {
+        if (!start(context, Intent(Intent.ACTION_ASSIST))) {
+            start(context, Intent(Intent.ACTION_VOICE_COMMAND))
+        }
+    }
+
     @SuppressLint("WrongConstant", "PrivateApi")
     private fun invokeStatusBar(context: Context, method: String) {
         try {

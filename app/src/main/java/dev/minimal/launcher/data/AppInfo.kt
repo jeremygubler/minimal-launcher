@@ -13,6 +13,7 @@ data class AppInfo(
     val component: ComponentName,
     val user: UserHandle,
     val isWork: Boolean,
+    val isPrivate: Boolean = false,
     val info: LauncherActivityInfo,
 ) {
     val notificationKey: String get() = notificationKey(packageName, user)

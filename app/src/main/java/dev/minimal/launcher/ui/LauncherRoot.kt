@@ -51,7 +51,11 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val notifications by vm.notifications.collectAsStateWithLifecycle()
     val notificationKeys = remember(notifications) { notifications.keys }
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
-    val letters = remember(apps) { apps.map { it.letter }.distinct() }
+    val privateSpace by vm.privateSpace.collectAsStateWithLifecycle()
+    val privateApps by vm.privateApps.collectAsStateWithLifecycle()
+    val letters = remember(apps, privateSpace != null) {
+        apps.map { it.letter }.distinct() + listOfNotNull(PRIVATE_LETTER.takeIf { privateSpace != null })
+    }
 
     var overlay by remember { mutableStateOf(Overlay.NONE) }
     var targetLetter by remember { mutableStateOf<String?>(null) }
@@ -94,6 +98,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             GestureAction.SEARCH -> overlay = Overlay.SEARCH
             GestureAction.DRAWER -> overlay = Overlay.DRAWER
             GestureAction.LOCK -> SystemActions.lockScreen(context)
+            GestureAction.ASSISTANT -> SystemActions.openAssistant(context)
         }
     }
 
@@ -131,13 +136,17 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 notifications = notificationKeys,
                 targetLetter = targetLetter,
                 scrollerDragging = scrollerDragging,
+                privateSpace = privateSpace,
+                privateApps = privateApps,
+                onTogglePrivateSpace = { privateSpace?.let { vm.setPrivateSpaceLocked(!it.locked) } },
+                onPrivateSpaceSettings = vm::openPrivateSpaceSettings,
                 onLaunch = launch,
                 onLongPress = longPress,
             )
         }
         AnimatedVisibility(overlay == Overlay.SEARCH, enter = fadeIn(), exit = fadeOut()) {
             SearchScreen(
-                apps = apps,
+                apps = apps + privateApps,
                 settings = settings,
                 notifications = notificationKeys,
                 onLaunch = launch,

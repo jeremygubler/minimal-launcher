@@ -12,6 +12,7 @@ enum class GestureAction(val label: String) {
     SEARCH("Suche öffnen"),
     DRAWER("Alle Apps öffnen"),
     LOCK("Bildschirm sperren"),
+    ASSISTANT("Gemini / Assistant öffnen"),
 }
 
 /** Ein Favorit ist entweder eine einzelne App oder ein Ordner (mehrere Apps). */
@@ -32,6 +33,7 @@ data class LauncherSettings(
     val showIcons: Boolean = true,
     val iconSize: Int = 36,
     val iconPack: String? = null,
+    val themedIcons: Boolean = false,
     val textScale: Float = 1f,
     val wallpaperDim: Float = 0.2f,
     val blur: Boolean = true,
@@ -63,6 +65,7 @@ data class LauncherSettings(
         put("showIcons", showIcons)
         put("iconSize", iconSize)
         put("iconPack", iconPack ?: JSONObject.NULL)
+        put("themedIcons", themedIcons)
         put("textScale", textScale.toDouble())
         put("wallpaperDim", wallpaperDim.toDouble())
         put("blur", blur)
@@ -105,6 +108,7 @@ data class LauncherSettings(
                 showIcons = o.optBoolean("showIcons", d.showIcons),
                 iconSize = o.optInt("iconSize", d.iconSize),
                 iconPack = str("iconPack"),
+                themedIcons = o.optBoolean("themedIcons", d.themedIcons),
                 textScale = o.optDouble("textScale", d.textScale.toDouble()).toFloat(),
                 wallpaperDim = o.optDouble("wallpaperDim", d.wallpaperDim.toDouble()).toFloat(),
                 blur = o.optBoolean("blur", d.blur),

@@ -51,7 +51,8 @@ import dev.minimal.launcher.util.AppSearch
 fun AppIcon(app: AppInfo, size: Dp, modifier: Modifier = Modifier) {
     val loader = LocalContext.current.launcherApp.icons
     val version by loader.version.collectAsState()
-    val bitmap by produceState<ImageBitmap?>(null, app.key, version) { value = loader.load(app) }
+    val dark = LocalHomeColors.current.dark
+    val bitmap by produceState<ImageBitmap?>(null, app.key, version, dark) { value = loader.load(app, dark) }
     Box(modifier.size(size)) {
         bitmap?.let { Image(it, contentDescription = null, modifier = Modifier.fillMaxSize()) }
     }

@@ -1,17 +1,22 @@
 package dev.minimal.launcher.data
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,6 +25,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+data class PrivateSpace(val user: UserHandle, val locked: Boolean)
 
 class AppRepository(private val context: Context, private val icons: IconLoader) {
     private val launcherApps = context.getSystemService(LauncherApps::class.java)
@@ -33,6 +40,14 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
     private val _apps = MutableStateFlow<List<AppInfo>>(emptyList())
     val apps: StateFlow<List<AppInfo>> = _apps.asStateFlow()
 
+    /** Privater Bereich (Android 15+); null, wenn keiner eingerichtet ist oder er ausgeblendet ist. */
+    private val _privateSpace = MutableStateFlow<PrivateSpace?>(null)
+    val privateSpace: StateFlow<PrivateSpace?> = _privateSpace.asStateFlow()
+
+    private val profileReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) = refresh()
+    }
+
     private val callback = object : LauncherApps.Callback() {
         override fun onPackageRemoved(packageName: String?, user: UserHandle?) = changed(packageName)
         override fun onPackageAdded(packageName: String?, user: UserHandle?) = changed(packageName)
@@ -43,6 +58,17 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
 
     init {
         launcherApps.registerCallback(callback, Handler(Looper.getMainLooper()))
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_MANAGED_PROFILE_AVAILABLE)
+            addAction(Intent.ACTION_MANAGED_PROFILE_UNAVAILABLE)
+            if (Build.VERSION.SDK_INT >= 35) {
+                addAction(Intent.ACTION_PROFILE_AVAILABLE)
+                addAction(Intent.ACTION_PROFILE_UNAVAILABLE)
+                addAction(Intent.ACTION_PROFILE_ADDED)
+                addAction(Intent.ACTION_PROFILE_REMOVED)
+            }
+        }
+        ContextCompat.registerReceiver(context, profileReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         refresh()
     }
 
@@ -67,12 +93,52 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         }
     }
 
-    private fun activities(): List<Pair<LauncherActivityInfo, UserHandle>> =
-        userManager.userProfiles.flatMap { user ->
-            launcherApps.getActivityList(null, user)
-                .filter { it.componentName.packageName != context.packageName }
-                .map { it to user }
+    private fun profiles(): List<UserHandle> =
+        if (Build.VERSION.SDK_INT >= 35) launcherApps.profiles else userManager.userProfiles
+
+    @Volatile
+    private var privateUsers: Set<UserHandle> = emptySet()
+
+    private fun isPrivate(user: UserHandle): Boolean = user in privateUsers
+
+    private fun detectPrivate(user: UserHandle): Boolean =
+        Build.VERSION.SDK_INT >= 35 &&
+            launcherApps.getLauncherUserInfo(user)?.userType == UserManager.USER_TYPE_PROFILE_PRIVATE
+
+    private fun activities(): List<Pair<LauncherActivityInfo, UserHandle>> {
+        val profiles = profiles()
+        val privateUser = profiles.firstOrNull { detectPrivate(it) }
+        privateUsers = setOfNotNull(privateUser)
+        _privateSpace.value = privateUser?.let { PrivateSpace(it, userManager.isQuietModeEnabled(it)) }
+        return profiles
+            // Gesperrter privater Bereich: Apps komplett ausblenden.
+            .filterNot { it == privateUser && userManager.isQuietModeEnabled(it) }
+            .flatMap { user ->
+                launcherApps.getActivityList(null, user)
+                    .filter { it.componentName.packageName != context.packageName }
+                    .map { it to user }
+            }
+    }
+
+    /** Sperrt/entsperrt den privaten Bereich. Beim Entsperren fragt das System nach PIN/Fingerabdruck. */
+    fun setPrivateSpaceLocked(locked: Boolean) {
+        val space = _privateSpace.value ?: return
+        try {
+            userManager.requestQuietModeEnabled(locked, space.user)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Privater Bereich konnte nicht geändert werden", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    fun openPrivateSpaceSettings() {
+        if (Build.VERSION.SDK_INT < 35) return
+        try {
+            launcherApps.privateSpaceSettingsIntent?.let {
+                context.startIntentSender(it, null, Intent.FLAG_ACTIVITY_NEW_TASK, Intent.FLAG_ACTIVITY_NEW_TASK, 0)
+            }
+        } catch (_: Exception) {
+        }
+    }
 
     private fun key(info: LauncherActivityInfo, user: UserHandle) = AppInfo.key(info.componentName, user)
 
@@ -86,12 +152,21 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
             packageName = info.componentName.packageName,
             component = info.componentName,
             user = user,
-            isWork = user != Process.myUserHandle(),
+            isWork = user != Process.myUserHandle() && !isPrivate(user),
+            isPrivate = isPrivate(user),
             info = info,
         )
     }
 
     fun launch(app: AppInfo, bounds: Rect? = null) {
+        // Pausiertes Arbeitsprofil: statt Fehler das Profil fortsetzen (das System fragt nach).
+        if (app.isWork && userManager.isQuietModeEnabled(app.user)) {
+            try {
+                userManager.requestQuietModeEnabled(false, app.user)
+            } catch (_: Exception) {
+            }
+            return
+        }
         try {
             launcherApps.startMainActivity(app.component, app.user, bounds, null)
         } catch (e: Exception) {

@@ -14,6 +14,7 @@ import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
+import dev.minimal.launcher.data.PrivateSpace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -43,8 +44,17 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val visibleApps: StateFlow<List<AppInfo>> = combine(allApps, store.state) { apps, s ->
-        apps.filter { it.key !in s.hidden }
+        apps.filter { it.key !in s.hidden && !it.isPrivate }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Apps im privaten Bereich – nur vorhanden, solange er entsperrt ist. */
+    val privateApps: StateFlow<List<AppInfo>> = allApps.map { apps -> apps.filter { it.isPrivate } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    val privateSpace: StateFlow<PrivateSpace?> = app.apps.privateSpace
+
+    fun setPrivateSpaceLocked(locked: Boolean) = app.apps.setPrivateSpaceLocked(locked)
+    fun openPrivateSpaceSettings() = app.apps.openPrivateSpaceSettings()
 
     val notifications: StateFlow<Map<String, List<NotificationPreview>>> =
         NotificationStore.items.map { list -> list.groupBy { it.appKey } }
@@ -55,8 +65,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     init {
         viewModelScope.launch {
-            store.state.map { it.iconPack }.distinctUntilChanged().collect { pack ->
-                withContext(Dispatchers.IO) { app.icons.setIconPack(pack) }
+            store.state.map { it.iconPack to it.themedIcons }.distinctUntilChanged().collect { (pack, themed) ->
+                withContext(Dispatchers.IO) { app.icons.configure(pack, themed) }
             }
         }
         viewModelScope.launch {
