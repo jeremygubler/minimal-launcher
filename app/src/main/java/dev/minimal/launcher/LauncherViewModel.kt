@@ -98,7 +98,16 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         _homePressed.tryEmit(Unit)
     }
 
-    fun launch(appInfo: AppInfo) = app.apps.launch(appInfo)
+    val usage: StateFlow<Map<String, Double>> = app.usage.scores
+
+    fun launch(appInfo: AppInfo) {
+        app.usage.record(appInfo.key)
+        app.apps.launch(appInfo)
+    }
+
+    fun clearUsage() = app.usage.clear()
+
+    suspend fun allShortcuts(): List<ShortcutInfo> = withContext(Dispatchers.IO) { app.apps.allShortcuts() }
     fun openAppInfo(appInfo: AppInfo) = app.apps.openAppInfo(appInfo)
 
     suspend fun shortcuts(appInfo: AppInfo): List<ShortcutInfo> =

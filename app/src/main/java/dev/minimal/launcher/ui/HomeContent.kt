@@ -1,5 +1,14 @@
 package dev.minimal.launcher.ui
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
 import android.text.format.DateFormat
@@ -217,6 +226,7 @@ private fun ClockBlock(settings: LauncherSettings) {
                     .clickable(noRipple, null) { SystemActions.openClock(context) },
             )
         }
+        if (settings.showBattery) BatteryLine()
         val event by produceState<CalendarEvent?>(null, now, settings.showEvents) {
             value = if (settings.showEvents) withContext(Dispatchers.IO) { CalendarEvents.next(context, now) } else null
         }
@@ -238,6 +248,46 @@ private fun ClockBlock(settings: LauncherSettings) {
             )
         }
     }
+}
+
+/** Akku nur zeigen, wenn es relevant ist: beim Laden oder bei höchstens 20 %. */
+@Composable
+private fun BatteryLine() {
+    val context = LocalContext.current
+    val colors = LocalHomeColors.current
+    var level by remember { mutableIntStateOf(-1) }
+    var charging by remember { mutableStateOf(false) }
+    var full by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                intent ?: return
+                val raw = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+                level = if (raw >= 0) raw * 100 / scale else -1
+                val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+                full = status == BatteryManager.BATTERY_STATUS_FULL
+                charging = status == BatteryManager.BATTERY_STATUS_CHARGING || full
+            }
+        }
+        ContextCompat.registerReceiver(
+            context, receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED,
+        )?.let { receiver.onReceive(context, it) }
+        onDispose { runCatching { context.unregisterReceiver(receiver) } }
+    }
+
+    if (level < 0 || (!charging && level > 20)) return
+    val text = when {
+        full -> "Akku voll"
+        charging -> "Lädt · $level %"
+        else -> "Akku schwach · $level %"
+    }
+    Text(
+        text,
+        style = homeTextStyle(15.sp).copy(color = if (!charging) Color(0xFFF28B82) else colors.secondary),
+        modifier = Modifier.padding(top = 4.dp),
+    )
 }
 
 @Composable

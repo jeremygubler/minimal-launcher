@@ -208,6 +208,9 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item {
                 SwitchRow("Mediensteuerung (Musik, Podcasts)", s.showMedia) { v -> vm.update { it.copy(showMedia = v) } }
             }
+            item {
+                SwitchRow("Akku beim Laden und unter 20 % anzeigen", s.showBattery) { v -> vm.update { it.copy(showBattery = v) } }
+            }
             item { SwitchRow("Buchstabenleiste links (Linkshänder)", s.alphabetLeft) { v -> vm.update { it.copy(alphabetLeft = v) } } }
 
             item { Section("Benachrichtigungen") }
@@ -224,6 +227,14 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { ClickRow("Nach oben wischen", s.swipeUp.label) { dialog = SettingsDialog.SWIPE_UP } }
             item { SwitchRow("Tastatur bei Suche automatisch öffnen", s.autoKeyboard) { v -> vm.update { it.copy(autoKeyboard = v) } } }
             item { SwitchRow("Kontakte in der Suche", s.searchContacts) { v -> vm.update { it.copy(searchContacts = v) } } }
+            item { SwitchRow("App-Aktionen in der Suche (z. B. „Neue Nachricht“)", s.searchShortcuts) { v -> vm.update { it.copy(searchShortcuts = v) } } }
+            item { SwitchRow("Vorschläge (meistgenutzte Apps)", s.showSuggestions) { v -> vm.update { it.copy(showSuggestions = v) } } }
+            item {
+                ClickRow("Nutzungsverlauf löschen", "Setzt Vorschläge und Sortierung zurück") {
+                    vm.clearUsage()
+                    Toast.makeText(context, "Nutzungsverlauf gelöscht", Toast.LENGTH_SHORT).show()
+                }
+            }
 
             item { Section("Favoriten") }
             s.favorites.forEachIndexed { index, fav ->

@@ -8,6 +8,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 **Startbildschirm**
 - Vertikale Favoritenliste, einhändig bedienbar (unten ausgerichtet)
 - Uhr, Datum, nächster Wecker und nächster Termin (antippen öffnet Uhr, Kalender bzw. den Termin)
+- Akku-Hinweis beim Laden oder unter 20 %
 - Mediensteuerung, wenn Musik oder Podcasts laufen (Titel, Zurück/Pause/Weiter)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
@@ -25,6 +26,8 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 **Suche**
 - Unscharfe Suche (Anfang, Wortanfang, Initialen, Teilstring, Buchstabenfolge; ignoriert Umlaute/Akzente)
 - Integrierter Taschenrechner (`12*3,5+4`, Ergebnis antippen zum Kopieren)
+- **Vorschläge**: meistgenutzte Apps beim Öffnen der Suche; Treffer werden nach Nutzung sortiert (nur lokal gespeichert)
+- **App-Aktionen** in der Suche, z. B. „Neue Nachricht“ oder „Scannen“
 - **Kontakte** in den Suchergebnissen (fragt beim ersten Mal nach der Berechtigung, abschaltbar)
 - Websuche und Play-Store-Suche als Fallback; Enter öffnet den ersten Treffer
 

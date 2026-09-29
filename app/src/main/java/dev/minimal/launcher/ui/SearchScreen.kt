@@ -19,6 +19,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import android.content.ClipData
+import android.content.pm.ShortcutInfo
+import android.graphics.drawable.Drawable
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import android.content.ClipboardManager
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -69,13 +75,32 @@ fun SearchScreen(
     onLaunch: (AppInfo) -> Unit,
     onLongPress: (AppInfo) -> Unit,
     onContactsDenied: () -> Unit,
+    usage: Map<String, Double>,
+    loadShortcuts: suspend () -> List<ShortcutInfo>,
+    shortcutIcon: (ShortcutInfo) -> Drawable?,
+    onShortcut: (ShortcutInfo) -> Unit,
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
     val colors = LocalHomeColors.current
     var query by remember { mutableStateOf("") }
     val focus = remember { FocusRequester() }
-    val results = remember(query, apps) { AppSearch.search(apps, query) }
+    val results = remember(query, apps, usage) { AppSearch.search(apps, query, usage) }
+    val suggestions = remember(apps, usage, settings.showSuggestions) {
+        if (!settings.showSuggestions) emptyList()
+        else apps.filter { (usage[it.key] ?: 0.0) > 0.05 }.sortedByDescending { usage[it.key] }.take(5)
+    }
+    val shortcuts by produceState(emptyList<ShortcutInfo>(), settings.searchShortcuts) {
+        value = if (settings.searchShortcuts) loadShortcuts() else emptyList()
+    }
+    val labelsByPackage = remember(apps) { apps.associate { it.packageName to it.label } }
+    val shortcutResults = remember(query, shortcuts) {
+        if (query.trim().length < 2) emptyList()
+        else shortcuts.filter { sc ->
+            AppSearch.matches(sc.shortLabel?.toString().orEmpty(), query) ||
+                AppSearch.matches(sc.longLabel?.toString().orEmpty(), query)
+        }.take(5)
+    }
     val calc = remember(query) { Calculator.evaluate(query) }
 
     var contactsAllowed by remember { mutableStateOf(ContactSearch.hasPermission(context)) }
@@ -153,6 +178,20 @@ fun SearchScreen(
                     )
                 }
             }
+            if (query.isBlank() && suggestions.isNotEmpty()) {
+                item(key = "suggestions_header") { SectionLabel("Vorschläge") }
+                items(suggestions, key = { "s_" + it.key }) { app ->
+                    AppRow(
+                        app = app,
+                        showIcon = settings.showIcons,
+                        iconSize = settings.iconSize.dp,
+                        fontSize = (22 * settings.textScale).sp,
+                        hasNotification = settings.notificationDots && app.notificationKey in notifications,
+                        onClick = { onLaunch(app) },
+                        onLongClick = { onLongPress(app) },
+                    )
+                }
+            }
             items(results.take(30), key = { it.key }) { app ->
                 AppRow(
                     app = app,
@@ -164,14 +203,20 @@ fun SearchScreen(
                     onLongClick = { onLongPress(app) },
                 )
             }
-            if (contacts.isNotEmpty()) {
-                item(key = "contacts_header") {
-                    Text(
-                        "Kontakte",
-                        style = homeTextStyle(13.sp).copy(color = colors.secondary, fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+            if (shortcutResults.isNotEmpty()) {
+                item(key = "shortcuts_header") { SectionLabel("Aktionen") }
+                items(shortcutResults, key = { "sc_${it.`package`}_${it.id}_${it.userHandle.hashCode()}" }) { sc ->
+                    ShortcutResultRow(
+                        shortcut = sc,
+                        appLabel = labelsByPackage[sc.`package`],
+                        fontSize = (20 * settings.textScale).sp,
+                        loadIcon = shortcutIcon,
+                        onClick = { onShortcut(sc) },
                     )
                 }
+            }
+            if (contacts.isNotEmpty()) {
+                item(key = "contacts_header") { SectionLabel("Kontakte") }
                 items(contacts, key = { "contact_${it.id}" }) { contact ->
                     ContactRow(contact, (22 * settings.textScale).sp) { ContactSearch.open(context, contact) }
                 }
@@ -230,5 +275,54 @@ private fun ContactRow(contact: ContactResult, fontSize: TextUnit, onClick: () -
         }
         Spacer(Modifier.width(16.dp))
         Text(contact.name, style = homeTextStyle(fontSize), maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text,
+        style = homeTextStyle(13.sp).copy(color = LocalHomeColors.current.secondary, fontWeight = FontWeight.Bold),
+        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+    )
+}
+
+@Composable
+private fun ShortcutResultRow(
+    shortcut: ShortcutInfo,
+    appLabel: String?,
+    fontSize: TextUnit,
+    loadIcon: (ShortcutInfo) -> Drawable?,
+    onClick: () -> Unit,
+) {
+    val icon by produceState<ImageBitmap?>(null, shortcut.id, shortcut.`package`) {
+        value = withContext(Dispatchers.IO) { loadIcon(shortcut)?.toBitmap(96, 96)?.asImageBitmap() }
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(32.dp)) {
+            icon?.let { Image(it, contentDescription = null, modifier = Modifier.size(32.dp)) }
+        }
+        Spacer(Modifier.width(16.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                (shortcut.shortLabel ?: shortcut.longLabel ?: "").toString(),
+                style = homeTextStyle(fontSize),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (appLabel != null) {
+                Text(
+                    appLabel,
+                    style = homeTextStyle(13.sp).copy(color = LocalHomeColors.current.secondary),
+                    maxLines = 1,
+                )
+            }
+        }
     }
 }

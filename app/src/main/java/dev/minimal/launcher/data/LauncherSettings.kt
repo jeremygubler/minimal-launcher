@@ -47,6 +47,9 @@ data class LauncherSettings(
     val notificationPreview: Boolean = true,
     val autoKeyboard: Boolean = true,
     val searchContacts: Boolean = true,
+    val searchShortcuts: Boolean = true,
+    val showSuggestions: Boolean = true,
+    val showBattery: Boolean = true,
     val doubleTap: GestureAction = GestureAction.LOCK,
     val swipeDown: GestureAction = GestureAction.NOTIFICATIONS,
     val swipeUp: GestureAction = GestureAction.SEARCH,
@@ -79,6 +82,9 @@ data class LauncherSettings(
         put("notificationPreview", notificationPreview)
         put("autoKeyboard", autoKeyboard)
         put("searchContacts", searchContacts)
+        put("searchShortcuts", searchShortcuts)
+        put("showSuggestions", showSuggestions)
+        put("showBattery", showBattery)
         put("doubleTap", doubleTap.name)
         put("swipeDown", swipeDown.name)
         put("swipeUp", swipeUp.name)
@@ -122,6 +128,9 @@ data class LauncherSettings(
                 notificationPreview = o.optBoolean("notificationPreview", d.notificationPreview),
                 autoKeyboard = o.optBoolean("autoKeyboard", d.autoKeyboard),
                 searchContacts = o.optBoolean("searchContacts", d.searchContacts),
+                searchShortcuts = o.optBoolean("searchShortcuts", d.searchShortcuts),
+                showSuggestions = o.optBoolean("showSuggestions", d.showSuggestions),
+                showBattery = o.optBoolean("showBattery", d.showBattery),
                 doubleTap = enumOr(str("doubleTap"), d.doubleTap),
                 swipeDown = enumOr(str("swipeDown"), d.swipeDown),
                 swipeUp = enumOr(str("swipeUp"), d.swipeUp),

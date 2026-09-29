@@ -36,11 +36,19 @@ object AppSearch {
         return i == q.length
     }
 
-    fun search(apps: List<AppInfo>, query: String): List<AppInfo> =
+    /** Sortiert nach Trefferqualität, dann nach Nutzung, dann nach kürzerem Namen. */
+    fun search(apps: List<AppInfo>, query: String, usage: Map<String, Double> = emptyMap()): List<AppInfo> =
         apps.mapNotNull { app ->
             val s = listOfNotNull(score(app.label, query), score(app.originalLabel, query)).minOrNull()
             s?.let { app to it }
-        }.sortedWith(compareBy({ it.second }, { it.first.label.length })).map { it.first }
+        }.sortedWith(
+            compareBy<Pair<AppInfo, Int>>({ it.second })
+                .thenByDescending { usage[it.first.key] ?: 0.0 }
+                .thenBy { it.first.label.length }
+        ).map { it.first }
+
+    /** Passt ein beliebiger Text (z. B. Shortcut-Name) zur Suche? */
+    fun matches(text: String, query: String): Boolean = score(text, query)?.let { it <= 4 } ?: false
 }
 
 object Calculator {

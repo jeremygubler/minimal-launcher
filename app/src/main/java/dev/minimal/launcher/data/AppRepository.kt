@@ -249,6 +249,24 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         emptyList()
     }
 
+    /** Alle App-Shortcuts aller sichtbaren Profile (nur als Standard-Launcher verfügbar). */
+    fun allShortcuts(): List<ShortcutInfo> = try {
+        if (!launcherApps.hasShortcutHostPermission()) {
+            emptyList()
+        } else {
+            val query = LauncherApps.ShortcutQuery().setQueryFlags(
+                LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST or
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED
+            )
+            _apps.value.map { it.user }.distinct().flatMap { user ->
+                runCatching { launcherApps.getShortcuts(query, user).orEmpty() }.getOrDefault(emptyList())
+            }.filter { it.isEnabled }.distinctBy { Triple(it.`package`, it.id, it.userHandle) }
+        }
+    } catch (e: Exception) {
+        emptyList()
+    }
+
     fun shortcutIcon(shortcut: ShortcutInfo): Drawable? = try {
         launcherApps.getShortcutIconDrawable(shortcut, context.resources.displayMetrics.densityDpi)
     } catch (e: Exception) {

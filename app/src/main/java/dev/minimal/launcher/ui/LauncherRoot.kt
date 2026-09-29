@@ -49,6 +49,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val apps by vm.visibleApps.collectAsStateWithLifecycle()
     val allApps by vm.allApps.collectAsStateWithLifecycle()
     val notifications by vm.notifications.collectAsStateWithLifecycle()
+    val usage by vm.usage.collectAsStateWithLifecycle()
     val notificationKeys = remember(notifications) { notifications.keys }
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     val privateSpace by vm.privateSpace.collectAsStateWithLifecycle()
@@ -152,6 +153,10 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onLaunch = launch,
                 onLongPress = longPress,
                 onContactsDenied = { vm.update { it.copy(searchContacts = false) } },
+                usage = usage,
+                loadShortcuts = vm::allShortcuts,
+                shortcutIcon = vm::shortcutIcon,
+                onShortcut = { vm.startShortcut(it) },
             )
         }
         if (overlay != Overlay.SEARCH) {
