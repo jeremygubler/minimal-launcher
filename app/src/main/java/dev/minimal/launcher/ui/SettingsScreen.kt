@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -59,7 +60,7 @@ import dev.minimal.launcher.service.LauncherAccessibilityService
 import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.SystemActions
 
-private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER }
+private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +72,9 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     var dialog by remember { mutableStateOf(SettingsDialog.NONE) }
     var editFolderId by remember { mutableStateOf<String?>(null) }
+    var renamePageId by remember { mutableStateOf<String?>(null) }
+    var deletePageId by remember { mutableStateOf<String?>(null) }
+    var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumeTick++ }
 
@@ -236,29 +240,58 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
-            item { Section("Favoriten") }
-            s.favorites.forEachIndexed { index, fav ->
-                item(key = "fav_${fav.id}") {
-                    val label = if (fav.isFolder) {
-                        "📁 " + (fav.name ?: "Ordner") + " (${fav.apps.size})"
-                    } else {
-                        fav.apps.firstOrNull()?.let { appsByKey[it]?.label } ?: "Nicht installiert"
-                    }
+            item { Section("Favoriten & Seiten") }
+            item { Hint("Auf dem Startbildschirm nach links/rechts wischen oder den Seitennamen antippen, um die Seite zu wechseln.") }
+            s.pages.forEachIndexed { pageIndex, page ->
+                item(key = "page_${page.id}") {
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clickable(enabled = fav.isFolder) { editFolderId = fav.id }
-                            .padding(start = 24.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+                            .padding(start = 24.dp, end = 8.dp, top = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(label, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        TextButton(onClick = { vm.moveFavorite(fav.id, -1) }, enabled = index > 0) { Text("↑") }
-                        TextButton(onClick = { vm.moveFavorite(fav.id, 1) }, enabled = index < s.favorites.lastIndex) { Text("↓") }
-                        TextButton(onClick = { vm.removeFavorite(fav.id) }) { Text("✕") }
+                        Text(
+                            page.name + if (page.id == s.activePage) "  (aktuell)" else "",
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        TextButton(onClick = { vm.movePage(page.id, -1) }, enabled = pageIndex > 0) { Text("↑") }
+                        TextButton(onClick = { vm.movePage(page.id, 1) }, enabled = pageIndex < s.pages.lastIndex) { Text("↓") }
+                        TextButton(onClick = { renamePageId = page.id }) { Text("✎") }
+                        if (s.pages.size > 1) TextButton(onClick = { deletePageId = page.id }) { Text("✕") }
+                    }
+                }
+                val pageFavs = s.pageFavorites(page.id)
+                if (pageFavs.isEmpty()) {
+                    item(key = "page_empty_${page.id}") { Hint("Keine Favoriten auf dieser Seite.") }
+                }
+                pageFavs.forEachIndexed { index, fav ->
+                    item(key = "fav_${fav.id}") {
+                        val label = if (fav.isFolder) {
+                            "📁 " + (fav.name ?: "Ordner") + " (${fav.apps.size})"
+                        } else {
+                            fav.apps.firstOrNull()?.let { appsByKey[it]?.label } ?: "Nicht installiert"
+                        }
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable(enabled = fav.isFolder) { editFolderId = fav.id }
+                                .padding(start = 36.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(label, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            TextButton(onClick = { vm.moveFavorite(fav.id, -1) }, enabled = index > 0) { Text("↑") }
+                            TextButton(onClick = { vm.moveFavorite(fav.id, 1) }, enabled = index < pageFavs.lastIndex) { Text("↓") }
+                            if (s.pages.size > 1) TextButton(onClick = { movingFavoriteId = fav.id }) { Text("⇄") }
+                            TextButton(onClick = { vm.removeFavorite(fav.id) }) { Text("✕") }
+                        }
                     }
                 }
             }
-            item { ClickRow("Ordner erstellen", "Mehrere Apps unter einem Favoriten") { dialog = SettingsDialog.NEW_FOLDER } }
+            item { ClickRow("Seite hinzufügen", "z. B. „Arbeit“ oder „Privat“") { dialog = SettingsDialog.NEW_PAGE } }
+            item { ClickRow("Ordner erstellen", "Mehrere Apps unter einem Favoriten") { dialog = SettingsDialog.NEW_FOLDER, NEW_PAGE } }
 
             item { Section("Ausgeblendete Apps") }
             if (s.hidden.isEmpty()) {
@@ -367,6 +400,16 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         SettingsDialog.SWIPE_UP -> GestureDialog("Nach oben wischen", s.swipeUp, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(swipeUp = v) }
         }
+        SettingsDialog.NEW_PAGE -> TextInputDialog(
+            title = "Neue Seite",
+            initial = "",
+            hint = "z. B. Arbeit, Privat, Reisen",
+            onDismiss = { dialog = SettingsDialog.NONE },
+            onConfirm = { name ->
+                vm.addPage(name)
+                dialog = SettingsDialog.NONE
+            },
+        )
         SettingsDialog.NEW_FOLDER -> TextInputDialog(
             title = "Neuer Ordner",
             initial = "",
@@ -379,6 +422,50 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         )
     }
 
+    renamePageId?.let { id ->
+        s.pages.firstOrNull { it.id == id }?.let { page ->
+            TextInputDialog(
+                title = "Seite umbenennen",
+                initial = page.name,
+                onDismiss = { renamePageId = null },
+                onConfirm = { name ->
+                    vm.renamePage(id, name)
+                    renamePageId = null
+                },
+            )
+        }
+    }
+    deletePageId?.let { id ->
+        s.pages.firstOrNull { it.id == id }?.let { page ->
+            val target = s.pages.first { it.id != id }.name
+            AlertDialog(
+                onDismissRequest = { deletePageId = null },
+                title = { Text("Seite „${page.name}“ löschen?") },
+                text = { Text("Ihre Favoriten werden auf die Seite „$target“ verschoben.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        vm.removePage(id)
+                        deletePageId = null
+                    }) { Text("Löschen") }
+                },
+                dismissButton = { TextButton(onClick = { deletePageId = null }) { Text("Abbrechen") } },
+            )
+        }
+    }
+    movingFavoriteId?.let { favId ->
+        val fav = s.favorites.firstOrNull { it.id == favId }
+        if (fav != null) {
+            ChoiceDialog(
+                title = "Auf Seite verschieben",
+                options = s.pages.map { it.id to it.name },
+                selected = fav.page,
+                onDismiss = { movingFavoriteId = null },
+            ) { pageId ->
+                vm.moveFavoriteToPage(favId, pageId)
+                movingFavoriteId = null
+            }
+        }
+    }
     editFolderId?.let { id ->
         s.favorites.firstOrNull { it.id == id }?.let { folder ->
             FolderEditDialog(

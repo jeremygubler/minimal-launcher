@@ -14,6 +14,13 @@ import android.appwidget.AppWidgetManager
 import android.text.format.DateFormat
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -113,8 +120,11 @@ fun HomeContent(
     onFolderLongPress: (Favorite) -> Unit,
     onHomeLongPress: () -> Unit,
     onReorderFavorites: (List<String>) -> Unit,
+    onPageChange: (String) -> Unit,
     perform: (GestureAction) -> Unit,
 ) {
+    val currentPageChange by rememberUpdatedState(onPageChange)
+    val currentSettings by rememberUpdatedState(settings)
     val currentPerform by rememberUpdatedState(perform)
     val currentHomeLongPress by rememberUpdatedState(onHomeLongPress)
     val swipeThreshold = with(LocalDensity.current) { 64.dp.toPx() }
@@ -132,6 +142,23 @@ fun HomeContent(
                     onDoubleTap = { currentPerform(settings.doubleTap) },
                     onLongPress = { currentHomeLongPress() },
                 )
+            }
+            .pointerInput(Unit) {
+                // Links/rechts wischen wechselt die Favoriten-Seite.
+                var total = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { total = 0f },
+                    onDragEnd = {
+                        val s = currentSettings
+                        val idx = s.pages.indexOfFirst { it.id == s.activePage }
+                        val target = when {
+                            total < -swipeThreshold -> idx + 1
+                            total > swipeThreshold -> idx - 1
+                            else -> idx
+                        }
+                        if (target != idx && target in s.pages.indices) currentPageChange(s.pages[target].id)
+                    },
+                ) { _, dx -> total += dx }
             }
             .pointerInput(settings.swipeDown, settings.swipeUp) {
                 var total = 0f
@@ -166,15 +193,32 @@ fun HomeContent(
                 )
             }
             Spacer(Modifier.weight(1f))
-            FavoritesList(
-                settings = settings,
-                appsByKey = appsByKey,
-                notifications = notifications,
-                onLaunch = onLaunch,
-                onLongPress = onLongPress,
-                onFolderLongPress = onFolderLongPress,
-                onReorder = onReorderFavorites,
-            )
+            if (settings.pages.size > 1) {
+                PageIndicator(settings, onPageChange)
+                Spacer(Modifier.height(12.dp))
+            }
+            val pageIndex = settings.pages.indexOfFirst { it.id == settings.activePage }
+            AnimatedContent(
+                targetState = settings.activePage,
+                transitionSpec = {
+                    val fromIdx = settings.pages.indexOfFirst { it.id == initialState }
+                    val dir = if (pageIndex >= fromIdx) 1 else -1
+                    (slideInHorizontally { w -> dir * w / 3 } + fadeIn()) togetherWith
+                        (slideOutHorizontally { w -> -dir * w / 3 } + fadeOut())
+                },
+                label = "page",
+            ) { page ->
+                FavoritesList(
+                    settings = settings,
+                    favorites = settings.pageFavorites(page),
+                    appsByKey = appsByKey,
+                    notifications = notifications,
+                    onLaunch = onLaunch,
+                    onLongPress = onLongPress,
+                    onFolderLongPress = onFolderLongPress,
+                    onReorder = onReorderFavorites,
+                )
+            }
             Spacer(Modifier.height(40.dp))
         }
     }
@@ -398,8 +442,31 @@ private fun WidgetsArea(
 }
 
 @Composable
+private fun PageIndicator(settings: LauncherSettings, onPageChange: (String) -> Unit) {
+    val colors = LocalHomeColors.current
+    val accent = MaterialTheme.colorScheme.primary
+    Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+        settings.pages.forEach { page ->
+            val active = page.id == settings.activePage
+            Text(
+                page.name,
+                style = homeTextStyle(15.sp).copy(
+                    color = if (active) accent else colors.secondary,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onPageChange(page.id) }
+                    .padding(vertical = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
 private fun FavoritesList(
     settings: LauncherSettings,
+    favorites: List<Favorite>,
     appsByKey: Map<String, AppInfo>,
     notifications: Map<String, List<NotificationPreview>>,
     onLaunch: (AppInfo) -> Unit,
@@ -409,7 +476,6 @@ private fun FavoritesList(
 ) {
     var expanded by remember { mutableStateOf<String?>(null) }
     val fontSize = (26 * settings.textScale).sp
-    val favorites = settings.favorites
     val haptics = LocalHapticFeedback.current
     val touchSlop = LocalViewConfiguration.current.touchSlop
 

@@ -11,6 +11,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Akku-Hinweis beim Laden oder unter 20 %
 - Mediensteuerung, wenn Musik oder Podcasts laufen (Titel, Zurück/Pause/Weiter)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
+- **Mehrere Favoriten-Seiten** (z. B. „Start“, „Arbeit“, „Privat“): links/rechts wischen oder Seitennamen antippen; verwalten unter *Einstellungen → Favoriten & Seiten*
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
 - Ordner direkt aus dem App-Menü anlegen („Neuen Ordner mit dieser App“)
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
@@ -64,6 +65,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 | Leeren Bereich lange drücken | Menü (Widgets, Hintergrund, Einstellungen) |
 | App lange drücken | App-Menü |
 | Favorit lange drücken und ziehen | Favoriten umsortieren |
+| Links/rechts wischen | Favoriten-Seite wechseln |
 
 ## Einrichtung
 

@@ -22,9 +22,16 @@ data class Favorite(
     val name: String? = null,
     /** App, die beim Wischen nach rechts über den Favoriten geöffnet wird. */
     val swipeApp: String? = null,
+    /** Seite, auf der der Favorit liegt. */
+    val page: String = MAIN_PAGE,
 ) {
     val isFolder: Boolean get() = apps.size > 1 || name != null
 }
+
+const val MAIN_PAGE = "main"
+
+/** Eine Favoriten-Seite, z. B. „Start“, „Arbeit“, „Privat“. */
+data class FavoritePage(val id: String, val name: String)
 
 data class LauncherSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -56,10 +63,19 @@ data class LauncherSettings(
     val hidden: Set<String> = emptySet(),
     val renamed: Map<String, String> = emptyMap(),
     val favorites: List<Favorite> = emptyList(),
+    val pages: List<FavoritePage> = listOf(FavoritePage(MAIN_PAGE, "Start")),
+    val currentPage: String = MAIN_PAGE,
     val widgets: List<Int> = emptyList(),
     val firstRunDone: Boolean = false,
 ) {
-    fun isFavorite(key: String) = favorites.any { !it.isFolder && it.apps.firstOrNull() == key }
+    /** Die angezeigte Seite – fällt auf die erste zurück, falls die gespeicherte nicht mehr existiert. */
+    val activePage: String get() = pages.firstOrNull { it.id == currentPage }?.id ?: pages.first().id
+
+    /** Favoriten einer Seite (standardmäßig der aktuellen). */
+    fun pageFavorites(page: String = activePage) = favorites.filter { it.page == page }
+
+    /** Liegt die App als einzelner Favorit auf der aktuellen Seite? */
+    fun isFavorite(key: String) = pageFavorites().any { !it.isFolder && it.apps.firstOrNull() == key }
 
     fun toJson(): JSONObject = JSONObject().apply {
         put("version", 1)
@@ -97,9 +113,14 @@ data class LauncherSettings(
                     put("apps", JSONArray(f.apps))
                     put("name", f.name ?: JSONObject.NULL)
                     put("swipeApp", f.swipeApp ?: JSONObject.NULL)
+                    put("page", f.page)
                 })
             }
         })
+        put("pages", JSONArray().apply {
+            pages.forEach { p -> put(JSONObject().apply { put("id", p.id); put("name", p.name) }) }
+        })
+        put("currentPage", currentPage)
         put("widgets", JSONArray(widgets))
         put("firstRunDone", firstRunDone)
     }
@@ -146,9 +167,17 @@ data class LauncherSettings(
                             apps = f.optJSONArray("apps")?.strings() ?: emptyList(),
                             name = if (f.isNull("name")) null else f.optString("name"),
                             swipeApp = if (f.isNull("swipeApp")) null else f.optString("swipeApp"),
+                            page = f.optString("page", MAIN_PAGE).ifEmpty { MAIN_PAGE },
                         )
                     }
                 } ?: emptyList(),
+                pages = o.optJSONArray("pages")?.let { arr ->
+                    (0 until arr.length()).mapNotNull { i ->
+                        val p = arr.optJSONObject(i) ?: return@mapNotNull null
+                        FavoritePage(p.optString("id").ifEmpty { return@mapNotNull null }, p.optString("name", "Seite"))
+                    }
+                }?.takeIf { it.isNotEmpty() } ?: d.pages,
+                currentPage = o.optString("currentPage", MAIN_PAGE).ifEmpty { MAIN_PAGE },
                 widgets = keepWidgets ?: o.optJSONArray("widgets")?.let { arr ->
                     (0 until arr.length()).map { arr.getInt(it) }
                 } ?: emptyList(),

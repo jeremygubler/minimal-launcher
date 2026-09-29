@@ -1,6 +1,8 @@
 package dev.minimal.launcher
 
 import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.FavoritePage
+import dev.minimal.launcher.data.MAIN_PAGE
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ThemeMode
@@ -33,9 +35,11 @@ class LauncherSettingsTest {
         renamed = mapOf("a/b#0" to "Mail"),
         favorites = listOf(
             Favorite("1", listOf("x/y#0"), swipeApp = "z/w#0"),
-            Favorite("2", listOf("p/q#0", "r/s#0"), name = "Social"),
+            Favorite("2", listOf("p/q#0", "r/s#0"), name = "Social", page = "work"),
             Favorite("3", emptyList(), name = "Leer"),
         ),
+        pages = listOf(FavoritePage(MAIN_PAGE, "Start"), FavoritePage("work", "Arbeit")),
+        currentPage = "work",
         widgets = listOf(5, 7),
         firstRunDone = true,
     )
@@ -59,10 +63,34 @@ class LauncherSettingsTest {
     }
 
     @Test
+    fun oldBackupsWithoutPagesLandOnStartPage() {
+        val json = """{"favorites":[{"id":"1","apps":["x/y#0"]}]}"""
+        val restored = LauncherSettings.fromJson(JSONObject(json))
+        assertEquals(MAIN_PAGE, restored.favorites.single().page)
+        assertEquals(listOf(FavoritePage(MAIN_PAGE, "Start")), restored.pages)
+        assertEquals(1, restored.pageFavorites().size)
+    }
+
+    @Test
+    fun unknownCurrentPageFallsBackToFirst() {
+        val s = LauncherSettings(currentPage = "gelöscht")
+        assertEquals(MAIN_PAGE, s.activePage)
+    }
+
+    @Test
+    fun favoritesArePerPage() {
+        val work = sample.copy(currentPage = "work")
+        assertTrue(work.pageFavorites().all { it.page == "work" })
+        assertFalse(work.isFavorite("x/y#0"))
+        assertTrue(sample.copy(currentPage = MAIN_PAGE).isFavorite("x/y#0"))
+    }
+
+    @Test
     fun emptyNamedFolderStaysAFolder() {
         assertTrue(Favorite("f", emptyList(), name = "Leer").isFolder)
         assertFalse(Favorite("a", listOf("x")).isFolder)
-        assertTrue(sample.isFavorite("x/y#0"))
-        assertFalse(sample.isFavorite("p/q#0"))
+        val start = sample.copy(currentPage = MAIN_PAGE)
+        assertTrue(start.isFavorite("x/y#0"))
+        assertFalse(start.isFavorite("p/q#0"))
     }
 }

@@ -68,8 +68,9 @@ fun AppActionsSheet(
     var pickingFolder by remember { mutableStateOf(false) }
     var creatingFolder by remember { mutableStateOf(false) }
     val isFavorite = settings.isFavorite(app.key)
-    val favorite = settings.favorites.firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
-    val folders = settings.favorites.filter { it.isFolder }
+    val favorite = settings.pageFavorites().firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
+    val folders = settings.pageFavorites().filter { it.isFolder }
+    var movingToPage by remember { mutableStateOf(false) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -109,6 +110,9 @@ fun AppActionsSheet(
             if (favorite != null) {
                 val swipeLabel = favorite.swipeApp?.let { appsByKey[it]?.label } ?: "keine"
                 SheetAction("Wisch-Aktion (nach rechts): $swipeLabel") { pickingSwipe = true }
+            }
+            if (favorite != null && settings.pages.size > 1) {
+                SheetAction("Auf andere Seite verschieben") { movingToPage = true }
             }
             if (folders.isNotEmpty()) {
                 SheetAction("Zu Ordner hinzufügen") { pickingFolder = true }
@@ -168,6 +172,18 @@ fun AppActionsSheet(
                 onDismiss()
             },
         )
+    }
+    if (movingToPage && favorite != null) {
+        ChoiceDialog(
+            title = "Auf Seite verschieben",
+            options = settings.pages.filter { it.id != favorite.page }.map { it.id to it.name },
+            selected = null,
+            onDismiss = { movingToPage = false },
+        ) { pageId ->
+            vm.moveFavoriteToPage(favorite.id, pageId)
+            movingToPage = false
+            onDismiss()
+        }
     }
     if (pickingFolder) {
         ChoiceDialog(

@@ -11,6 +11,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
@@ -122,20 +123,23 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun toggleFavorite(appInfo: AppInfo) = store.update { s ->
         if (s.isFavorite(appInfo.key)) {
-            s.copy(favorites = s.favorites.filterNot { !it.isFolder && it.apps.firstOrNull() == appInfo.key })
+            val page = s.activePage
+            s.copy(favorites = s.favorites.filterNot {
+                it.page == page && !it.isFolder && it.apps.firstOrNull() == appInfo.key
+            })
         } else {
-            s.copy(favorites = s.favorites + Favorite(UUID.randomUUID().toString(), listOf(appInfo.key)))
+            s.copy(favorites = s.favorites + Favorite(UUID.randomUUID().toString(), listOf(appInfo.key), page = s.activePage))
         }
     }
 
     fun setSwipeApp(appKey: String, swipeKey: String?) = store.update { s ->
         s.copy(favorites = s.favorites.map {
-            if (!it.isFolder && it.apps.firstOrNull() == appKey) it.copy(swipeApp = swipeKey) else it
+            if (it.page == s.activePage && !it.isFolder && it.apps.firstOrNull() == appKey) it.copy(swipeApp = swipeKey) else it
         })
     }
 
     fun createFolder(name: String, appKeys: List<String>) = store.update { s ->
-        s.copy(favorites = s.favorites + Favorite(UUID.randomUUID().toString(), appKeys, name = name))
+        s.copy(favorites = s.favorites + Favorite(UUID.randomUUID().toString(), appKeys, name = name, page = s.activePage))
     }
 
     fun addToFolder(folderId: String, appKey: String) = store.update { s ->
@@ -154,13 +158,52 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun removeFavorite(id: String) = store.update { s -> s.copy(favorites = s.favorites.filterNot { it.id == id }) }
 
+    /** Verschiebt einen Favoriten innerhalb seiner Seite um eine Position. */
     fun moveFavorite(id: String, delta: Int) = store.update { s ->
-        val list = s.favorites.toMutableList()
-        val from = list.indexOfFirst { it.id == id }
+        val fav = s.favorites.firstOrNull { it.id == id } ?: return@update s
+        val samePage = s.favorites.filter { it.page == fav.page }
+        val from = samePage.indexOf(fav)
         val to = from + delta
-        if (from < 0 || to !in list.indices) return@update s
-        list.add(to, list.removeAt(from))
-        s.copy(favorites = list)
+        if (to !in samePage.indices) return@update s
+        val reordered = samePage.toMutableList().apply { add(to, removeAt(from)) }
+        s.copy(favorites = s.favorites.filter { it.page != fav.page } + reordered)
+    }
+
+    // --- Seiten ------------------------------------------------------------
+
+    fun setCurrentPage(id: String) = store.update { if (it.currentPage == id) it else it.copy(currentPage = id) }
+
+    fun addPage(name: String) = store.update { s ->
+        val page = FavoritePage(UUID.randomUUID().toString(), name.ifBlank { "Seite ${s.pages.size + 1}" })
+        s.copy(pages = s.pages + page, currentPage = page.id)
+    }
+
+    fun renamePage(id: String, name: String) = store.update { s ->
+        s.copy(pages = s.pages.map { if (it.id == id) it.copy(name = name.ifBlank { it.name }) else it })
+    }
+
+    /** Löscht eine Seite; ihre Favoriten wandern auf die erste verbleibende Seite. */
+    fun removePage(id: String) = store.update { s ->
+        if (s.pages.size <= 1) return@update s
+        val remaining = s.pages.filterNot { it.id == id }
+        val target = remaining.first().id
+        s.copy(
+            pages = remaining,
+            favorites = s.favorites.map { if (it.page == id) it.copy(page = target) else it },
+            currentPage = if (s.currentPage == id) target else s.currentPage,
+        )
+    }
+
+    fun movePage(id: String, delta: Int) = store.update { s ->
+        val from = s.pages.indexOfFirst { it.id == id }
+        val to = from + delta
+        if (from < 0 || to !in s.pages.indices) return@update s
+        s.copy(pages = s.pages.toMutableList().apply { add(to, removeAt(from)) })
+    }
+
+    fun moveFavoriteToPage(favoriteId: String, pageId: String) = store.update { s ->
+        val fav = s.favorites.firstOrNull { it.id == favoriteId } ?: return@update s
+        s.copy(favorites = s.favorites.filterNot { it.id == favoriteId } + fav.copy(page = pageId))
     }
 
     fun setFavoriteOrder(ids: List<String>) = store.update { s ->

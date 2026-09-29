@@ -123,6 +123,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onFolderLongPress = { editFolder = it },
                 onHomeLongPress = { showHomeMenu = true },
                 onReorderFavorites = vm::setFavoriteOrder,
+                onPageChange = vm::setCurrentPage,
                 perform = perform,
             )
         }
