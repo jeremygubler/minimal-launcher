@@ -27,6 +27,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 
 **Suche**
 - Unscharfe Suche (Anfang, Wortanfang, Initialen, Teilstring, Buchstabenfolge; ignoriert Umlaute/Akzente)
+- **Schnellaktionen**: `timer 5 min`, `wecker 7:30`, Einheiten umrechnen (`10 km in mi`, `25 °c`, `2 lb`), Systemeinstellungen (`wlan`, `bluetooth`, `akku` …), Telefonnummern anrufen/SMS, Webadressen öffnen
 - Integrierter Taschenrechner (`12*3,5+4`, Ergebnis antippen zum Kopieren)
 - **Vorschläge**: meistgenutzte Apps beim Öffnen der Suche; Treffer werden nach Nutzung sortiert (nur lokal gespeichert)
 - **App-Aktionen** in der Suche, z. B. „Neue Nachricht“ oder „Scannen“

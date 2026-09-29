@@ -65,6 +65,8 @@ import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.util.AppSearch
 import dev.minimal.launcher.util.Calculator
+import dev.minimal.launcher.util.QuickAction
+import dev.minimal.launcher.util.QuickActions
 import dev.minimal.launcher.util.SystemActions
 
 @Composable
@@ -102,6 +104,7 @@ fun SearchScreen(
         }.take(5)
     }
     val calc = remember(query) { Calculator.evaluate(query) }
+    val quickActions = remember(query) { QuickActions.parse(query) }
 
     var contactsAllowed by remember { mutableStateOf(ContactSearch.hasPermission(context)) }
     val requestContacts = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -149,8 +152,10 @@ fun SearchScreen(
                 ),
                 keyboardActions = KeyboardActions(onGo = {
                     val first = results.firstOrNull()
+                    val firstAction = quickActions.firstOrNull { it !is QuickAction.Conversion }
                     when {
                         first != null -> onLaunch(first)
+                        firstAction != null -> QuickActions.perform(context, firstAction)
                         query.isNotBlank() -> SystemActions.webSearch(context, query)
                     }
                 }),
@@ -175,6 +180,36 @@ fun SearchScreen(
                                 Toast.makeText(context, "Ergebnis kopiert", Toast.LENGTH_SHORT).show()
                             }
                             .padding(vertical = 12.dp),
+                    )
+                }
+            }
+            items(quickActions, key = { "qa_" + it.title }) { action ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (action is QuickAction.Conversion) {
+                                val cm = context.getSystemService(ClipboardManager::class.java)
+                                cm?.setPrimaryClip(ClipData.newPlainText("Ergebnis", action.value))
+                                Toast.makeText(context, "Ergebnis kopiert", Toast.LENGTH_SHORT).show()
+                            } else {
+                                QuickActions.perform(context, action)
+                            }
+                        }
+                        .padding(vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                        Text(action.icon, style = homeTextStyle(20.sp))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        action.title,
+                        style = homeTextStyle((20 * settings.textScale).sp).copy(
+                            color = if (action is QuickAction.Conversion) MaterialTheme.colorScheme.primary else colors.text,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
