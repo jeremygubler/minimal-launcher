@@ -25,6 +25,12 @@ val LocalHomeColors = staticCompositionLocalOf {
     HomeColors(Color.White, Color.White.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.5f), Color.Black, true)
 }
 
+/** Apps, die der Fokus-Modus gerade bremst (werden ausgegraut). */
+val LocalBlockedApps = staticCompositionLocalOf<Set<String>> { emptySet() }
+
+/** Ist der Fokus-Modus gerade aktiv? */
+val LocalFocusActive = staticCompositionLocalOf { false }
+
 val ACCENT_COLORS = listOf(
     0 to "Systemfarbe (Material You)",
     0xFF8AB4F8.toInt() to "Blau",

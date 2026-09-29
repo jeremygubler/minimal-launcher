@@ -270,6 +270,13 @@ private fun ClockBlock(settings: LauncherSettings) {
                     .clickable(noRipple, null) { SystemActions.openClock(context) },
             )
         }
+        if (LocalFocusActive.current) {
+            Text(
+                "Fokus aktiv",
+                style = homeTextStyle(15.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium),
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
         if (settings.showBattery) BatteryLine()
         val event by produceState<CalendarEvent?>(null, now, settings.showEvents) {
             value = if (settings.showEvents) withContext(Dispatchers.IO) { CalendarEvents.next(context, now) } else null

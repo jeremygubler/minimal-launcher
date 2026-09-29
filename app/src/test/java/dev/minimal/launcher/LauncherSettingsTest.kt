@@ -45,6 +45,9 @@ class LauncherSettingsTest {
         ),
         currentPage = "work",
         autoPages = true,
+        focusApps = setOf("x/y#0"),
+        focusManual = true,
+        focusSchedule = PageSchedule(setOf(6, 7), 22 * 60, 7 * 60),
         widgets = listOf(5, 7),
         firstRunDone = true,
     )

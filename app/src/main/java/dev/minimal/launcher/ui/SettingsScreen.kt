@@ -79,6 +79,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var editFolderId by remember { mutableStateOf<String?>(null) }
     var renamePageId by remember { mutableStateOf<String?>(null) }
     var schedulePageId by remember { mutableStateOf<String?>(null) }
+    var editFocusSchedule by remember { mutableStateOf(false) }
+    var pickingFocusApp by remember { mutableStateOf(false) }
     var deletePageId by remember { mutableStateOf<String?>(null) }
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
@@ -317,6 +319,33 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { ClickRow("Seite hinzufügen", "z. B. „Arbeit“ oder „Privat“") { dialog = SettingsDialog.NEW_PAGE } }
             item { ClickRow("Ordner erstellen", "Mehrere Apps unter einem Favoriten") { dialog = SettingsDialog.NEW_FOLDER } }
 
+            item { Section("Fokus-Modus") }
+            item {
+                Hint(
+                    "Ablenkende Apps werden im Fokus-Modus ausgegraut, ihre Benachrichtigungen ausgeblendet, " +
+                        "und vor dem Öffnen gibt es eine kurze Denkpause. Schnell umschalten: leeren Bereich " +
+                        "auf dem Startbildschirm lange drücken."
+                )
+            }
+            item { SwitchRow("Fokus-Modus jetzt aktiv", s.focusManual) { v -> vm.setFocusManual(v) } }
+            item {
+                ClickRow("Zeitplan", s.focusSchedule?.describe() ?: "Kein Zeitplan – nur manuell") { editFocusSchedule = true }
+            }
+            s.focusApps.forEach { key ->
+                item(key = "focus_$key") {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(appsByKey[key]?.label ?: key, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        TextButton(onClick = { vm.toggleFocusApp(key) }) { Text("✕") }
+                    }
+                }
+            }
+            item { ClickRow("Ablenkende App hinzufügen", if (s.focusApps.isEmpty()) "Noch keine ausgewählt" else "${s.focusApps.size} ausgewählt") { pickingFocusApp = true } }
+
             item { Section("Ausgeblendete Apps") }
             if (s.hidden.isEmpty()) {
                 item { Hint("Keine. Halte eine App gedrückt und wähle „Ausblenden“.") }
@@ -446,10 +475,33 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         )
     }
 
+    if (editFocusSchedule) {
+        ScheduleDialog(
+            title = "Zeitplan: Fokus-Modus",
+            existing = s.focusSchedule,
+            onDismiss = { editFocusSchedule = false },
+            onSave = { schedule ->
+                vm.setFocusSchedule(schedule)
+                editFocusSchedule = false
+            },
+        )
+    }
+    if (pickingFocusApp) {
+        AppPickerDialog(
+            title = "Ablenkende App wählen",
+            apps = visibleApps.filter { it.key !in s.focusApps },
+            onDismiss = { pickingFocusApp = false },
+            onPick = { app ->
+                app?.let { vm.toggleFocusApp(it.key) }
+                pickingFocusApp = false
+            },
+        )
+    }
     schedulePageId?.let { id ->
         s.pages.firstOrNull { it.id == id }?.let { page ->
             ScheduleDialog(
-                page = page,
+                title = "Zeitplan: ${page.name}",
+                existing = page.schedule,
                 onDismiss = { schedulePageId = null },
                 onSave = { schedule ->
                     vm.setPageSchedule(id, schedule)
@@ -611,9 +663,14 @@ private fun StatusRow(title: String, ok: Boolean, action: String, onClick: () ->
 }
 
 @Composable
-private fun ScheduleDialog(page: FavoritePage, onDismiss: () -> Unit, onSave: (PageSchedule?) -> Unit) {
+private fun ScheduleDialog(
+    title: String,
+    existing: PageSchedule?,
+    onDismiss: () -> Unit,
+    onSave: (PageSchedule?) -> Unit,
+) {
     val context = LocalContext.current
-    val initial = page.schedule ?: PageSchedule(setOf(1, 2, 3, 4, 5), 8 * 60, 17 * 60)
+    val initial = existing ?: PageSchedule(setOf(1, 2, 3, 4, 5), 8 * 60, 17 * 60)
     var days by remember { mutableStateOf(initial.days) }
     var start by remember { mutableIntStateOf(initial.start) }
     var end by remember { mutableIntStateOf(initial.end) }
@@ -631,7 +688,7 @@ private fun ScheduleDialog(page: FavoritePage, onDismiss: () -> Unit, onSave: (P
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Zeitplan: ${page.name}") },
+        title = { Text(title) },
         text = {
             Column {
                 Text("Tage", style = MaterialTheme.typography.labelLarge)
@@ -684,7 +741,7 @@ private fun ScheduleDialog(page: FavoritePage, onDismiss: () -> Unit, onSave: (P
         },
         dismissButton = {
             Row {
-                if (page.schedule != null) TextButton(onClick = { onSave(null) }) { Text("Entfernen") }
+                if (existing != null) TextButton(onClick = { onSave(null) }) { Text("Entfernen") }
                 TextButton(onClick = onDismiss) { Text("Abbrechen") }
             }
         },

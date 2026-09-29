@@ -51,6 +51,11 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Ausgeblendete und umbenannte Apps verwalten
 - Sicherung/Wiederherstellung aller Einstellungen als JSON-Datei
 
+**Fokus-Modus**
+- Apps als ablenkend markieren (App-Menü oder Einstellungen)
+- Wenn aktiv: ausgegraut, keine Benachrichtigungen/Punkte, 5 Sekunden Denkpause vor dem Öffnen
+- Manuell (lange auf den Startbildschirm drücken) oder per Zeitplan
+
 **Stabilität & Tempo**
 - App-Namen und Icons werden zwischengespeichert – der Launcher ist nach einem Neustart sofort da
 - Lokales Absturzprotokoll unter *Einstellungen → Fehlerprotokoll* (teilen oder löschen); es werden keine Daten automatisch gesendet

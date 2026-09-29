@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,8 +30,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.Focus
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.util.SystemActions
+import kotlinx.coroutines.delay
+import java.time.LocalDateTime
 import kotlin.math.max
 
 interface HomeCallbacks {
@@ -48,8 +52,29 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val settings by vm.settings.collectAsStateWithLifecycle()
     val apps by vm.visibleApps.collectAsStateWithLifecycle()
     val allApps by vm.allApps.collectAsStateWithLifecycle()
-    val notifications by vm.notifications.collectAsStateWithLifecycle()
+    val rawNotifications by vm.notifications.collectAsStateWithLifecycle()
     val usage by vm.usage.collectAsStateWithLifecycle()
+    // Uhrzeit für Zeitpläne (jede Minute und beim Zurückkehren aktualisiert).
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000 - System.currentTimeMillis() % 60_000)
+            now = LocalDateTime.now()
+        }
+    }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = LocalDateTime.now() }
+    val focusActive = Focus.isActive(settings, now)
+    val blockedKeys = if (focusActive) settings.focusApps else emptySet()
+
+    // Im Fokus-Modus keine Benachrichtigungen ablenkender Apps anzeigen.
+    val notifications = remember(rawNotifications, blockedKeys, allApps) {
+        if (blockedKeys.isEmpty()) {
+            rawNotifications
+        } else {
+            val blockedNotificationKeys = allApps.filter { it.key in blockedKeys }.map { it.notificationKey }.toSet()
+            rawNotifications.filterKeys { it !in blockedNotificationKeys }
+        }
+    }
     val notificationKeys = remember(notifications) { notifications.keys }
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     val privateSpace by vm.privateSpace.collectAsStateWithLifecycle()
@@ -89,7 +114,10 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     )
     val homeColors = LocalHomeColors.current
 
-    val launch: (AppInfo) -> Unit = { vm.launch(it) }
+    var focusPauseFor by remember { mutableStateOf<AppInfo?>(null) }
+    val launch: (AppInfo) -> Unit = { app ->
+        if (app.key in blockedKeys) focusPauseFor = app else vm.launch(app)
+    }
     val longPress: (AppInfo) -> Unit = { actionsFor = it }
     val perform: (GestureAction) -> Unit = { action ->
         when (action) {
@@ -103,6 +131,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
     }
 
+    CompositionLocalProvider(LocalBlockedApps provides blockedKeys, LocalFocusActive provides focusActive) {
     Box(
         Modifier
             .fillMaxSize()
@@ -177,6 +206,12 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
     }
 
+    }
+
+    focusPauseFor?.let { app ->
+        FocusPauseDialog(app = app, onOpen = { vm.launch(app) }, onDismiss = { focusPauseFor = null })
+    }
+
     actionsFor?.let { app ->
         AppActionsSheet(
             app = app,
@@ -203,6 +238,11 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     if (showHomeMenu) {
         HomeMenuSheet(
             hasWidgets = settings.widgets.isNotEmpty(),
+            focusOn = settings.focusManual,
+            onToggleFocus = {
+                showHomeMenu = false
+                vm.setFocusManual(!settings.focusManual)
+            },
             onDismiss = { showHomeMenu = false },
             onAddWidget = { showHomeMenu = false; showWidgetPicker = true },
             onEditWidgets = { showHomeMenu = false; editWidgets = true },

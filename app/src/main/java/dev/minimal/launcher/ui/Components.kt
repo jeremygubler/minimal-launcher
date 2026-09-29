@@ -25,6 +25,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -81,9 +85,11 @@ fun AppRow(
     modifier: Modifier = Modifier,
     textColor: Color? = null,
 ) {
+    val dimmed = app.key in LocalBlockedApps.current
     Row(
         modifier
             .fillMaxWidth()
+            .alpha(if (dimmed) 0.4f else 1f)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .heightIn(min = 48.dp)
             .padding(vertical = 8.dp),
@@ -225,5 +231,38 @@ fun <T> ChoiceDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Schließen") } },
+    )
+}
+
+/** Kurze Denkpause, bevor eine ablenkende App im Fokus-Modus geöffnet wird. */
+@Composable
+fun FocusPauseDialog(app: AppInfo, onOpen: () -> Unit, onDismiss: () -> Unit) {
+    var remaining by remember { mutableIntStateOf(5) }
+    LaunchedEffect(Unit) {
+        while (remaining > 0) {
+            delay(1000)
+            remaining--
+        }
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Kurz durchatmen") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AppIcon(app, 40.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Text(app.label, style = MaterialTheme.typography.titleMedium)
+                }
+                Text("Der Fokus-Modus ist aktiv. Brauchst du ${app.label} gerade wirklich?")
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = remaining == 0, onClick = {
+                onOpen()
+                onDismiss()
+            }) { Text(if (remaining > 0) "Trotzdem öffnen ($remaining)" else "Trotzdem öffnen") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Lieber nicht") } },
     )
 }

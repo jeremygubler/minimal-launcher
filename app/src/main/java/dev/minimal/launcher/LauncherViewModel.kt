@@ -279,6 +279,16 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    // --- Fokus-Modus ------------------------------------------------------
+
+    fun toggleFocusApp(key: String) = store.update { s ->
+        s.copy(focusApps = if (key in s.focusApps) s.focusApps - key else s.focusApps + key)
+    }
+
+    fun setFocusManual(enabled: Boolean) = store.update { it.copy(focusManual = enabled) }
+
+    fun setFocusSchedule(schedule: PageSchedule?) = store.update { it.copy(focusSchedule = schedule) }
+
     // --- Widgets -----------------------------------------------------------
 
     fun addWidget(id: Int) = store.update { it.copy(widgets = it.widgets + id) }

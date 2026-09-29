@@ -118,6 +118,12 @@ fun AppActionsSheet(
                 SheetAction("Zu Ordner hinzufügen") { pickingFolder = true }
             }
             SheetAction("Neuen Ordner mit dieser App") { creatingFolder = true }
+            SheetAction(
+                if (app.key in settings.focusApps) "Nicht mehr als ablenkend markieren" else "Als ablenkend markieren (Fokus-Modus)"
+            ) {
+                vm.toggleFocusApp(app.key)
+                onDismiss()
+            }
             SheetAction("Umbenennen") { renaming = true }
             SheetAction("Ausblenden") {
                 vm.hide(app)
@@ -242,6 +248,8 @@ fun SheetAction(text: String, onClick: () -> Unit) {
 @Composable
 fun HomeMenuSheet(
     hasWidgets: Boolean,
+    focusOn: Boolean,
+    onToggleFocus: () -> Unit,
     onDismiss: () -> Unit,
     onAddWidget: () -> Unit,
     onEditWidgets: () -> Unit,
@@ -255,6 +263,7 @@ fun HomeMenuSheet(
                 .padding(bottom = 16.dp)
                 .navigationBarsPadding()
         ) {
+            SheetAction(if (focusOn) "Fokus-Modus ausschalten" else "Fokus-Modus einschalten", onToggleFocus)
             SheetAction("Widget hinzufügen", onAddWidget)
             if (hasWidgets) SheetAction("Widgets bearbeiten", onEditWidgets)
             SheetAction("Hintergrundbild ändern") {

@@ -66,6 +66,10 @@ data class LauncherSettings(
     val pages: List<FavoritePage> = listOf(FavoritePage(MAIN_PAGE, "Start")),
     val currentPage: String = MAIN_PAGE,
     val autoPages: Boolean = false,
+    /** Als ablenkend markierte Apps. */
+    val focusApps: Set<String> = emptySet(),
+    val focusManual: Boolean = false,
+    val focusSchedule: PageSchedule? = null,
     val widgets: List<Int> = emptyList(),
     val firstRunDone: Boolean = false,
 ) {
@@ -124,17 +128,16 @@ data class LauncherSettings(
                     put("id", p.id)
                     put("name", p.name)
                     p.schedule?.let { sch ->
-                        put("schedule", JSONObject().apply {
-                            put("days", JSONArray(sch.days.sorted()))
-                            put("start", sch.start)
-                            put("end", sch.end)
-                        })
+                        put("schedule", scheduleToJson(sch))
                     }
                 })
             }
         })
         put("currentPage", currentPage)
         put("autoPages", autoPages)
+        put("focusApps", JSONArray(focusApps.toList()))
+        put("focusManual", focusManual)
+        focusSchedule?.let { put("focusSchedule", scheduleToJson(it)) }
         put("widgets", JSONArray(widgets))
         put("firstRunDone", firstRunDone)
     }
@@ -191,21 +194,32 @@ data class LauncherSettings(
                         FavoritePage(
                             id = p.optString("id").ifEmpty { return@mapNotNull null },
                             name = p.optString("name", "Seite"),
-                            schedule = p.optJSONObject("schedule")?.let { sch ->
-                                val days = sch.optJSONArray("days")?.let { a -> (0 until a.length()).map { a.getInt(it) } }
-                                    ?.filter { it in 1..7 }?.toSet().orEmpty()
-                                PageSchedule(days, sch.optInt("start", 0).coerceIn(0, 1439), sch.optInt("end", 0).coerceIn(0, 1439))
-                            },
+                            schedule = p.optJSONObject("schedule")?.let(::scheduleFromJson),
                         )
                     }
                 }?.takeIf { it.isNotEmpty() } ?: d.pages,
                 currentPage = o.optString("currentPage", MAIN_PAGE).ifEmpty { MAIN_PAGE },
                 autoPages = o.optBoolean("autoPages", d.autoPages),
+                focusApps = o.optJSONArray("focusApps")?.strings()?.toSet() ?: emptySet(),
+                focusManual = o.optBoolean("focusManual", false),
+                focusSchedule = o.optJSONObject("focusSchedule")?.let(::scheduleFromJson),
                 widgets = keepWidgets ?: o.optJSONArray("widgets")?.let { arr ->
                     (0 until arr.length()).map { arr.getInt(it) }
                 } ?: emptyList(),
                 firstRunDone = o.optBoolean("firstRunDone", false),
             )
+        }
+
+        private fun scheduleToJson(sch: PageSchedule) = JSONObject().apply {
+            put("days", JSONArray(sch.days.sorted()))
+            put("start", sch.start)
+            put("end", sch.end)
+        }
+
+        private fun scheduleFromJson(sch: JSONObject): PageSchedule {
+            val days = sch.optJSONArray("days")?.let { a -> (0 until a.length()).map { a.getInt(it) } }
+                ?.filter { it in 1..7 }?.toSet().orEmpty()
+            return PageSchedule(days, sch.optInt("start", 0).coerceIn(0, 1439), sch.optInt("end", 0).coerceIn(0, 1439))
         }
 
         private fun JSONArray.strings() = (0 until length()).map { getString(it) }
