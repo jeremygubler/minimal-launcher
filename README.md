@@ -70,7 +70,8 @@ Jeder Push auf `main` führt die Unit-Tests aus und baut die APK über GitHub Ac
 
 ## Releases & automatische Updates
 
-Ein Tag `v*` (z. B. `v1.1.0`) erstellt automatisch ein GitHub-Release mit der APK.
+Jeder erfolgreiche Build auf `main` erstellt automatisch ein GitHub-Release `v1.0.<Build-Nr>` mit der APK
+(zusätzlich auch jeder Tag `v*`).
 Mit [Obtainium](https://github.com/ImranR98/Obtainium) lässt sich das Repo als Quelle eintragen –
 dann kommen Updates direkt aufs Handy.
 

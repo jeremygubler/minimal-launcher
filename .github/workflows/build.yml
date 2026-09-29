@@ -38,9 +38,12 @@ jobs:
           name: minimal-launcher-apk
           path: out/*.apk
 
-      - name: GitHub-Release (bei Tags v*)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: GitHub-Release
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v1.0.{0}', github.run_number) }}
+          target_commitish: ${{ github.sha }}
+          name: Minimal Launcher ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('1.0.{0}', github.run_number) }}
           files: out/minimal-launcher-${{ github.run_number }}.apk
           generate_release_notes: true
