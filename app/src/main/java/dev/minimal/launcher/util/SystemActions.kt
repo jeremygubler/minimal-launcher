@@ -86,6 +86,11 @@ object SystemActions {
     fun openNotificationAccess(context: Context) =
         start(context, Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
 
+    fun openAppDetails(context: Context) = start(
+        context,
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")),
+    )
+
     fun openAccessibility(context: Context) = start(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
 
     fun uninstall(context: Context, packageName: String) =

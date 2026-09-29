@@ -96,7 +96,11 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
     }
 
     private fun profiles(): List<UserHandle> =
-        if (Build.VERSION.SDK_INT >= 35) launcherApps.profiles else userManager.userProfiles
+        if (Build.VERSION.SDK_INT >= 35) {
+            runCatching { launcherApps.profiles }.getOrNull()?.takeIf { it.isNotEmpty() } ?: userManager.userProfiles
+        } else {
+            userManager.userProfiles
+        }
 
     @Volatile
     private var privateUsers: Set<UserHandle> = emptySet()
@@ -104,8 +108,9 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
     private fun isPrivate(user: UserHandle): Boolean = user in privateUsers
 
     private fun detectPrivate(user: UserHandle): Boolean =
-        Build.VERSION.SDK_INT >= 35 &&
+        Build.VERSION.SDK_INT >= 35 && runCatching {
             launcherApps.getLauncherUserInfo(user)?.userType == UserManager.USER_TYPE_PROFILE_PRIVATE
+        }.getOrDefault(false)
 
     private fun activities(): List<Pair<LauncherActivityInfo, UserHandle>> {
         val profiles = profiles()
@@ -148,6 +153,37 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
             context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (_: Exception) {
         }
+    }
+
+    /** Technische Infos für die Fehlersuche (Profile, Berechtigungen). */
+    fun diagnostics(): String = buildString {
+        appendLine("Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.MANUFACTURER} ${Build.MODEL}")
+        val home = context.packageManager.resolveActivity(
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), android.content.pm.PackageManager.MATCH_DEFAULT_ONLY,
+        )?.activityInfo?.packageName
+        appendLine("Standard-Launcher: $home")
+        if (Build.VERSION.SDK_INT >= 35) {
+            val granted = ContextCompat.checkSelfPermission(context, "android.permission.ACCESS_HIDDEN_PROFILES") ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            appendLine("ACCESS_HIDDEN_PROFILES: ${if (granted) "erteilt" else "fehlt"}")
+        }
+        appendLine("Kurzbefehle erlaubt: ${runCatching { launcherApps.hasShortcutHostPermission() }.getOrDefault(false)}")
+        appendLine("Profile (UserManager): ${runCatching { userManager.userProfiles.size }.getOrElse { "Fehler: ${it.message}" }}")
+        val profiles = runCatching { profiles() }.getOrElse {
+            appendLine("Profile (LauncherApps): Fehler ${it.javaClass.simpleName}: ${it.message}")
+            emptyList()
+        }
+        profiles.forEach { user ->
+            val type = if (Build.VERSION.SDK_INT >= 35) {
+                runCatching { launcherApps.getLauncherUserInfo(user)?.userType }.getOrElse { "Fehler: ${it.message}" }
+            } else {
+                "-"
+            }
+            val quiet = runCatching { userManager.isQuietModeEnabled(user) }.getOrNull()
+            val count = runCatching { launcherApps.getActivityList(null, user).size }.getOrNull()
+            appendLine("• Profil $user: Typ=$type, gesperrt=$quiet, Apps=$count")
+        }
+        appendLine("Privater Bereich erkannt: ${_privateSpace.value?.let { if (it.locked) "ja, gesperrt" else "ja, entsperrt" } ?: "nein"}")
     }
 
     private fun key(info: LauncherActivityInfo, user: UserHandle) = AppInfo.key(info.componentName, user)

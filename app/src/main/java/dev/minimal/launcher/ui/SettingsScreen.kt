@@ -140,6 +140,16 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     SystemActions.openAccessibility(context)
                 }
             }
+            if (!hasNotificationAccess || !accessibilityOn) {
+                item {
+                    Hint(
+                        "Meldet Android „App wurde Zugriff verweigert“ / „Eingeschränkte Einstellung“? " +
+                            "Dann zuerst in der App-Info oben rechts auf ⋮ tippen und " +
+                            "„Eingeschränkte Einstellungen zulassen“ wählen. Danach klappt das Erlauben."
+                    )
+                }
+                item { ClickRow("App-Info öffnen", "Um eingeschränkte Einstellungen zuzulassen") { SystemActions.openAppDetails(context) } }
+            }
 
             item { Section("Darstellung") }
             item {
@@ -299,6 +309,17 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                         CrashLog.clear(context)
                         crashLog = null
                     }
+                }
+            }
+
+            item { Section("Diagnose") }
+            item {
+                ClickRow("Diagnose teilen", "Technische Infos für die Fehlersuche (Profile, Berechtigungen)") {
+                    val send = Intent(Intent.ACTION_SEND)
+                        .setType("text/plain")
+                        .putExtra(Intent.EXTRA_SUBJECT, "Minimal Launcher – Diagnose")
+                        .putExtra(Intent.EXTRA_TEXT, vm.diagnostics())
+                    SystemActions.start(context, Intent.createChooser(send, "Diagnose teilen"))
                 }
             }
 

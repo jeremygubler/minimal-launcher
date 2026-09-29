@@ -55,6 +55,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun setPrivateSpaceLocked(locked: Boolean) = app.apps.setPrivateSpaceLocked(locked)
     fun openPrivateSpaceSettings() = app.apps.openPrivateSpaceSettings()
+    fun diagnostics(): String = app.apps.diagnostics()
 
     val notifications: StateFlow<Map<String, List<NotificationPreview>>> =
         NotificationStore.items.map { list -> list.groupBy { it.appKey } }
