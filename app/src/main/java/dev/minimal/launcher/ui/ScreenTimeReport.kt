@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppCategories
 import dev.minimal.launcher.data.AppInfo
+import dev.minimal.launcher.data.IntentionSummary
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.data.ScreenTimeMath
@@ -59,6 +60,7 @@ fun ScreenTimeReport(
     onDismiss: () -> Unit,
 ) {
     val days by produceState<List<Pair<LocalDate, Map<String, Long>>>?>(null) { value = vm.screenTimeWeek() }
+    val intentions by produceState<IntentionSummary?>(null) { value = vm.intentionWeek() }
     var tab by remember { mutableIntStateOf(0) }
     val pro = isPro()
     var paywall by remember { mutableStateOf(false) }
@@ -89,7 +91,10 @@ fun ScreenTimeReport(
                         Text("Wochenbericht, Tagesziel und Serie gehören zu Pro.")
                         TextButton(onClick = { paywall = true }) { Text("Pro freischalten") }
                     }
-                    else -> WeekView(d, settings.dailyGoalMinutes * 60_000L, appsByPackage)
+                    else -> {
+                        WeekView(d, settings.dailyGoalMinutes * 60_000L, appsByPackage)
+                        intentions?.takeIf { !it.isEmpty }?.let { IntentionsSection(it, appsByPackage) }
+                    }
                 }
             }
         },
@@ -243,7 +248,60 @@ private fun SectionTitle(text: String) {
 }
 
 @Composable
-private fun UsageBarRow(label: String, ms: Long, max: Long, icon: AppInfo?) {
+private fun UsageBarRow(label: String, ms: Long, max: Long, icon: AppInfo?) =
+    BarRow(label, ScreenTime.format(ms), ms.toFloat() / max, icon)
+
+/** Absichten der Woche: bewusst geöffnet vs. verzichtet, häufigste Gründe, Langeweile-Hinweis. */
+@Composable
+private fun IntentionsSection(summary: IntentionSummary, appsByPackage: Map<String, AppInfo>) {
+    Spacer(Modifier.height(16.dp))
+    SectionTitle("Absichten")
+    Text(
+        buildString {
+            append(if (summary.opened == 1) "1 bewusste Öffnung" else "${summary.opened} bewusste Öffnungen")
+            if (summary.skipped > 0) append(" · ${summary.skipped}× verzichtet")
+        },
+        style = MaterialTheme.typography.bodyLarge,
+    )
+    if (summary.boredom > 0) {
+        val app = summary.boredomTopApp?.let { appsByPackage[it]?.label ?: it }
+        Text(
+            "${summary.boredom}× aus Langeweile" + (app?.let { " – meist bei $it" } ?: ""),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+    if (summary.skipped > 0) {
+        Text(
+            "Jedes „Lieber nicht“ ist gewonnene Zeit.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    val top = summary.byIntention.take(5)
+    if (top.isNotEmpty()) {
+        Spacer(Modifier.height(8.dp))
+        val max = top.first().second.toFloat()
+        top.forEach { (text, count) -> BarRow(text, "$count×", count / max, icon = null) }
+    }
+    val apps = summary.byApp.take(5)
+    if (apps.isNotEmpty()) {
+        Spacer(Modifier.height(8.dp))
+        SectionTitle("Nach App")
+        val max = apps.maxOf { it.second + it.third }.toFloat()
+        apps.forEach { (pkg, opened, skipped) ->
+            BarRow(
+                appsByPackage[pkg]?.label ?: pkg,
+                "$opened× geöffnet" + if (skipped > 0) " · $skipped× verzichtet" else "",
+                (opened + skipped) / max,
+                icon = appsByPackage[pkg],
+            )
+        }
+    }
+}
+
+@Composable
+private fun BarRow(label: String, value: String, fraction: Float, icon: AppInfo?) {
     Column(Modifier.padding(vertical = 5.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) {
@@ -251,12 +309,12 @@ private fun UsageBarRow(label: String, ms: Long, max: Long, icon: AppInfo?) {
                 Spacer(Modifier.width(8.dp))
             }
             Text(label, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(ScreenTime.format(ms), style = MaterialTheme.typography.bodySmall)
+            Text(value, style = MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.height(4.dp))
         Box(
             Modifier
-                .fillMaxWidth((ms.toFloat() / max).coerceIn(0.02f, 1f))
+                .fillMaxWidth(fraction.coerceIn(0.02f, 1f))
                 .height(4.dp)
                 .clip(RoundedCornerShape(2.dp))
                 .background(MaterialTheme.colorScheme.primary)

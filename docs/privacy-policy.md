@@ -13,6 +13,7 @@ Die App hat kein Konto, keine Werbung, keine Analyse- oder Tracking-Dienste und 
 | Einstellungen, Favoriten, Notiz, Aufgaben | Funktion der App | nur auf dem Gerät (optional Sicherung in einen von dir gewählten Ordner) | keine |
 | Benachrichtigungen (nur mit deiner Erlaubnis) | Punkte, Vorschau, Mediensteuerung | nur im Arbeitsspeicher | keine |
 | Nutzungsstatistik (nur mit „Nutzungszugriff“) | Bildschirmzeit, Tageslimits, Wochenbericht, Vorschläge | nur auf dem Gerät | keine |
+| Absichten der Absichtsfrage (App, Zeitpunkt, gewählter Grund) | Wochenbericht | nur auf dem Gerät, max. 30 Tage | keine |
 | Kontakte (nur mit Erlaubnis) | Kontakte in der Suche und als Favoriten | nicht gespeichert (außer Name + Verweis eines angehefteten Kontakts) | keine |
 | Kalender (nur mit Erlaubnis) | nächste Termine unter der Uhr | nicht gespeichert | keine |
 | Bluetooth-Gerätenamen, WLAN-Name (nur mit Erlaubnis) | kontextbasierte Seiten | nur die von dir gewählte Regel | keine |

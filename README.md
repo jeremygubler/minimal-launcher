@@ -26,7 +26,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
 - **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal), nach links einen App-Shortcut (z. B. „Neue Nachricht“)
 - **Pop-up-Widgets** (Pro): Favorit nach rechts wischen zeigt das Widget der App als Pop-up – z. B. Wetter, Kalender, Notizen. Festlegen im App-Menü
-- **Absichtsfrage** (Pro): vor ablenkenden Apps „Wozu öffnest du …?“ – mit Zähler für heute, Schnellauswahl und Timer, der danach an die Absicht erinnert
+- **Absichtsfrage** (Pro): vor ablenkenden Apps „Wozu öffnest du …?“ – mit Zähler für heute, Schnellauswahl und Timer, der danach an die Absicht erinnert. Im Wochenbericht: bewusste Öffnungen, Verzichte, häufigste Gründe
 
 **Alle Apps**
 - Buchstabenleiste am Rand mit „Wellen“-Effekt und haptischem Feedback – ziehen springt direkt zum Buchstaben

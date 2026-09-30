@@ -10,6 +10,9 @@ import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.minimal.launcher.data.Declutter
+import dev.minimal.launcher.data.IntentionEntry
+import dev.minimal.launcher.data.IntentionStats
+import dev.minimal.launcher.data.IntentionSummary
 import dev.minimal.launcher.data.UnusedApp
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
@@ -438,6 +441,18 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     suspend fun screenTimeToday(): Map<String, Long> =
         withContext(Dispatchers.IO) { ScreenTime.today(getApplication()) }
+
+    /** Absichtsfrage protokollieren; [intention] = null heisst „Lieber nicht“. */
+    fun logIntention(appInfo: AppInfo, intention: String?) = viewModelScope.launch(Dispatchers.IO) {
+        app.intentions.add(IntentionEntry(System.currentTimeMillis(), appInfo.packageName, intention))
+    }
+
+    /** Absichten der letzten 7 Tage (wie der Wochenbericht). */
+    suspend fun intentionWeek(): IntentionSummary = withContext(Dispatchers.IO) {
+        val zone = java.time.ZoneId.systemDefault()
+        val from = java.time.LocalDate.now(zone).minusDays(6).atStartOfDay(zone).toInstant().toEpochMilli()
+        IntentionStats.summarize(app.intentions.entries(), from)
+    }
 
     /** Öffnungen und Nutzungsdauer einer App heute (null ohne Nutzungszugriff). */
     suspend fun appToday(appInfo: AppInfo): Pair<Int, Long>? =

@@ -8,6 +8,7 @@ import dev.minimal.launcher.pro.Pro
 import dev.minimal.launcher.data.CrashLog
 import dev.minimal.launcher.data.IconLoader
 import dev.minimal.launcher.data.SettingsStore
+import dev.minimal.launcher.data.IntentionLog
 import dev.minimal.launcher.data.UsageStore
 
 class LauncherApp : Application() {
@@ -19,6 +20,8 @@ class LauncherApp : Application() {
         private set
     lateinit var usage: UsageStore
         private set
+    lateinit var intentions: IntentionLog
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -28,6 +31,7 @@ class LauncherApp : Application() {
         settings = SettingsStore(this)
         icons = IconLoader(this)
         usage = UsageStore(this)
+        intentions = IntentionLog(this)
         apps = AppRepository(this, icons)
     }
 }

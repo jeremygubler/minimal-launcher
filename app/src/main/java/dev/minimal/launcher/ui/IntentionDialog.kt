@@ -32,12 +32,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
+import dev.minimal.launcher.data.IntentionStats
 import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.util.IntentionReminder
 import kotlinx.coroutines.delay
 
-private val QUICK_INTENTIONS = listOf("Nachricht beantworten", "Etwas nachschauen", "Etwas teilen", "Langeweile")
-private const val BOREDOM = "Langeweile"
+private val QUICK_INTENTIONS = listOf("Nachricht beantworten", "Etwas nachschauen", "Etwas teilen", IntentionStats.BOREDOM)
 private val TIMERS = listOf(0, 5, 10, 20)
 
 /**
@@ -109,7 +109,7 @@ fun IntentionDialog(
                     placeholder = { Text("Oder in eigenen Worten…") },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (chosen == BOREDOM) {
+                if (chosen.equals(IntentionStats.BOREDOM, ignoreCase = true)) {
                     Text(
                         "Langeweile ist okay. Vielleicht erst ein paar ruhige Atemzüge – oder kurz aus dem Fenster schauen?",
                         style = MaterialTheme.typography.bodySmall,
@@ -140,11 +140,17 @@ fun IntentionDialog(
                 enabled = remaining == 0 && chosen.isNotBlank(),
                 onClick = {
                     IntentionReminder.schedule(context, app.label, chosen, minutes)
+                    vm.logIntention(app, chosen)
                     onOpen()
                     onDismiss()
                 },
             ) { Text(if (remaining > 0) "Öffnen ($remaining)" else "Öffnen") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Lieber nicht") } },
+        dismissButton = {
+            TextButton(onClick = {
+                vm.logIntention(app, null)
+                onDismiss()
+            }) { Text("Lieber nicht") }
+        },
     )
 }
