@@ -113,6 +113,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var deletePageId by remember { mutableStateOf<String?>(null) }
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
+    var showDeclutter by remember { mutableStateOf(false) }
     val pro = isPro()
     var paywallFor by remember { mutableStateOf<String?>(null) }
     var showPaywall by remember { mutableStateOf(false) }
@@ -586,6 +587,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
 
             item { Section("Ausgeblendete Apps") }
+            item { ClickRow("Aufräumen", "Apps finden, die du lange nicht geöffnet hast") { showDeclutter = true } }
             if (s.hidden.isEmpty()) {
                 item { Hint("Keine. Halte eine App gedrückt und wähle „Ausblenden“.") }
             }
@@ -695,6 +697,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { ClickRow("Einstellungen importieren", "Aus JSON-Datei wiederherstellen") { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) } }
         }
     }
+
+    if (showDeclutter) DeclutterDialog(vm = vm, onDismiss = { showDeclutter = false })
 
     when (dialog) {
         SettingsDialog.NONE -> Unit

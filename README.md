@@ -51,6 +51,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - App-Shortcuts (z. B. „Neue Nachricht“), wenn der Launcher Standard ist
 - Favorit hinzufügen/entfernen, Wisch-Aktion festlegen, zu Ordner hinzufügen
 - Umbenennen, Ausblenden, App-Info, Deinstallieren
+- **Aufräumen**: schlägt Apps vor, die seit 30/90/180 Tagen nicht geöffnet wurden – ausblenden, deinstallieren oder bewusst behalten
 
 **Anpassung**
 - Hell/Dunkel/System, Akzentfarbe inkl. Material You

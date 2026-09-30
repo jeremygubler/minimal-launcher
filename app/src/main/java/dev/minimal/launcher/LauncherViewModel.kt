@@ -9,6 +9,8 @@ import android.os.Process
 import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.minimal.launcher.data.Declutter
+import dev.minimal.launcher.data.UnusedApp
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
@@ -318,6 +320,30 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun unhide(key: String) = store.update { it.copy(hidden = it.hidden - key) }
+
+    // --- Aufräumen -----------------------------------------------------------
+
+    fun keepApp(key: String) = store.update { it.copy(declutterKeep = it.declutterKeep + key) }
+
+    fun resetKeptApps() = store.update { it.copy(declutterKeep = emptySet()) }
+
+    /** Apps, die seit mindestens [days] Tagen nicht geöffnet wurden (ohne ausgeblendete und behaltene). */
+    suspend fun unusedApps(days: Int): List<UnusedApp> = withContext(Dispatchers.IO) {
+        val s = store.value
+        val candidates = allApps.value.filter {
+            it.key !in s.hidden && it.key !in s.declutterKeep && !it.isPrivate && it.packageName != app.packageName
+        }
+        val launches = app.usage.lastLaunches()
+        Declutter.select(
+            items = candidates,
+            packageName = { it.packageName },
+            installTime = { it.installTime },
+            launcherLast = { launches[it.key] },
+            systemLast = Declutter.systemLastUsed(app),
+            now = System.currentTimeMillis(),
+            days = days,
+        ).map { (a, last) -> UnusedApp(a, last, Declutter.isRemovable(a)) }
+    }
 
     fun rename(appInfo: AppInfo, name: String?) = store.update { s ->
         val clean = name?.trim().orEmpty()

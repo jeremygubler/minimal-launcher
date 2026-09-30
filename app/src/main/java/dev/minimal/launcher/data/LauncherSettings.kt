@@ -110,6 +110,8 @@ data class LauncherSettings(
     /** Ordner (Tree-URI) für die automatische Sicherung. */
     val backupFolder: String? = null,
     val hidden: Set<String> = emptySet(),
+    /** Apps, die beim Aufräumen bewusst behalten werden (nicht mehr vorschlagen). */
+    val declutterKeep: Set<String> = emptySet(),
     val renamed: Map<String, String> = emptyMap(),
     val favorites: List<Favorite> = emptyList(),
     val pages: List<FavoritePage> = listOf(FavoritePage(MAIN_PAGE, "Start")),
@@ -177,6 +179,7 @@ data class LauncherSettings(
         put("homePress", homePress.name)
         put("searchEngine", searchEngine.name)
         put("lockedApps", JSONArray(lockedApps.toList()))
+        put("declutterKeep", JSONArray(declutterKeep.toList()))
         put("appLimits", JSONObject(appLimits as Map<*, *>))
         put("categoryLimits", JSONObject(categoryLimits as Map<*, *>))
         put("dailyGoalMinutes", dailyGoalMinutes)
@@ -279,6 +282,7 @@ data class LauncherSettings(
                 homePress = enumOr(str("homePress"), d.homePress),
                 searchEngine = enumOr(str("searchEngine"), d.searchEngine),
                 lockedApps = o.optJSONArray("lockedApps")?.strings()?.toSet() ?: emptySet(),
+                declutterKeep = o.optJSONArray("declutterKeep")?.strings()?.toSet() ?: emptySet(),
                 appLimits = o.optJSONObject("appLimits")?.let { l ->
                     l.keys().asSequence().associateWith { l.optInt(it) }.filterValues { it > 0 }
                 } ?: emptyMap(),

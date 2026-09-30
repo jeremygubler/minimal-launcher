@@ -27,6 +27,11 @@ class UsageStore(context: Context) {
         _scores.value = _scores.value + (key to entry.score)
     }
 
+    /** App-Schlüssel → Zeitpunkt des letzten Starts über den Launcher. */
+    fun lastLaunches(): Map<String, Long> = prefs.all.mapNotNull { (key, value) ->
+        (value as? String)?.let(::parse)?.let { key to it.last }
+    }.toMap()
+
     fun clear() {
         prefs.edit().clear().apply()
         _scores.value = emptyMap()

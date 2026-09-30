@@ -53,6 +53,7 @@ class LauncherSettingsTest {
         customIcons = mapOf("x/y#0" to "pack:com.icons/whatsapp", "a/b#0" to "file:abc.png"),
         backupFolder = "content://com.android.externalstorage.documents/tree/primary%3ABackups",
         hidden = setOf("a/b#0", "c/d#10"),
+        declutterKeep = setOf("keep/me#0"),
         renamed = mapOf("a/b#0" to "Mail"),
         favorites = listOf(
             Favorite("1", listOf("x/y#0"), swipeApp = "z/w#0", swipeLeftShortcut = "compose", swipeLeftLabel = "Neue Nachricht"),
