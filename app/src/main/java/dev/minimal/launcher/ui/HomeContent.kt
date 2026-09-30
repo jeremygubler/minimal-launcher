@@ -237,6 +237,7 @@ fun HomeContent(
                     onReorder = onReorderFavorites,
                     onStartShortcut = onStartShortcut,
                     onRemoveFavorite = onRemoveFavorite,
+                    widgetHost = widgetHost,
                 )
             }
             Spacer(Modifier.height(40.dp))
@@ -599,8 +600,11 @@ private fun FavoritesList(
     onReorder: (List<String>) -> Unit,
     onStartShortcut: (AppInfo, String) -> Unit,
     onRemoveFavorite: (String) -> Unit,
+    widgetHost: AppWidgetHost,
 ) {
     var expanded by remember { mutableStateOf<String?>(null) }
+    /** Offenes Pop-up-Widget: App + Widget-ID. */
+    var popup by remember { mutableStateOf<Pair<AppInfo, Int>?>(null) }
     val fontSize = (26 * settings.textScale).sp
     val haptics = LocalHapticFeedback.current
     val touchSlop = LocalViewConfiguration.current.touchSlop
@@ -725,6 +729,8 @@ private fun FavoritesList(
                             FavoriteEntry(
                                 app = app,
                                 swipeApp = fav.swipeApp?.let { appsByKey[it] },
+                                hasWidget = fav.widgetId != null,
+                                onWidget = { fav.widgetId?.let { popup = app to it } },
                                 leftShortcutLabel = fav.swipeLeftShortcut?.let { fav.swipeLeftLabel ?: "Aktion" },
                                 onLeftSwipe = { fav.swipeLeftShortcut?.let { onStartShortcut(app, it) } },
                                 notifications = notifications[app.notificationKey].orEmpty(),
@@ -738,6 +744,19 @@ private fun FavoritesList(
                 }
             }
         }
+    }
+
+    popup?.let { (app, id) ->
+        WidgetPopup(
+            host = widgetHost,
+            widgetId = id,
+            app = app,
+            onOpenApp = {
+                popup = null
+                onLaunch(app)
+            },
+            onDismiss = { popup = null },
+        )
     }
 
     removingContact?.let { fav ->
@@ -793,6 +812,8 @@ private fun ContactFavoriteEntry(fav: Favorite, settings: LauncherSettings, font
 private fun FavoriteEntry(
     app: AppInfo,
     swipeApp: AppInfo?,
+    hasWidget: Boolean,
+    onWidget: () -> Unit,
     leftShortcutLabel: String?,
     notifications: List<NotificationPreview>,
     settings: LauncherSettings,
@@ -812,12 +833,23 @@ private fun FavoriteEntry(
     val currentSwipe by rememberUpdatedState(swipeApp)
     val currentLaunch by rememberUpdatedState(onLaunch)
     val currentLeftSwipe by rememberUpdatedState(onLeftSwipe)
-    val canRight = swipeApp != null
+    val currentWidget by rememberUpdatedState(onWidget)
+    val currentHasWidget by rememberUpdatedState(hasWidget)
+    val canRight = swipeApp != null || hasWidget
     val canLeft = leftShortcutLabel != null
 
     Column {
         Box(reorder) {
-            if (swipeApp != null && shownX > 1f) {
+            if (hasWidget && shownX > 1f) {
+                Text(
+                    "▦ Widget",
+                    style = homeTextStyle(13.sp),
+                    maxLines = 1,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .alpha(min(1f, shownX / threshold)),
+                )
+            } else if (swipeApp != null && shownX > 1f) {
                 Row(
                     Modifier
                         .align(Alignment.CenterStart)
@@ -854,7 +886,9 @@ private fun FavoriteEntry(
                         detectHorizontalDragGestures(
                             onDragStart = { dragging = true },
                             onDragEnd = {
-                                if (dragX >= threshold) currentSwipe?.let(currentLaunch)
+                                if (dragX >= threshold) {
+                                    if (currentHasWidget) currentWidget() else currentSwipe?.let(currentLaunch)
+                                }
                                 if (dragX <= -threshold) currentLeftSwipe()
                                 dragging = false
                                 dragX = 0f

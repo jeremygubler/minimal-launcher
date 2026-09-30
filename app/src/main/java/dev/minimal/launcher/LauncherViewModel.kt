@@ -181,7 +181,22 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun setSwipeApp(appKey: String, swipeKey: String?) = store.update { s ->
         s.copy(favorites = s.favorites.map {
-            if (it.page == s.activePage && !it.isFolder && it.apps.firstOrNull() == appKey) it.copy(swipeApp = swipeKey) else it
+            if (it.page == s.activePage && !it.isFolder && it.apps.firstOrNull() == appKey) {
+                it.copy(swipeApp = swipeKey, widgetId = null)
+            } else {
+                it
+            }
+        })
+    }
+
+    /** Pop-up-Widget für den Favoriten setzen (null = entfernen). Ersetzt die Wisch-App. */
+    fun setFavoriteWidget(appKey: String, widgetId: Int?) = store.update { s ->
+        s.copy(favorites = s.favorites.map {
+            if (it.page == s.activePage && !it.isFolder && it.apps.firstOrNull() == appKey) {
+                it.copy(widgetId = widgetId, swipeApp = if (widgetId != null) null else it.swipeApp)
+            } else {
+                it
+            }
         })
     }
 

@@ -65,9 +65,11 @@ fun AppActionsSheet(
     pickerApps: List<AppInfo>,
     appsByKey: Map<String, AppInfo>,
     onDismiss: () -> Unit,
+    onPickPopupWidget: (AppWidgetProviderInfo) -> Unit,
 ) {
     val context = LocalContext.current
     val shortcuts by produceState(emptyList<ShortcutInfo>(), app.key) { value = vm.shortcuts(app) }
+    var pickingWidget by remember { mutableStateOf(false) }
     var renaming by remember { mutableStateOf(false) }
     var pickingSwipe by remember { mutableStateOf(false) }
     var pickingFolder by remember { mutableStateOf(false) }
@@ -76,7 +78,7 @@ fun AppActionsSheet(
     var pickingLimit by remember { mutableStateOf(false) }
     var pickingIcon by remember { mutableStateOf(false) }
     val pro = isPro()
-    var paywall by remember { mutableStateOf(false) }
+    var paywall by remember { mutableStateOf<String?>(null) }
     val isFavorite = settings.isFavorite(app.key)
     val favorite = settings.pageFavorites().firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
     val folders = settings.pageFavorites().filter { it.isFolder }
@@ -122,8 +124,20 @@ fun AppActionsSheet(
                 onDismiss()
             }
             if (favorite != null) {
-                val swipeLabel = favorite.swipeApp?.let { appsByKey[it]?.label } ?: "keine"
+                val swipeLabel = when {
+                    favorite.widgetId != null -> "Pop-up-Widget"
+                    else -> favorite.swipeApp?.let { appsByKey[it]?.label } ?: "keine"
+                }
                 SheetAction("Wisch-Aktion (nach rechts): $swipeLabel") { pickingSwipe = true }
+                SheetAction(if (favorite.widgetId != null) "Pop-up-Widget ändern" else "Pop-up-Widget festlegen") {
+                    if (pro) pickingWidget = true else paywall = "Pop-up-Widgets"
+                }
+                if (favorite.widgetId != null) {
+                    SheetAction("Pop-up-Widget entfernen") {
+                        vm.setFavoriteWidget(app.key, null)
+                        onDismiss()
+                    }
+                }
                 if (shortcuts.isNotEmpty()) {
                     SheetAction("Wisch-Aktion (nach links): ${favorite.swipeLeftLabel ?: "keine"}") { pickingLeft = true }
                 }
@@ -150,7 +164,7 @@ fun AppActionsSheet(
                 vm.toggleLockedApp(app.key)
                 onDismiss()
             }
-            SheetAction("Icon ändern") { if (pro) pickingIcon = true else paywall = true }
+            SheetAction("Icon ändern") { if (pro) pickingIcon = true else paywall = "Eigene Icons" }
             SheetAction("Umbenennen") { renaming = true }
             SheetAction("Ausblenden") {
                 vm.hide(app)
@@ -193,7 +207,19 @@ fun AppActionsSheet(
             },
         )
     }
-    if (paywall) PaywallDialog(feature = "Eigene Icons", onDismiss = { paywall = false })
+    paywall?.let { PaywallDialog(feature = it, onDismiss = { paywall = null }) }
+    if (pickingWidget) {
+        WidgetPickerDialog(
+            title = "Pop-up-Widget",
+            packageName = app.packageName,
+            onDismiss = { pickingWidget = false },
+            onPick = { info ->
+                pickingWidget = false
+                onPickPopupWidget(info)
+                onDismiss()
+            },
+        )
+    }
     if (pickingIcon) {
         IconPickerDialog(app = app, vm = vm, settings = settings, onDismiss = {
             pickingIcon = false
@@ -423,14 +449,22 @@ fun FolderEditDialog(
 private data class WidgetEntry(val info: AppWidgetProviderInfo, val appLabel: String, val label: String)
 
 @Composable
-fun WidgetPickerDialog(onDismiss: () -> Unit, onPick: (AppWidgetProviderInfo) -> Unit) {
+fun WidgetPickerDialog(
+    onDismiss: () -> Unit,
+    title: String = "Widget hinzufügen",
+    /** Nur Widgets dieser App anzeigen (für Pop-up-Widgets). */
+    packageName: String? = null,
+    onPick: (AppWidgetProviderInfo) -> Unit,
+) {
     val context = LocalContext.current
     var query by remember { mutableStateOf("") }
-    val entries = remember {
+    val entries = remember(packageName) {
         val manager = AppWidgetManager.getInstance(context)
         val pm = context.packageManager
         val users = context.getSystemService(UserManager::class.java).userProfiles
-        users.flatMap { manager.getInstalledProvidersForProfile(it) }.map { info ->
+        users.flatMap { manager.getInstalledProvidersForProfile(it) }
+            .filter { packageName == null || it.provider.packageName == packageName }
+            .map { info ->
             WidgetEntry(info, appLabel(pm, info.provider.packageName), info.loadLabel(pm) ?: "")
         }.sortedWith(compareBy({ it.appLabel.lowercase() }, { it.label.lowercase() }))
     }
@@ -441,10 +475,14 @@ fun WidgetPickerDialog(onDismiss: () -> Unit, onPick: (AppWidgetProviderInfo) ->
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Widget hinzufügen") },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
+                if (entries.isEmpty()) {
+                    Text("Diese App bietet keine Widgets an.")
+                    return@Column
+                }
+                if (packageName == null) OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,

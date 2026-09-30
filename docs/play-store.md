@@ -44,7 +44,7 @@
 > • App-Sperre per Fingerabdruck, vertrauliches Profil, Arbeitsprofil
 > • Icon-Packs, Designsymbole, Schriftarten, Material You
 >
-> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), eigene Icons, automatische
+> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Pop-up-Widgets, eigene Icons, automatische
 > Sicherung, Wochenbericht mit Tagesziel und Kategorie-Limits, Aufgabenliste.
 
 **Kategorie:** Personalisierung · **Einstufung:** ohne Altersbeschränkung

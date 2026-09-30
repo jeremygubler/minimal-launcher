@@ -25,6 +25,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Ordner direkt aus dem App-Menü anlegen („Neuen Ordner mit dieser App“)
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
 - **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal), nach links einen App-Shortcut (z. B. „Neue Nachricht“)
+- **Pop-up-Widgets** (Pro): Favorit nach rechts wischen zeigt das Widget der App als Pop-up – z. B. Wetter, Kalender, Notizen. Festlegen im App-Menü
 
 **Alle Apps**
 - Buchstabenleiste am Rand mit „Wellen“-Effekt und haptischem Feedback – ziehen springt direkt zum Buchstaben

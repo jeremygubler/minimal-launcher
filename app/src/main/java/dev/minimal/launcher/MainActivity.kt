@@ -37,6 +37,8 @@ class MainActivity : ComponentActivity() {
 
     private var pendingWidgetId = -1
     private var pendingWidgetInfo: AppWidgetProviderInfo? = null
+    /** Favorit (App-Schlüssel), für den gerade ein Pop-up-Widget eingerichtet wird. */
+    private var pendingFavoriteKey: String? = null
 
     private var pendingUnlock: (() -> Unit)? = null
 
@@ -90,7 +92,7 @@ class MainActivity : ComponentActivity() {
         widgetHost = AppWidgetHost(this, WIDGET_HOST_ID)
 
         val callbacks = object : HomeCallbacks {
-            override fun addWidget(info: AppWidgetProviderInfo) = startAddWidget(info)
+            override fun addWidget(info: AppWidgetProviderInfo, favoriteAppKey: String?) = startAddWidget(info, favoriteAppKey)
             override fun removeWidget(id: Int) {
                 widgetHost.deleteAppWidgetId(id)
                 vm.removeWidget(id)
@@ -133,6 +135,7 @@ class MainActivity : ComponentActivity() {
             widgetHost.startListening()
         } catch (_: Exception) {
         }
+        cleanupWidgets()
     }
 
     override fun onStop() {
@@ -145,10 +148,11 @@ class MainActivity : ComponentActivity() {
 
     // --- Widgets -----------------------------------------------------------
 
-    private fun startAddWidget(info: AppWidgetProviderInfo) {
+    private fun startAddWidget(info: AppWidgetProviderInfo, favoriteAppKey: String?) {
         val id = widgetHost.allocateAppWidgetId()
         pendingWidgetId = id
         pendingWidgetInfo = info
+        pendingFavoriteKey = favoriteAppKey
         if (widgetManager.bindAppWidgetIdIfAllowed(id, info.profile, info.provider, null)) {
             configureOrAdd(id, info)
         } else {
@@ -183,15 +187,35 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun finishAddWidget(id: Int) {
-        if (id != -1) vm.addWidget(id)
+        if (id != -1) {
+            val favorite = pendingFavoriteKey
+            if (favorite != null) vm.setFavoriteWidget(favorite, id) else vm.addWidget(id)
+        }
         pendingWidgetId = -1
         pendingWidgetInfo = null
+        pendingFavoriteKey = null
+        cleanupWidgets()
     }
 
     private fun discardPendingWidget() {
         if (pendingWidgetId != -1) widgetHost.deleteAppWidgetId(pendingWidgetId)
         pendingWidgetId = -1
         pendingWidgetInfo = null
+        pendingFavoriteKey = null
+    }
+
+    /**
+     * Gibt Widget-IDs frei, die nirgends mehr verwendet werden (ersetzte Pop-up-Widgets,
+     * gelöschte Favoriten). Nur mit gültigen Einstellungen – sonst gingen Widgets verloren.
+     */
+    private fun cleanupWidgets() {
+        val s = launcherApp.settings.value
+        if (!s.firstRunDone || pendingWidgetId != -1) return
+        val used = s.widgets.toSet() + s.favorites.mapNotNull { it.widgetId }
+        try {
+            widgetHost.appWidgetIds.filter { it !in used }.forEach { widgetHost.deleteAppWidgetId(it) }
+        } catch (_: Exception) {
+        }
     }
 
     // --- Unschärfe (Android 12+) --------------------------------------------

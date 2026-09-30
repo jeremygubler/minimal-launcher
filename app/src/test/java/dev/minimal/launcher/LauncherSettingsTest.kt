@@ -58,6 +58,7 @@ class LauncherSettingsTest {
         favorites = listOf(
             Favorite("1", listOf("x/y#0"), swipeApp = "z/w#0", swipeLeftShortcut = "compose", swipeLeftLabel = "Neue Nachricht"),
             Favorite("2", listOf("p/q#0", "r/s#0"), name = "Social", page = "work"),
+            Favorite("3", listOf("w/x#0"), widgetId = 42),
             Favorite("3", emptyList(), name = "Leer"),
             Favorite("4", emptyList(), name = "Anna", contactUri = "content://com.android.contacts/contacts/lookup/abc/1"),
         ),
@@ -97,6 +98,8 @@ class LauncherSettingsTest {
     fun importKeepsLocalWidgets() {
         val restored = LauncherSettings.fromJson(sample.toJson(), keepWidgets = listOf(99))
         assertEquals(listOf(99), restored.widgets)
+        // Pop-up-Widgets eines anderen Geräts sind hier ungültig.
+        assertEquals(null, restored.favorites.first { it.id == "3" }.widgetId)
     }
 
     @Test

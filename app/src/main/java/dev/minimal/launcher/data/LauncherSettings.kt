@@ -42,6 +42,8 @@ data class Favorite(
     val swipeLeftLabel: String? = null,
     /** Kontakt-Favorit: Lookup-URI des Kontakts (Name steht in [name]). */
     val contactUri: String? = null,
+    /** Pop-up-Widget, das beim Wischen nach rechts erscheint (ersetzt [swipeApp]). Gerätespezifisch. */
+    val widgetId: Int? = null,
 ) {
     val isFolder: Boolean get() = contactUri == null && (apps.size > 1 || name != null)
     val isContact: Boolean get() = contactUri != null
@@ -200,6 +202,7 @@ data class LauncherSettings(
                     f.swipeLeftShortcut?.let { put("swipeLeftShortcut", it) }
                     f.swipeLeftLabel?.let { put("swipeLeftLabel", it) }
                     f.contactUri?.let { put("contactUri", it) }
+                    f.widgetId?.let { put("widgetId", it) }
                 })
             }
         })
@@ -313,6 +316,8 @@ data class LauncherSettings(
                             swipeLeftShortcut = f.optString("swipeLeftShortcut").ifEmpty { null },
                             swipeLeftLabel = f.optString("swipeLeftLabel").ifEmpty { null },
                             contactUri = f.optString("contactUri").ifEmpty { null },
+                            // Widget-IDs gelten nur auf diesem Gerät – beim Import verwerfen.
+                            widgetId = if (keepWidgets == null && f.has("widgetId")) f.optInt("widgetId") else null,
                         )
                     }
                 } ?: emptyList(),

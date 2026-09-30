@@ -48,7 +48,8 @@ import java.time.LocalDateTime
 import kotlin.math.max
 
 interface HomeCallbacks {
-    fun addWidget(info: AppWidgetProviderInfo)
+    /** Widget binden; mit [favoriteAppKey] als Pop-up-Widget dieses Favoriten statt auf dem Startbildschirm. */
+    fun addWidget(info: AppWidgetProviderInfo, favoriteAppKey: String? = null)
     fun removeWidget(id: Int)
     fun setBlur(enabled: Boolean)
     fun openSettings()
@@ -395,6 +396,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             pickerApps = apps,
             appsByKey = appsByKey,
             onDismiss = { actionsFor = null },
+            onPickPopupWidget = { info -> callbacks.addWidget(info, app.key) },
         )
     }
 
