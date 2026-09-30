@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.ui.HomeCallbacks
 import dev.minimal.launcher.ui.LauncherRoot
 import dev.minimal.launcher.ui.LauncherTheme
+import dev.minimal.launcher.util.EveningRecapScheduler
 import dev.minimal.launcher.util.IntentionReminder
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.data.AutoBackup
@@ -105,6 +106,7 @@ class MainActivity : ComponentActivity() {
             override fun authenticate(title: String, onSuccess: () -> Unit) = unlockThen(title, onSuccess)
         }
 
+        handleReportIntent(intent)
         setContent {
             val settings by vm.settings.collectAsStateWithLifecycle()
             LauncherTheme(settings) {
@@ -115,6 +117,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleReportIntent(intent)
         if (intent.action == Intent.ACTION_MAIN) {
             // Fenster hatte schon den Fokus und wurde nicht aus einer anderen App nach vorne geholt
             // → Home wurde auf dem Startbildschirm gedrückt.
@@ -129,6 +132,7 @@ class MainActivity : ComponentActivity() {
         // Zurück auf dem Startbildschirm: die Absichts-Erinnerung ist erledigt. (onStart statt onResume –
         // Fingerabdruck- und Berechtigungsdialoge pausieren die Activity nur, sie stoppen sie nicht.)
         IntentionReminder.cancel()
+        EveningRecapScheduler.sync(this)
         vm.checkSchedule()
         DeviceCompat.rebindNotificationListener(this)
         // Tägliche Sicherung (nur wenn ein Ordner gewählt ist).
@@ -147,6 +151,14 @@ class MainActivity : ComponentActivity() {
         try {
             widgetHost.stopListening()
         } catch (_: Exception) {
+        }
+    }
+
+    /** Tippen auf den Abendrückblick öffnet den Bildschirmzeit-Bericht. */
+    private fun handleReportIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EveningRecapScheduler.EXTRA_SHOW_REPORT, false) == true) {
+            intent.removeExtra(EveningRecapScheduler.EXTRA_SHOW_REPORT)
+            vm.requestReport()
         }
     }
 

@@ -35,6 +35,7 @@ import dev.minimal.launcher.data.PrivateSpace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -79,6 +80,16 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val notifications: StateFlow<Map<String, List<NotificationPreview>>> =
         NotificationStore.items.map { list -> list.groupBy { it.appKey } }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** Wochenbericht öffnen (z. B. nach Tippen auf den Abendrückblick). */
+    private val _showReport = MutableStateFlow(false)
+    val showReport: StateFlow<Boolean> = _showReport
+    fun requestReport() {
+        _showReport.value = true
+    }
+    fun reportShown() {
+        _showReport.value = false
+    }
 
     /** true = Home gedrückt, während der Startbildschirm schon im Vordergrund war. */
     private val _homePressed = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)

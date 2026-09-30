@@ -129,6 +129,9 @@ data class LauncherSettings(
     val intentionPrompt: Boolean = false,
     /** Absichtsfrage auch ausserhalb des Fokus-Modus stellen. */
     val intentionAlways: Boolean = false,
+    /** Abendrückblick als Benachrichtigung, täglich um [eveningRecapMinute] (Minute des Tages). */
+    val eveningRecap: Boolean = false,
+    val eveningRecapMinute: Int = 21 * 60,
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -235,6 +238,8 @@ data class LauncherSettings(
         put("focusPauseSeconds", focusPauseSeconds)
         put("intentionPrompt", intentionPrompt)
         put("intentionAlways", intentionAlways)
+        put("eveningRecap", eveningRecap)
+        put("eveningRecapMinute", eveningRecapMinute)
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -349,6 +354,8 @@ data class LauncherSettings(
                 focusPauseSeconds = o.optInt("focusPauseSeconds", d.focusPauseSeconds).coerceIn(0, 60),
                 intentionPrompt = o.optBoolean("intentionPrompt", d.intentionPrompt),
                 intentionAlways = o.optBoolean("intentionAlways", d.intentionAlways),
+                eveningRecap = o.optBoolean("eveningRecap", d.eveningRecap),
+                eveningRecapMinute = o.optInt("eveningRecapMinute", d.eveningRecapMinute).coerceIn(0, 24 * 60 - 1),
                 showScreenTime = o.optBoolean("showScreenTime", d.showScreenTime),
                 showWeather = o.optBoolean("showWeather", d.showWeather),
                 weatherCity = o.optString("weatherCity", ""),

@@ -1,6 +1,9 @@
 package dev.minimal.launcher.ui
 
 import android.Manifest
+import kotlinx.coroutines.Dispatchers
+import dev.minimal.launcher.util.IntentionReminder
+import dev.minimal.launcher.util.EveningRecapScheduler
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
@@ -114,6 +117,14 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
     var showDeclutter by remember { mutableStateOf(false) }
+    var pickingRecapTime by remember { mutableStateOf(false) }
+    val requestRecapNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) {
+            vm.update { it.copy(eveningRecap = false) }
+            Toast.makeText(context, "Ohne Benachrichtigungen kein Abendrückblick", Toast.LENGTH_SHORT).show()
+        }
+        EveningRecapScheduler.sync(context)
+    }
     val pro = isPro()
     var paywallFor by remember { mutableStateOf<String?>(null) }
     var showPaywall by remember { mutableStateOf(false) }
@@ -556,6 +567,38 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 ) { v -> vm.update { it.copy(dailyGoalMinutes = ((v / 15).roundToInt() * 15)) } }
             }
             item { Hint("Das Ziel erscheint im Wochenbericht (Bildschirmzeit unter der Uhr antippen) samt Serie.") }
+            item {
+                SwitchRow("Abendrückblick" + if (pro) "" else " (Pro)", s.eveningRecap && pro) { v ->
+                    if (!pro) {
+                        paywallFor = "Abendrückblick"
+                    } else {
+                        vm.update { it.copy(eveningRecap = v) }
+                        if (v && !IntentionReminder.canNotify(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            requestRecapNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            EveningRecapScheduler.sync(context)
+                        }
+                    }
+                }
+            }
+            if (s.eveningRecap && pro) {
+                item {
+                    ClickRow("Uhrzeit", "%02d:%02d".format(s.eveningRecapMinute / 60, s.eveningRecapMinute % 60)) {
+                        pickingRecapTime = true
+                    }
+                }
+                item {
+                    ClickRow("Rückblick jetzt anzeigen", "Vorschau mit den Zahlen von heute") {
+                        scope.launch(Dispatchers.IO) { EveningRecapScheduler.show(context) }
+                    }
+                }
+            }
+            item {
+                Hint(
+                    "Jeden Abend eine leise Benachrichtigung: Bildschirmzeit, Tagesziel, bewusste Öffnungen " +
+                        "und erledigte Aufgaben. Antippen öffnet den Wochenbericht."
+                )
+            }
             if (pro) AppCategories.all.forEach { (category, label) ->
                 item(key = "cat_$category") {
                     ClickRow(
@@ -717,6 +760,18 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
 
     if (showDeclutter) DeclutterDialog(vm = vm, onDismiss = { showDeclutter = false })
+    if (pickingRecapTime) {
+        ChoiceDialog(
+            title = "Abendrückblick um",
+            options = (36..47).map { half -> half * 30 to "%02d:%02d".format(half / 2, half % 2 * 30) },
+            selected = s.eveningRecapMinute,
+            onDismiss = { pickingRecapTime = false },
+        ) { minute ->
+            vm.update { it.copy(eveningRecapMinute = minute) }
+            EveningRecapScheduler.sync(context)
+            pickingRecapTime = false
+        }
+    }
 
     when (dialog) {
         SettingsDialog.NONE -> Unit

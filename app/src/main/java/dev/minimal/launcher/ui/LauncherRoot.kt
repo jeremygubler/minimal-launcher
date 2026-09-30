@@ -130,6 +130,15 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
 
     val currentSettings by rememberUpdatedState(settings)
     LaunchedEffect(Unit) {
+        vm.showReport.collect { show ->
+            if (show) {
+                closeAll()
+                showScreenTimeDialog = true
+                vm.reportShown()
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
         vm.homePressed.collect { alreadyOnHome ->
             val nothingOpen = overlay == Overlay.NONE && actionsFor == null && editFolder == null &&
                 !showHomeMenu && !showWidgetPicker && !editWidgets
