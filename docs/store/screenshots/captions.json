@@ -1,0 +1,8 @@
+[
+  { "file": "1-home.png",     "de": "Nur das, was zählt.",          "en": "Only what matters." },
+  { "file": "2-drawer.png",   "de": "Jede App mit einem Wisch.",     "en": "Every app, one swipe away." },
+  { "file": "3-search.png",   "de": "Suchen, rechnen, starten.",     "en": "Search, calculate, launch." },
+  { "file": "4-focus.png",    "de": "Fokus, wenn du ihn brauchst.",  "en": "Focus when you need it." },
+  { "file": "5-report.png",   "de": "Deine Zeit im Blick.",          "en": "Your time at a glance." },
+  { "file": "6-pages.png",    "de": "Die richtige Seite zur richtigen Zeit.", "en": "The right page at the right time." }
+]

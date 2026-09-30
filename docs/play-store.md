@@ -76,3 +76,31 @@
 - [ ] Screenshots (mind. 2) und Feature-Grafik 1024×500
 - [ ] Kauf in der internen Testspur getestet, „Wiederherstellen“ getestet
 - [ ] Bedienungshilfe-Deklaration inkl. Video eingereicht
+
+## Grafiken
+
+| Datei | Verwendung |
+|---|---|
+| `docs/store/icon-512.png` | App-Symbol (512×512) |
+| `docs/store/feature-graphic.png` | Feature-Grafik (1024×500) |
+| `docs/store/screenshots/out/de/*.png` | Smartphone-Screenshots (1080×1920) |
+
+### Screenshots
+
+Echte Aufnahmen vom Gerät (Ein/Aus + Leiser) in `docs/store/screenshots/raw/` ablegen – diese Namen:
+
+1. `1-home.png` – Startbildschirm mit Uhr, Wetter und Favoriten
+2. `2-drawer.png` – App-Liste, Finger auf der Buchstabenleiste
+3. `3-search.png` – Suche mit Rechnung, z. B. „12*7+3“
+4. `4-focus.png` – Fokus-Modus aktiv (blockierte App / Pause-Dialog)
+5. `5-report.png` – Bildschirmzeit-Wochenbericht
+6. `6-pages.png` – Seiten-Einstellungen mit Kontextregel (📍)
+
+Tipps: neutrales Hintergrundbild, keine privaten Benachrichtigungen, Kontakte oder Termine sichtbar.
+Die Rohbilder sind per `.gitignore` vom Repo ausgeschlossen.
+
+Rahmen erzeugen (Play erlaubt höchstens 2:1, das Pixel liefert ~20:9):
+```bash
+cd docs/store/screenshots && npm i playwright && node frame.mjs de   # oder: en
+```
+Bildunterschriften stehen in `captions.json`.
