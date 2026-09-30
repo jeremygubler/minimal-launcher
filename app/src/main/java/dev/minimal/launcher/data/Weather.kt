@@ -34,6 +34,7 @@ data class WeatherInfo(
  */
 object Weather {
     private const val REFRESH_MS = 30 * 60 * 1000L
+    private const val RETRY_MS = 10 * 60 * 1000L
 
     fun hasLocationPermission(context: Context) =
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -45,6 +46,9 @@ object Weather {
         val fresh = System.currentTimeMillis() - prefs.getLong("time", 0) < REFRESH_MS &&
             prefs.getString("key", null) == cacheKey
         if (!force && fresh && cached != null) return@withContext cached
+        // Nach einem Fehlschlag nicht jede Minute erneut versuchen.
+        if (!force && System.currentTimeMillis() - prefs.getLong("attempt", 0) < RETRY_MS) return@withContext cached
+        prefs.edit().putLong("attempt", System.currentTimeMillis()).apply()
 
         val coords = if (cacheKey.isNotEmpty()) geocode(city) else lastLocation(context)?.let { Triple(it.latitude, it.longitude, null) }
         if (coords == null) return@withContext cached

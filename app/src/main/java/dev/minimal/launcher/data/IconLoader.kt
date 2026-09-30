@@ -19,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -27,7 +28,12 @@ import java.io.File
  * Der Datei-Cache sorgt dafür, dass Icons nach einem Neustart sofort da sind.
  */
 class IconLoader(private val context: Context) {
-    private val memory = LruCache<String, ImageBitmap>(400)
+    /** Nach Speichergröße begrenzt (höchstens 1/8 des App-Speichers, max. 24 MB). */
+    private val memory = object : LruCache<String, ImageBitmap>(
+        (Runtime.getRuntime().maxMemory() / 1024 / 8).coerceAtMost(24L * 1024).toInt(),
+    ) {
+        override fun sizeOf(key: String, value: ImageBitmap) = (value.width * value.height * 4 / 1024).coerceAtLeast(1)
+    }
     private val sizePx = (56 * context.resources.displayMetrics.density).toInt()
     private val densityDpi = context.resources.displayMetrics.densityDpi
     private val dir = File(context.cacheDir, "icons").apply { mkdirs() }
@@ -66,14 +72,14 @@ class IconLoader(private val context: Context) {
             marker.writeText(config)
         }
         memory.evictAll()
-        _version.value += 1
+        _version.update { it + 1 }
     }
 
     /** Nach Installation oder Update einer App deren Icons verwerfen. */
     fun invalidatePackage(packageName: String) {
         memory.snapshot().keys.filter { it.startsWith("$packageName/") }.forEach { memory.remove(it) }
         dir.listFiles { f -> f.name.startsWith("${packageName}__") }?.forEach { it.delete() }
-        _version.value += 1
+        _version.update { it + 1 }
     }
 
     private fun style(dark: Boolean) = if (themed) (if (dark) "td" else "tl") else "n"

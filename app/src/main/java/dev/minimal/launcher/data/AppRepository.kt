@@ -17,9 +17,11 @@ import android.os.Process
 import android.os.UserHandle
 import android.os.UserManager
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import dev.minimal.launcher.util.DeviceCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -83,17 +85,28 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
     fun refresh() {
         refreshJob?.cancel()
         refreshJob = scope.launch {
-            val entries = activities()
-            // 1. Sofort mit zwischengespeicherten Namen anzeigen.
-            val cached = entries.map { (info, user) -> build(info, user, labelCache.getString(key(info, user), null)) }
-            _apps.value = cached
-            // 2. Echte Namen im Hintergrund laden und nur bei Änderungen neu anzeigen.
-            val fresh = entries.map { (info, user) -> build(info, user, null) }
-            if (fresh.map { it.label } != cached.map { it.label }) _apps.value = fresh
-            labelCache.edit().clear().apply {
-                fresh.forEach { putString(it.key, it.originalLabel) }
-            }.apply()
+            try {
+                load()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // z. B. Profil wird gerade gesperrt – beim nächsten Ereignis erneut versuchen, nicht abstürzen.
+                Log.w("AppRepository", "App-Liste konnte nicht geladen werden", e)
+            }
         }
+    }
+
+    private fun load() {
+        val entries = activities()
+        // 1. Sofort mit zwischengespeicherten Namen anzeigen.
+        val cached = entries.map { (info, user) -> build(info, user, labelCache.getString(key(info, user), null)) }
+        _apps.value = cached
+        // 2. Echte Namen im Hintergrund laden und nur bei Änderungen neu anzeigen.
+        val fresh = entries.map { (info, user) -> build(info, user, null) }
+        if (fresh.map { it.label } != cached.map { it.label }) _apps.value = fresh
+        labelCache.edit().clear().apply {
+            fresh.forEach { putString(it.key, it.originalLabel) }
+        }.apply()
     }
 
     private fun profiles(): List<UserHandle> =

@@ -89,6 +89,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val appsByKey = remember(allApps) { allApps.associateBy { it.key } }
     val privateSpace by vm.privateSpace.collectAsStateWithLifecycle()
     val privateApps by vm.privateApps.collectAsStateWithLifecycle()
+    val searchApps = remember(apps, privateApps) { apps + privateApps }
     val letters = remember(apps, privateSpace != null) {
         apps.map { it.letter }.distinct() + listOfNotNull(PRIVATE_LETTER.takeIf { privateSpace != null })
     }
@@ -192,7 +193,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
         AnimatedVisibility(overlay == Overlay.SEARCH, enter = fadeIn(), exit = fadeOut()) {
             SearchScreen(
-                apps = apps + privateApps,
+                apps = searchApps,
                 settings = settings,
                 notifications = notificationKeys,
                 onLaunch = launch,

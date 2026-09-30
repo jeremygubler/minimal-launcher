@@ -9,8 +9,14 @@ import kotlin.math.floor
 import kotlin.math.pow
 
 object AppSearch {
-    private fun normalize(s: String) =
-        Normalizer.normalize(s.lowercase(), Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")
+    private val marks = Regex("\\p{Mn}+")
+
+    /** Normalisierte Namen werden zwischengespeichert – sonst bei jedem Tastendruck für alle Apps neu berechnet. */
+    private val normalized = object : android.util.LruCache<String, String>(2000) {
+        override fun create(key: String): String = Normalizer.normalize(key.lowercase(), Normalizer.Form.NFD).replace(marks, "")
+    }
+
+    private fun normalize(s: String): String = normalized.get(s)
 
     /** Kleinere Werte = bessere Treffer, null = kein Treffer. */
     private fun score(label: String, query: String): Int? {
