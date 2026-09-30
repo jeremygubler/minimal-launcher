@@ -5,7 +5,7 @@
 1. **Google-Play-Entwicklerkonto** anlegen (einmalig 25 USD): https://play.google.com/console
 2. **Namen & Paketnamen festlegen** – in `gradle.properties`:
    - `launcherName=…` (Anzeigename, gesetzt: `Kanso`)
-   - `playApplicationId=…` (gesetzt: `ch.gubler.kanso` – nach dem ersten Upload nicht mehr änderbar)
+   - `playApplicationId=…` (gesetzt: `ch.hazzar.kanso` – nach dem ersten Upload nicht mehr änderbar)
 3. **Upload-Schlüssel erzeugen** (auf deinem Rechner, gut aufbewahren):
    ```bash
    keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000

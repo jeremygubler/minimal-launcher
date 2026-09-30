@@ -50,7 +50,7 @@ android {
         }
         create("play") {
             dimension = "store"
-            applicationId = providers.gradleProperty("playApplicationId").getOrElse("ch.gubler.kanso")
+            applicationId = providers.gradleProperty("playApplicationId").getOrElse("ch.hazzar.kanso")
             buildConfigField("boolean", "STORE_BUILD", "true")
             resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Kanso"))
             signingConfig = signingConfigs.getByName("upload")
