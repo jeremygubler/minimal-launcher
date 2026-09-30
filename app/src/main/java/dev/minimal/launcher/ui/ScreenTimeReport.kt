@@ -60,6 +60,9 @@ fun ScreenTimeReport(
 ) {
     val days by produceState<List<Pair<LocalDate, Map<String, Long>>>?>(null) { value = vm.screenTimeWeek() }
     var tab by remember { mutableIntStateOf(0) }
+    val pro = isPro()
+    var paywall by remember { mutableStateOf(false) }
+    if (paywall) PaywallDialog(feature = "Wochenbericht", onDismiss = { paywall = false })
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -82,6 +85,10 @@ fun ScreenTimeReport(
                 when {
                     d == null -> Text("Wird berechnet …")
                     tab == 0 -> TodayView(d.last().second, appsByPackage)
+                    !pro -> {
+                        Text("Wochenbericht, Tagesziel und Serie gehören zu Pro.")
+                        TextButton(onClick = { paywall = true }) { Text("Pro freischalten") }
+                    }
                     else -> WeekView(d, settings.dailyGoalMinutes * 60_000L, appsByPackage)
                 }
             }

@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import dev.minimal.launcher.data.AppRepository
 import dev.minimal.launcher.data.ContextMonitor
+import dev.minimal.launcher.pro.Pro
 import dev.minimal.launcher.data.CrashLog
 import dev.minimal.launcher.data.IconLoader
 import dev.minimal.launcher.data.SettingsStore
@@ -23,6 +24,7 @@ class LauncherApp : Application() {
         super.onCreate()
         CrashLog.install(this)
         ContextMonitor.start(this)
+        Pro.init(this)
         settings = SettingsStore(this)
         icons = IconLoader(this)
         usage = UsageStore(this)

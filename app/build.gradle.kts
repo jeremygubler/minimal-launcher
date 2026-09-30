@@ -19,14 +19,39 @@ android {
     }
 
     signingConfigs {
-        // Fester Schlüssel, damit neue Builds über alte installiert werden können.
-        // Für den Play Store eigenen Schlüssel über die SIGNING_*-Umgebungsvariablen setzen.
+        // Fester Schlüssel der Sideload-Version, damit neue Builds über alte installiert werden können.
         create("shared") {
-            storeFile = System.getenv("SIGNING_KEYSTORE_PATH")?.let { file(it) }
-                ?: rootProject.file("keystore/launcher.keystore")
-            storePassword = System.getenv("SIGNING_STORE_PASSWORD") ?: "android"
-            keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: "launcher"
-            keyPassword = System.getenv("SIGNING_KEY_PASSWORD") ?: "android"
+            storeFile = rootProject.file("keystore/launcher.keystore")
+            storePassword = "android"
+            keyAlias = "launcher"
+            keyPassword = "android"
+        }
+        // Upload-Schlüssel für Google Play – kommt ausschließlich aus Umgebungsvariablen (GitHub Secrets).
+        create("upload") {
+            val path = System.getenv("UPLOAD_KEYSTORE_PATH")
+            storeFile = path?.let { file(it) } ?: rootProject.file("keystore/launcher.keystore")
+            storePassword = System.getenv("UPLOAD_STORE_PASSWORD") ?: "android"
+            keyAlias = System.getenv("UPLOAD_KEY_ALIAS") ?: "launcher"
+            keyPassword = System.getenv("UPLOAD_KEY_PASSWORD") ?: "android"
+        }
+    }
+
+    // Zwei Varianten aus demselben Code:
+    // sideload = APK für GitHub (alles frei), play = Google-Play-Version mit Pro-Freischaltung.
+    flavorDimensions += "store"
+    productFlavors {
+        create("sideload") {
+            dimension = "store"
+            buildConfigField("boolean", "STORE_BUILD", "false")
+            resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Minimal Launcher"))
+            signingConfig = signingConfigs.getByName("shared")
+        }
+        create("play") {
+            dimension = "store"
+            applicationId = providers.gradleProperty("playApplicationId").getOrElse("dev.minimal.launcher.play")
+            buildConfigField("boolean", "STORE_BUILD", "true")
+            resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Minimal Launcher"))
+            signingConfig = signingConfigs.getByName("upload")
         }
     }
 
@@ -38,7 +63,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("shared")
+            // Signatur kommt aus der jeweiligen Variante (sideload: fester Schlüssel, play: Upload-Schlüssel).
         }
     }
 
@@ -68,6 +93,9 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-core")
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    // Google Play Billing nur in der Play-Variante.
+    "playImplementation"("com.android.billingclient:billing-ktx:7.1.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")

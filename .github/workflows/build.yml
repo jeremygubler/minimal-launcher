@@ -22,21 +22,41 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Tests
-        run: ./gradlew --no-daemon testDebugUnitTest
+        run: ./gradlew --no-daemon testSideloadDebugUnitTest
+
+      # Upload-Schlüssel für Google Play (nur wenn die Secrets gesetzt sind)
+      - name: Upload-Schlüssel einrichten
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+        if: env.UPLOAD_KEYSTORE_BASE64 != ''
+        run: |
+          echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
 
       - name: Build
-        run: ./gradlew --no-daemon assembleDebug assembleRelease
+        env:
+          UPLOAD_STORE_PASSWORD: ${{ secrets.UPLOAD_STORE_PASSWORD }}
+          UPLOAD_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleSideloadDebug assembleSideloadRelease bundlePlayRelease
 
-      - name: APK umbenennen
+      - name: Dateien umbenennen
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/release/app-release.apk "out/minimal-launcher-${GITHUB_RUN_NUMBER}.apk"
-          cp app/build/outputs/apk/debug/app-debug.apk "out/minimal-launcher-${GITHUB_RUN_NUMBER}-debug.apk"
+          cp app/build/outputs/apk/sideload/release/app-sideload-release.apk "out/minimal-launcher-${GITHUB_RUN_NUMBER}.apk"
+          cp app/build/outputs/apk/sideload/debug/app-sideload-debug.apk "out/minimal-launcher-${GITHUB_RUN_NUMBER}-debug.apk"
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab "out/minimal-launcher-play-${GITHUB_RUN_NUMBER}.aab"
 
       - uses: actions/upload-artifact@v4
         with:
           name: minimal-launcher-apk
           path: out/*.apk
+
+      # AAB für die Play Console (nur als Artefakt, nicht im öffentlichen Release)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: minimal-launcher-play-aab
+          path: out/*.aab
 
       - name: GitHub-Release
         if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))

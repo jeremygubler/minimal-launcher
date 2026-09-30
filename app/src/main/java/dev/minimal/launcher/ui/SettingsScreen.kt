@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.BuildConfig
+import dev.minimal.launcher.pro.Pro
 import dev.minimal.launcher.data.AppCategories
 import dev.minimal.launcher.data.AutoBackup
 import android.net.Uri
@@ -111,6 +113,10 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var deletePageId by remember { mutableStateOf<String?>(null) }
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
+    val pro = isPro()
+    var paywallFor by remember { mutableStateOf<String?>(null) }
+    var showPaywall by remember { mutableStateOf(false) }
+    var disclosure by remember { mutableStateOf<Disclosure?>(null) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumeTick++ }
     val scope = rememberCoroutineScope()
     var backupTick by remember { mutableIntStateOf(0) }
@@ -195,6 +201,20 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 bottom = padding.calculateBottomPadding() + 32.dp,
             ),
         ) {
+            if (BuildConfig.STORE_BUILD) {
+                item { Section("Pro") }
+                item {
+                    if (pro) {
+                        StatusRow("Pro ist freigeschaltet – danke!", true, "") {}
+                    } else {
+                        ClickRow("Pro freischalten", "Einmalkauf – kontextbasierte Seiten, eigene Icons, Sicherung, Wochenbericht, Aufgaben") {
+                            paywallFor = null
+                            showPaywall = true
+                        }
+                    }
+                }
+                if (!pro) item { ClickRow("Käufe wiederherstellen", null) { Pro.restore() } }
+            }
             item { Section("Einrichtung") }
             item { ClickRow("Einrichtungsassistent erneut zeigen", null) { vm.update { it.copy(onboardingDone = false) } } }
             item {
@@ -207,7 +227,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item {
                 StatusRow("Bedienungshilfe (Sperren per Doppeltipp)", accessibilityOn, "Aktivieren") {
-                    SystemActions.openAccessibility(context)
+                    disclosure = Disclosure.ACCESSIBILITY
                 }
             }
             if (listenerDisconnected) {
@@ -326,7 +346,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 SwitchRow("Wetter unter der Uhr (Internet, Open-Meteo)", s.showWeather) { v ->
                     vm.update { it.copy(showWeather = v) }
                     if (v && s.weatherCity.isBlank() && !Weather.hasLocationPermission(context)) {
-                        requestLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                        disclosure = Disclosure.WEATHER_LOCATION
                     }
                 }
             }
@@ -418,7 +438,9 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                         TextButton(onClick = { vm.movePage(page.id, -1) }, enabled = pageIndex > 0) { Text("↑") }
                         TextButton(onClick = { vm.movePage(page.id, 1) }, enabled = pageIndex < s.pages.lastIndex) { Text("↓") }
                         if (s.autoPages && s.pages.size > 1) TextButton(onClick = { schedulePageId = page.id }) { Text("⏰") }
-                        if (s.autoPages && s.pages.size > 1) TextButton(onClick = { contextPageId = page.id }) { Text("📍") }
+                        if (s.autoPages && s.pages.size > 1) TextButton(onClick = {
+                            if (pro) contextPageId = page.id else paywallFor = "Kontextbasierte Seiten"
+                        }) { Text("📍") }
                         TextButton(onClick = { renamePageId = page.id }) { Text("✎") }
                         if (s.pages.size > 1) TextButton(onClick = { deletePageId = page.id }) { Text("✕") }
                     }
@@ -503,7 +525,10 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 ) { editGrayscale = true }
             }
             item { Section("Tageslimits") }
-            item {
+            if (!pro) {
+                item { ClickRow("Tagesziel & Kategorie-Limits (Pro)", "Wochenbericht, Ziel mit Serie, Limits pro Kategorie") { paywallFor = "Tagesziel & Kategorie-Limits" } }
+            }
+            if (pro) item {
                 SliderRow(
                     "Tagesziel Bildschirmzeit",
                     s.dailyGoalMinutes.toFloat(),
@@ -512,7 +537,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 ) { v -> vm.update { it.copy(dailyGoalMinutes = ((v / 15).roundToInt() * 15)) } }
             }
             item { Hint("Das Ziel erscheint im Wochenbericht (Bildschirmzeit unter der Uhr antippen) samt Serie.") }
-            AppCategories.all.forEach { (category, label) ->
+            if (pro) AppCategories.all.forEach { (category, label) ->
                 item(key = "cat_$category") {
                     ClickRow(
                         "Limit $label",
@@ -640,7 +665,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     "Automatische Sicherung",
                     s.backupFolder?.let { "Täglich nach „${AutoBackup.folderLabel(it)}“ · letzte: $lastBackupText" }
                         ?: "Aus – Ordner wählen, dann täglich (7 Stände werden behalten)",
-                ) { pickBackupFolder.launch(null) }
+                ) { if (pro) pickBackupFolder.launch(null) else paywallFor = "Automatische Sicherung" }
             }
             if (s.backupFolder != null) {
                 item {
@@ -790,9 +815,28 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 vm.update { it.copy(weatherCity = city.trim()) }
                 editingCity = false
                 if (city.isBlank() && !Weather.hasLocationPermission(context)) {
-                    requestLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    disclosure = Disclosure.WEATHER_LOCATION
                 }
             },
+        )
+    }
+    if (showPaywall || paywallFor != null) {
+        PaywallDialog(feature = paywallFor, onDismiss = {
+            showPaywall = false
+            paywallFor = null
+        })
+    }
+    disclosure?.let { d ->
+        DisclosureDialog(
+            disclosure = d,
+            onAccept = {
+                when (d) {
+                    Disclosure.ACCESSIBILITY -> SystemActions.openAccessibility(context)
+                    Disclosure.WEATHER_LOCATION -> requestLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    Disclosure.WIFI_LOCATION -> requestFineLocation.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                }
+            },
+            onDismiss = { disclosure = null },
         )
     }
     contextPageId?.let { id ->
@@ -810,7 +854,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 onRequestBluetooth = {
                     if (Build.VERSION.SDK_INT >= 31) requestBluetooth.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 },
-                onRequestWifi = { requestFineLocation.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+                onRequestWifi = { disclosure = Disclosure.WIFI_LOCATION },
                 onDismiss = { contextPageId = null },
                 onSave = { ctx ->
                     vm.setPageContext(id, ctx)

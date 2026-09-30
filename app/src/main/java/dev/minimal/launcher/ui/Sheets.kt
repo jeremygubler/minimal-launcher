@@ -75,6 +75,8 @@ fun AppActionsSheet(
     var pickingLeft by remember { mutableStateOf(false) }
     var pickingLimit by remember { mutableStateOf(false) }
     var pickingIcon by remember { mutableStateOf(false) }
+    val pro = isPro()
+    var paywall by remember { mutableStateOf(false) }
     val isFavorite = settings.isFavorite(app.key)
     val favorite = settings.pageFavorites().firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
     val folders = settings.pageFavorites().filter { it.isFolder }
@@ -148,7 +150,7 @@ fun AppActionsSheet(
                 vm.toggleLockedApp(app.key)
                 onDismiss()
             }
-            SheetAction("Icon ändern") { pickingIcon = true }
+            SheetAction("Icon ändern") { if (pro) pickingIcon = true else paywall = true }
             SheetAction("Umbenennen") { renaming = true }
             SheetAction("Ausblenden") {
                 vm.hide(app)
@@ -191,6 +193,7 @@ fun AppActionsSheet(
             },
         )
     }
+    if (paywall) PaywallDialog(feature = "Eigene Icons", onDismiss = { paywall = false })
     if (pickingIcon) {
         IconPickerDialog(app = app, vm = vm, settings = settings, onDismiss = {
             pickingIcon = false

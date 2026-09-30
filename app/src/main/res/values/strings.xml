@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Minimal Launcher</string>
     <string name="settings_name">Launcher-Einstellungen</string>
     <string name="accessibility_label">Minimal Launcher – Gesten</string>
     <string name="accessibility_description">Wird nur verwendet, um per Doppeltipp den Bildschirm zu sperren und die Benachrichtigungsleiste zu öffnen. Es werden keine Bildschirminhalte gelesen.</string>

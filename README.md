@@ -109,13 +109,23 @@ dann verschwinden Benachrichtigungspunkte und Mediensteuerung. Auf diesen Gerät
 „Autostart erlauben“. Einige Funktionen hängen von der Android-Version ab: Material You (12+),
 Weichzeichnen (12+, nicht auf allen Geräten), Designsymbole (13+), vertrauliches Profil (15+).
 
+## Varianten & Google Play
+
+- **sideload** (GitHub-Releases): alle Funktionen frei, fester Schlüssel – die bisherige Version.
+- **play** (Google Play): Pro-Funktionen per Einmalkauf `pro_lifetime`, Upload-Schlüssel aus GitHub Secrets,
+  Google-konforme Berechtigungen und Hinweise. Jeder Push erzeugt zusätzlich ein AAB als Artefakt.
+
+Checkliste, Store-Texte, Datensicherheit und Berechtigungs-Begründungen: [`docs/play-store.md`](docs/play-store.md).
+Datenschutzerklärung: [`docs/privacy-policy.md`](docs/privacy-policy.md).
+
 ## Bauen
 
 Voraussetzung: JDK 17 und Android SDK (oder einfach Android Studio öffnen).
 
 ```bash
-./gradlew assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleSideloadDebug
+# APK: app/build/outputs/apk/sideload/debug/app-sideload-debug.apk
+./gradlew bundlePlayRelease   # AAB für Google Play
 ```
 
 Jeder Push auf `main` führt die Unit-Tests aus und baut die APK über GitHub Actions

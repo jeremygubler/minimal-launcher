@@ -15,6 +15,7 @@ import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.PageContext
 import dev.minimal.launcher.data.ContextMonitor
+import dev.minimal.launcher.pro.Pro
 import dev.minimal.launcher.data.PageScheduler
 import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.data.TaskItem
@@ -237,7 +238,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             lastScheduledPage = null
             return
         }
-        val target = PageScheduler.pageFor(s, now, ContextMonitor.state.value)
+        val context = if (Pro.isPro.value) ContextMonitor.state.value else dev.minimal.launcher.data.ContextState()
+        val target = PageScheduler.pageFor(s, now, context)
         if (target != lastScheduledPage) {
             lastScheduledPage = target
             setCurrentPage(target)

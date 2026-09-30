@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
+import dev.minimal.launcher.BuildConfig
 import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.service.NotificationListener
 import java.util.Locale
@@ -57,6 +58,11 @@ object DeviceCompat {
 
     @SuppressLint("BatteryLife")
     fun requestIgnoreBatteryOptimizations(context: Context) {
+        // Google Play erlaubt die direkte Anfrage nur in Ausnahmefällen → dort die Einstellungsliste öffnen.
+        if (BuildConfig.STORE_BUILD) {
+            SystemActions.start(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            return
+        }
         val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
         if (!SystemActions.start(context, direct)) {
             SystemActions.start(context, Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))

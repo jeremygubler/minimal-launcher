@@ -85,6 +85,8 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     var editingNote by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskItem?>(null) }
     var addingTask by remember { mutableStateOf(false) }
+    var taskPaywall by remember { mutableStateOf(false) }
+    val pro = isPro()
     val focusActive = Focus.isActive(settings, now)
     val blockedKeys = if (focusActive) settings.focusApps else emptySet()
 
@@ -278,7 +280,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onLongPress = longPress,
                 onContactsDenied = { vm.update { it.copy(searchContacts = false) } },
                 onSetNote = { vm.setNote(it) },
-                onAddTask = { title, due -> vm.addTask(title, due) },
+                onAddTask = { title, due -> if (pro) vm.addTask(title, due) else taskPaywall = true },
                 onPinContact = { uri, name -> vm.addContactFavorite(uri, name) },
                 usage = usage,
                 loadShortcuts = vm::allShortcuts,
@@ -343,6 +345,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         )
     }
 
+    if (taskPaywall) PaywallDialog(feature = "Aufgabenliste", onDismiss = { taskPaywall = false })
     if (addingTask) {
         TextInputDialog(
             title = "Neue Aufgabe",
@@ -413,7 +416,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             hasNote = settings.note.isNotBlank(),
             onAddTask = {
                 showHomeMenu = false
-                addingTask = true
+                if (pro) addingTask = true else taskPaywall = true
             },
             onEditNote = {
                 showHomeMenu = false

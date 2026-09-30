@@ -16,6 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,6 +40,14 @@ fun OnboardingDialog(onDone: () -> Unit) {
     val notifications = remember(tick) { NotificationStore.hasAccess(context) }
     val accessibility = remember(tick) { LauncherAccessibilityService.isRunning }
     val battery = remember(tick) { DeviceCompat.isIgnoringBatteryOptimizations(context) }
+    var showAccessibilityInfo by remember { mutableStateOf(false) }
+    if (showAccessibilityInfo) {
+        DisclosureDialog(
+            disclosure = Disclosure.ACCESSIBILITY,
+            onAccept = { SystemActions.openAccessibility(context) },
+            onDismiss = { showAccessibilityInfo = false },
+        )
+    }
 
     AlertDialog(
         onDismissRequest = {},
@@ -59,7 +68,7 @@ fun OnboardingDialog(onDone: () -> Unit) {
                     SystemActions.openNotificationAccess(context)
                 }
                 Step("Bedienungshilfe (Sperren per Doppeltipp)", accessibility, "Aktivieren") {
-                    SystemActions.openAccessibility(context)
+                    showAccessibilityInfo = true
                 }
                 if (!notifications || !accessibility) {
                     Text(

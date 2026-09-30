@@ -34,10 +34,9 @@ object SystemActions {
         ) return
         Toast.makeText(
             context,
-            "Zum Sperren per Doppeltipp bitte „Minimal Launcher – Gesten“ in den Bedienungshilfen aktivieren",
+            "Zum Sperren per Doppeltipp: Launcher-Einstellungen → Einrichtung → Bedienungshilfe aktivieren",
             Toast.LENGTH_LONG,
         ).show()
-        start(context, Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
     }
 
     /** Öffnet den Standard-Assistenten (auf dem Pixel: Gemini). */
