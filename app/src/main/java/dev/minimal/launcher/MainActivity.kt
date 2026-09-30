@@ -1,11 +1,16 @@
 package dev.minimal.launcher
 
+import android.app.KeyguardManager
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
 import android.os.Build
+import android.hardware.biometrics.BiometricManager
+import android.hardware.biometrics.BiometricPrompt
 import android.os.Bundle
+import android.os.CancellationSignal
+import android.widget.Toast
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +32,43 @@ class MainActivity : ComponentActivity() {
 
     private var pendingWidgetId = -1
     private var pendingWidgetInfo: AppWidgetProviderInfo? = null
+
+    private var pendingUnlock: (() -> Unit)? = null
+
+    private val confirmCredential = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) pendingUnlock?.invoke()
+        pendingUnlock = null
+    }
+
+    /** Fingerabdruck/Gesicht/PIN abfragen, dann [onSuccess] ausführen (App-Sperre). */
+    private fun unlockThen(title: String, onSuccess: () -> Unit) {
+        val keyguard = getSystemService(KeyguardManager::class.java)
+        if (keyguard == null || !keyguard.isDeviceSecure) {
+            Toast.makeText(this, "Keine Displaysperre eingerichtet – App-Sperre ist wirkungslos", Toast.LENGTH_SHORT).show()
+            onSuccess()
+            return
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val prompt = BiometricPrompt.Builder(this)
+                .setTitle(title)
+                .setSubtitle("Entsperren zum Öffnen")
+                .setAllowedAuthenticators(
+                    BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+                )
+                .build()
+            prompt.authenticate(CancellationSignal(), mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) = onSuccess()
+            })
+        } else {
+            @Suppress("DEPRECATION")
+            val intent = keyguard.createConfirmDeviceCredentialIntent(title, "Entsperren zum Öffnen") ?: run {
+                onSuccess()
+                return
+            }
+            pendingUnlock = onSuccess
+            confirmCredential.launch(intent)
+        }
+    }
 
     private val bindWidget = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val info = pendingWidgetInfo
@@ -52,6 +94,7 @@ class MainActivity : ComponentActivity() {
             override fun openSettings() {
                 startActivity(Intent(this@MainActivity, SettingsActivity::class.java))
             }
+            override fun authenticate(title: String, onSuccess: () -> Unit) = unlockThen(title, onSuccess)
         }
 
         setContent {
@@ -64,7 +107,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.action == Intent.ACTION_MAIN) vm.onHomePressed()
+        if (intent.action == Intent.ACTION_MAIN) {
+            // Fenster hatte schon den Fokus und wurde nicht aus einer anderen App nach vorne geholt
+            // → Home wurde auf dem Startbildschirm gedrückt.
+            val alreadyOnHome = hasWindowFocus() &&
+                (intent.flags and Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) == 0
+            vm.onHomePressed(alreadyOnHome)
+        }
     }
 
     override fun onStart() {

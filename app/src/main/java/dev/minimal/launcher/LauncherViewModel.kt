@@ -69,8 +69,9 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         NotificationStore.items.map { list -> list.groupBy { it.appKey } }
             .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    private val _homePressed = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    val homePressed: SharedFlow<Unit> = _homePressed
+    /** true = Home gedrückt, während der Startbildschirm schon im Vordergrund war. */
+    private val _homePressed = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)
+    val homePressed: SharedFlow<Boolean> = _homePressed
 
     init {
         // Zeitplan jede Minute prüfen (zur vollen Minute).
@@ -109,9 +110,9 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         }.distinctBy { it.key }.map { Favorite(id = UUID.randomUUID().toString(), apps = listOf(it.key)) }
     }
 
-    fun onHomePressed() {
+    fun onHomePressed(alreadyOnHome: Boolean = false) {
         checkSchedule()
-        _homePressed.tryEmit(Unit)
+        _homePressed.tryEmit(alreadyOnHome)
     }
 
     val usage: StateFlow<Map<String, Double>> = app.usage.scores
@@ -303,6 +304,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     }
 
     // --- Fokus-Modus ------------------------------------------------------
+
+    fun toggleLockedApp(key: String) = store.update { s ->
+        s.copy(lockedApps = if (key in s.lockedApps) s.lockedApps - key else s.lockedApps + key)
+    }
 
     fun toggleFocusApp(key: String) = store.update { s ->
         s.copy(focusApps = if (key in s.focusApps) s.focusApps - key else s.focusApps + key)

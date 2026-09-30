@@ -304,7 +304,7 @@ private fun ClockBlock(
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .clickable(noRipple, null) {
-                        SystemActions.webSearch(context, "Wetter " + (weather.place ?: ""))
+                        SystemActions.webSearch(context, "Wetter " + (weather.place ?: ""), settings.searchEngine)
                     },
             )
         }
@@ -816,7 +816,7 @@ private fun FavoriteEntry(
                     },
             )
         }
-        if (settings.notificationPreview && notifications.isNotEmpty()) {
+        if (settings.notificationPreview && notifications.isNotEmpty() && app.key !in settings.lockedApps) {
             NotificationPreviewBlock(
                 items = notifications,
                 startPadding = if (settings.showIcons) settings.iconSize.dp + 16.dp else 0.dp,

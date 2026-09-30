@@ -4,6 +4,7 @@ import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.MAIN_PAGE
 import dev.minimal.launcher.data.PageSchedule
+import dev.minimal.launcher.data.SearchEngine
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.HomeFont
 import dev.minimal.launcher.data.HomeWeight
@@ -38,6 +39,9 @@ class LauncherSettingsTest {
         showMedia = false,
         doubleTap = GestureAction.ASSISTANT,
         swipeUp = GestureAction.DRAWER,
+        homePress = GestureAction.SEARCH,
+        searchEngine = SearchEngine.DUCKDUCKGO,
+        lockedApps = setOf("bank/x#0"),
         hidden = setOf("a/b#0", "c/d#10"),
         renamed = mapOf("a/b#0" to "Mail"),
         favorites = listOf(

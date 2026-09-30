@@ -5,6 +5,15 @@ import org.json.JSONObject
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+enum class SearchEngine(val label: String, val url: String?) {
+    SYSTEM("Standard-App des Systems", null),
+    GOOGLE("Google", "https://www.google.com/search?q="),
+    DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q="),
+    STARTPAGE("Startpage", "https://www.startpage.com/do/search?q="),
+    ECOSIA("Ecosia", "https://www.ecosia.org/search?q="),
+    BING("Bing", "https://www.bing.com/search?q="),
+}
+
 enum class HomeFont(val label: String) { SYSTEM("System"), SERIF("Serif"), MONO("Monospace"), CURSIVE("Handschrift") }
 
 enum class HomeWeight(val label: String) { LIGHT("Leicht"), NORMAL("Normal"), MEDIUM("Kräftig") }
@@ -76,6 +85,11 @@ data class LauncherSettings(
     val doubleTap: GestureAction = GestureAction.LOCK,
     val swipeDown: GestureAction = GestureAction.NOTIFICATIONS,
     val swipeUp: GestureAction = GestureAction.SEARCH,
+    /** Home-Taste, während der Startbildschirm schon offen ist. */
+    val homePress: GestureAction = GestureAction.NONE,
+    val searchEngine: SearchEngine = SearchEngine.SYSTEM,
+    /** Apps, die nur nach Fingerabdruck/PIN geöffnet werden. */
+    val lockedApps: Set<String> = emptySet(),
     val hidden: Set<String> = emptySet(),
     val renamed: Map<String, String> = emptyMap(),
     val favorites: List<Favorite> = emptyList(),
@@ -138,6 +152,9 @@ data class LauncherSettings(
         put("doubleTap", doubleTap.name)
         put("swipeDown", swipeDown.name)
         put("swipeUp", swipeUp.name)
+        put("homePress", homePress.name)
+        put("searchEngine", searchEngine.name)
+        put("lockedApps", JSONArray(lockedApps.toList()))
         put("hidden", JSONArray(hidden.toList()))
         put("renamed", JSONObject(renamed as Map<*, *>))
         put("favorites", JSONArray().apply {
@@ -213,6 +230,9 @@ data class LauncherSettings(
                 doubleTap = enumOr(str("doubleTap"), d.doubleTap),
                 swipeDown = enumOr(str("swipeDown"), d.swipeDown),
                 swipeUp = enumOr(str("swipeUp"), d.swipeUp),
+                homePress = enumOr(str("homePress"), d.homePress),
+                searchEngine = enumOr(str("searchEngine"), d.searchEngine),
+                lockedApps = o.optJSONArray("lockedApps")?.strings()?.toSet() ?: emptySet(),
                 hidden = o.optJSONArray("hidden")?.strings()?.toSet() ?: emptySet(),
                 renamed = o.optJSONObject("renamed")?.let { r ->
                     r.keys().asSequence().associateWith { r.getString(it) }

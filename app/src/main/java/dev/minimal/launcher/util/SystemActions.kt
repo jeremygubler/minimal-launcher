@@ -13,6 +13,7 @@ import android.os.Build
 import android.provider.AlarmClock
 import android.provider.Settings
 import android.widget.Toast
+import dev.minimal.launcher.data.SearchEngine
 import dev.minimal.launcher.service.LauncherAccessibilityService
 
 object SystemActions {
@@ -55,7 +56,10 @@ object SystemActions {
         }
     }
 
-    fun webSearch(context: Context, query: String) {
+    fun webSearch(context: Context, query: String, engine: SearchEngine = SearchEngine.SYSTEM) {
+        engine.url?.let { base ->
+            if (start(context, Intent(Intent.ACTION_VIEW, Uri.parse(base + Uri.encode(query))))) return
+        }
         val intent = Intent(Intent.ACTION_WEB_SEARCH).putExtra(SearchManager.QUERY, query)
         if (!start(context, intent)) {
             start(context, Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(query))))

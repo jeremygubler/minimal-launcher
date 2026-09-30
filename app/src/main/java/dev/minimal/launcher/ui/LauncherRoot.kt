@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,8 @@ interface HomeCallbacks {
     fun removeWidget(id: Int)
     fun setBlur(enabled: Boolean)
     fun openSettings()
+    /** Fingerabdruck/PIN abfragen und danach [onSuccess] ausführen. */
+    fun authenticate(title: String, onSuccess: () -> Unit)
 }
 
 enum class Overlay { NONE, DRAWER, SEARCH }
@@ -102,6 +105,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     var showHomeMenu by remember { mutableStateOf(false) }
     var showWidgetPicker by remember { mutableStateOf(false) }
     var editWidgets by remember { mutableStateOf(false) }
+    var homeGesture by remember { mutableStateOf<GestureAction?>(null) }
 
     fun closeAll() {
         overlay = Overlay.NONE
@@ -112,7 +116,18 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         editWidgets = false
     }
 
-    LaunchedEffect(Unit) { vm.homePressed.collect { closeAll() } }
+    val currentSettings by rememberUpdatedState(settings)
+    LaunchedEffect(Unit) {
+        vm.homePressed.collect { alreadyOnHome ->
+            val nothingOpen = overlay == Overlay.NONE && actionsFor == null && editFolder == null &&
+                !showHomeMenu && !showWidgetPicker && !editWidgets
+            if (alreadyOnHome && nothingOpen && currentSettings.homePress != GestureAction.NONE) {
+                homeGesture = currentSettings.homePress
+            } else {
+                closeAll()
+            }
+        }
+    }
     // Nach dem Start einer App zurück zum Startbildschirm, wie bei Niagara.
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { closeAll() }
     BackHandler { closeAll() }
@@ -126,8 +141,15 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val homeColors = LocalHomeColors.current
 
     var focusPauseFor by remember { mutableStateOf<AppInfo?>(null) }
+    // App-Sperre: gesperrte Apps (und ihre Shortcuts) nur nach Fingerabdruck/PIN öffnen.
+    val lockedPackages = remember(allApps, settings.lockedApps) {
+        allApps.filter { it.key in settings.lockedApps }.map { it.packageName }.toSet()
+    }
+    val openApp: (AppInfo) -> Unit = { app ->
+        if (app.key in settings.lockedApps) callbacks.authenticate(app.label) { vm.launch(app) } else vm.launch(app)
+    }
     val launch: (AppInfo) -> Unit = { app ->
-        if (app.key in blockedKeys) focusPauseFor = app else vm.launch(app)
+        if (app.key in blockedKeys) focusPauseFor = app else openApp(app)
     }
     val longPress: (AppInfo) -> Unit = { actionsFor = it }
     val perform: (GestureAction) -> Unit = { action ->
@@ -143,6 +165,13 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
 
     CompositionLocalProvider(LocalBlockedApps provides blockedKeys, LocalFocusActive provides focusActive) {
+    homeGesture?.let { gesture ->
+        LaunchedEffect(gesture) {
+            perform(gesture)
+            homeGesture = null
+        }
+    }
+
     Box(
         Modifier
             .fillMaxSize()
@@ -168,7 +197,13 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onScreenTimeClick = { showScreenTimeDialog = true },
                 weather = weather,
                 onNoteClick = { editingNote = true },
-                onStartShortcut = { app, id -> vm.startShortcutById(app, id) },
+                onStartShortcut = { app, id ->
+                    if (app.key in settings.lockedApps) {
+                        callbacks.authenticate(app.label) { vm.startShortcutById(app, id) }
+                    } else {
+                        vm.startShortcutById(app, id)
+                    }
+                },
                 onRemoveFavorite = vm::removeFavorite,
                 perform = perform,
             )
@@ -205,7 +240,13 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 usage = usage,
                 loadShortcuts = vm::allShortcuts,
                 shortcutIcon = vm::shortcutIcon,
-                onShortcut = { vm.startShortcut(it) },
+                onShortcut = { sc ->
+                    if (sc.`package` in lockedPackages) {
+                        callbacks.authenticate(sc.shortLabel?.toString() ?: "App") { vm.startShortcut(sc) }
+                    } else {
+                        vm.startShortcut(sc)
+                    }
+                },
             )
         }
         if (overlay != Overlay.SEARCH) {
@@ -231,7 +272,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         FocusPauseDialog(
             app = app,
             seconds = settings.focusPauseSeconds,
-            onOpen = { vm.launch(app) },
+            onOpen = { openApp(app) },
             onDismiss = { focusPauseFor = null },
         )
     }

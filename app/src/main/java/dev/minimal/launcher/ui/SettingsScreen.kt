@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.SearchEngine
 import dev.minimal.launcher.data.Weather
 import kotlin.math.roundToInt
 import android.content.Intent
@@ -71,7 +72,7 @@ import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.util.SystemActions
 
-private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE, FONT, WEIGHT }
+private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE, FONT, WEIGHT, HOME_PRESS, ENGINE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -325,6 +326,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { ClickRow("Doppeltippen", s.doubleTap.label) { dialog = SettingsDialog.DOUBLE_TAP } }
             item { ClickRow("Nach unten wischen", s.swipeDown.label) { dialog = SettingsDialog.SWIPE_DOWN } }
             item { ClickRow("Nach oben wischen", s.swipeUp.label) { dialog = SettingsDialog.SWIPE_UP } }
+            item { ClickRow("Home-Taste auf dem Startbildschirm", s.homePress.label) { dialog = SettingsDialog.HOME_PRESS } }
+            item { ClickRow("Suchmaschine", s.searchEngine.label) { dialog = SettingsDialog.ENGINE } }
             item { SwitchRow("Tastatur bei Suche automatisch öffnen", s.autoKeyboard) { v -> vm.update { it.copy(autoKeyboard = v) } } }
             item { SwitchRow("Kontakte in der Suche", s.searchContacts) { v -> vm.update { it.copy(searchContacts = v) } } }
             item { SwitchRow("App-Aktionen in der Suche (z. B. „Neue Nachricht“)", s.searchShortcuts) { v -> vm.update { it.copy(searchShortcuts = v) } } }
@@ -444,6 +447,29 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item { ClickRow("Ablenkende App hinzufügen", if (s.focusApps.isEmpty()) "Noch keine ausgewählt" else "${s.focusApps.size} ausgewählt") { pickingFocusApp = true } }
 
+            item { Section("App-Sperre") }
+            item {
+                Hint(
+                    "Gesperrte Apps öffnen sich aus dem Launcher nur nach Fingerabdruck oder PIN; ihre " +
+                        "Benachrichtigungsvorschau wird ausgeblendet. Hinzufügen: App lange drücken → „Mit " +
+                        "Fingerabdruck/PIN sperren“. Hinweis: Über „Zuletzt verwendet“ oder Benachrichtigungen " +
+                        "bleibt die App erreichbar – das kann nur Android selbst verhindern."
+                )
+            }
+            s.lockedApps.forEach { key ->
+                item(key = "locked_$key") {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("🔒 " + (appsByKey[key]?.label ?: key), modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        TextButton(onClick = { vm.toggleLockedApp(key) }) { Text("✕") }
+                    }
+                }
+            }
+
             item { Section("Ausgeblendete Apps") }
             if (s.hidden.isEmpty()) {
                 item { Hint("Keine. Halte eine App gedrückt und wähle „Ausblenden“.") }
@@ -551,6 +577,13 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         SettingsDialog.SWIPE_UP -> GestureDialog("Nach oben wischen", s.swipeUp, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(swipeUp = v) }
         }
+        SettingsDialog.HOME_PRESS -> GestureDialog("Home-Taste auf dem Startbildschirm", s.homePress, { dialog = SettingsDialog.NONE }) { v ->
+            vm.update { it.copy(homePress = v) }
+        }
+        SettingsDialog.ENGINE -> ChoiceDialog(
+            "Suchmaschine", SearchEngine.entries.map { it to it.label }, s.searchEngine,
+            onDismiss = { dialog = SettingsDialog.NONE },
+        ) { v -> vm.update { it.copy(searchEngine = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.FONT -> ChoiceDialog(
             "Schriftart", HomeFont.entries.map { it to it.label }, s.font,
             onDismiss = { dialog = SettingsDialog.NONE },

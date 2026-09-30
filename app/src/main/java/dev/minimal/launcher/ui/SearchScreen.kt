@@ -160,7 +160,7 @@ fun SearchScreen(
                     when {
                         first != null -> onLaunch(first)
                         firstAction != null -> QuickActions.perform(context, firstAction)
-                        query.isNotBlank() -> SystemActions.webSearch(context, query)
+                        query.isNotBlank() -> SystemActions.webSearch(context, query, settings.searchEngine)
                     }
                 }),
                 modifier = Modifier
@@ -286,7 +286,7 @@ fun SearchScreen(
             }
             if (query.isNotBlank()) {
                 item(key = "web") {
-                    ActionLine("Im Web suchen: „$query“") { SystemActions.webSearch(context, query) }
+                    ActionLine("Im Web suchen: „$query“") { SystemActions.webSearch(context, query, settings.searchEngine) }
                 }
                 item(key = "store") {
                     ActionLine("Im Play Store suchen") { SystemActions.storeSearch(context, query) }

@@ -37,7 +37,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - **Vorschläge**: meistgenutzte Apps beim Öffnen der Suche; Treffer werden nach Nutzung sortiert (nur lokal gespeichert)
 - **App-Aktionen** in der Suche, z. B. „Neue Nachricht“ oder „Scannen“
 - **Kontakte** in den Suchergebnissen (fragt beim ersten Mal nach der Berechtigung, abschaltbar)
-- Websuche und Play-Store-Suche als Fallback; Enter öffnet den ersten Treffer
+- Websuche mit wählbarer Suchmaschine (Google, DuckDuckGo, Startpage, Ecosia, Bing) und Play-Store-Suche als Fallback; Enter öffnet den ersten Treffer
 
 **Benachrichtigungen**
 - Benachrichtigungspunkte an Apps und Ordnern
@@ -63,6 +63,9 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Wenn aktiv: ausgegraut, keine Benachrichtigungen/Punkte, einstellbare Denkpause (0–30 s) vor dem Öffnen
 - Manuell (lange auf den Startbildschirm drücken) oder per Zeitplan
 
+**App-Sperre**
+- Ausgewählte Apps öffnen sich aus dem Launcher nur nach Fingerabdruck/PIN (inkl. ihrer Shortcuts); keine Benachrichtigungsvorschau
+
 **Stabilität & Tempo**
 - App-Namen und Icons werden zwischengespeichert – der Launcher ist nach einem Neustart sofort da
 - Lokales Absturzprotokoll unter *Einstellungen → Fehlerprotokoll* (teilen oder löschen); es werden keine Daten automatisch gesendet
@@ -79,6 +82,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 | App lange drücken | App-Menü |
 | Favorit lange drücken und ziehen | Favoriten umsortieren |
 | Links/rechts wischen | Favoriten-Seite wechseln |
+| Home-Taste auf dem Startbildschirm | einstellbar (z. B. Suche öffnen) |
 
 ## Einrichtung
 

@@ -102,7 +102,7 @@ fun AppActionsSheet(
             }
             Spacer(Modifier.height(12.dp))
 
-            if (shortcuts.isNotEmpty()) {
+            if (shortcuts.isNotEmpty() && app.key !in settings.lockedApps) {
                 shortcuts.forEach { shortcut ->
                     ShortcutRow(shortcut, vm) {
                         vm.startShortcut(shortcut)
@@ -134,6 +134,12 @@ fun AppActionsSheet(
                 if (app.key in settings.focusApps) "Nicht mehr als ablenkend markieren" else "Als ablenkend markieren (Fokus-Modus)"
             ) {
                 vm.toggleFocusApp(app.key)
+                onDismiss()
+            }
+            SheetAction(
+                if (app.key in settings.lockedApps) "App-Sperre aufheben" else "Mit Fingerabdruck/PIN sperren"
+            ) {
+                vm.toggleLockedApp(app.key)
                 onDismiss()
             }
             SheetAction("Umbenennen") { renaming = true }
