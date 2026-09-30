@@ -15,6 +15,8 @@ import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.PageScheduler
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.Weather
+import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
@@ -300,6 +302,12 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun setFocusManual(enabled: Boolean) = store.update { it.copy(focusManual = enabled) }
 
     fun setFocusSchedule(schedule: PageSchedule?) = store.update { it.copy(focusSchedule = schedule) }
+
+    suspend fun weather(force: Boolean = false): WeatherInfo? {
+        val s = store.value
+        if (!s.showWeather) return null
+        return Weather.load(getApplication(), s.weatherCity, force)
+    }
 
     fun setNote(text: String) = store.update { it.copy(note = text.trim()) }
 

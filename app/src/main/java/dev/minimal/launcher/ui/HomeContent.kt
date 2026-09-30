@@ -89,6 +89,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
 import dev.minimal.launcher.data.NowPlaying
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.util.CalendarEvent
 import dev.minimal.launcher.util.CalendarEvents
 import kotlinx.coroutines.Dispatchers
@@ -124,6 +125,7 @@ fun HomeContent(
     onPageChange: (String) -> Unit,
     screenTimeTotal: Long?,
     onScreenTimeClick: () -> Unit,
+    weather: WeatherInfo?,
     onNoteClick: () -> Unit,
     onStartShortcut: (AppInfo, String) -> Unit,
     perform: (GestureAction) -> Unit,
@@ -185,7 +187,7 @@ fun HomeContent(
                 .then(sidePadding)
         ) {
             Spacer(Modifier.height(32.dp))
-            ClockBlock(settings, screenTimeTotal, onScreenTimeClick)
+            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather)
             if (settings.note.isNotBlank()) NoteLine(settings.note, onNoteClick)
             if (settings.showMedia) MediaBlock()
             if (settings.widgets.isNotEmpty()) {
@@ -248,7 +250,12 @@ private fun NoteLine(note: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ClockBlock(settings: LauncherSettings, screenTimeTotal: Long?, onScreenTimeClick: () -> Unit) {
+private fun ClockBlock(
+    settings: LauncherSettings,
+    screenTimeTotal: Long?,
+    onScreenTimeClick: () -> Unit,
+    weather: WeatherInfo?,
+) {
     val context = LocalContext.current
     val colors = LocalHomeColors.current
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -282,6 +289,19 @@ private fun ClockBlock(settings: LauncherSettings, screenTimeTotal: Long?, onScr
                 ),
                 style = homeTextStyle(18.sp).copy(color = colors.secondary),
                 modifier = Modifier.clickable(noRipple, null) { SystemActions.openCalendar(context) },
+            )
+        }
+        if (weather != null) {
+            Text(
+                weather.summary(),
+                style = homeTextStyle(15.sp).copy(color = colors.secondary),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null) {
+                        SystemActions.webSearch(context, "Wetter " + (weather.place ?: ""))
+                    },
             )
         }
         if (alarm != null) {

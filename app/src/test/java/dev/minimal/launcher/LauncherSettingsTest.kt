@@ -53,6 +53,8 @@ class LauncherSettingsTest {
         focusManual = true,
         focusPauseSeconds = 12,
         showScreenTime = true,
+        showWeather = true,
+        weatherCity = "Zürich",
         note = "Milch kaufen \"bio\"",
         focusSchedule = PageSchedule(setOf(6, 7), 22 * 60, 7 * 60),
         widgets = listOf(5, 7),

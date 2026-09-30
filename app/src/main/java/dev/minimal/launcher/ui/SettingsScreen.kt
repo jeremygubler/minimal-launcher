@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.Weather
 import kotlin.math.roundToInt
 import android.content.Intent
 import android.os.Build
@@ -99,6 +100,13 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val batteryUnrestricted = remember(resumeTick) { DeviceCompat.isIgnoringBatteryOptimizations(context) }
     val listenerDisconnected = remember(resumeTick) { DeviceCompat.isListenerDisconnected(context) }
     var crashLog by remember(resumeTick) { mutableStateOf(CrashLog.read(context)) }
+    var editingCity by remember { mutableStateOf(false) }
+    val requestLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!granted) {
+            Toast.makeText(context, "Ohne Standort bitte einen festen Ort eintragen", Toast.LENGTH_LONG).show()
+            editingCity = true
+        }
+    }
     var calendarAllowed by remember(resumeTick) { mutableStateOf(CalendarEvents.hasPermission(context)) }
     val requestCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         calendarAllowed = granted
@@ -259,6 +267,29 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item {
                 SwitchRow("Akku beim Laden und unter 20 % anzeigen", s.showBattery) { v -> vm.update { it.copy(showBattery = v) } }
+            }
+            item {
+                SwitchRow("Wetter unter der Uhr (Internet, Open-Meteo)", s.showWeather) { v ->
+                    vm.update { it.copy(showWeather = v) }
+                    if (v && s.weatherCity.isBlank() && !Weather.hasLocationPermission(context)) {
+                        requestLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    }
+                }
+            }
+            if (s.showWeather) {
+                item {
+                    ClickRow(
+                        "Ort fürs Wetter",
+                        s.weatherCity.ifBlank { "Automatisch (ungefährer Standort)" },
+                    ) { editingCity = true }
+                }
+                item {
+                    Hint(
+                        "Wetterdaten von Open-Meteo, ohne Konto und Tracking. Mit festem Ort ist keine " +
+                            "Standortberechtigung nötig; sonst wird der Standort auf ca. 1 km gerundet. " +
+                            "Aktualisierung alle 30 Minuten."
+                    )
+                }
             }
             item {
                 SwitchRow("Bildschirmzeit unter der Uhr", s.showScreenTime) { v ->
@@ -559,6 +590,21 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             onPick = { app ->
                 app?.let { vm.toggleFocusApp(it.key) }
                 pickingFocusApp = false
+            },
+        )
+    }
+    if (editingCity) {
+        TextInputDialog(
+            title = "Ort fürs Wetter",
+            initial = s.weatherCity,
+            hint = "z. B. Zürich – leer = Standort",
+            onDismiss = { editingCity = false },
+            onConfirm = { city ->
+                vm.update { it.copy(weatherCity = city.trim()) }
+                editingCity = false
+                if (city.isBlank() && !Weather.hasLocationPermission(context)) {
+                    requestLocation.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                }
             },
         )
     }

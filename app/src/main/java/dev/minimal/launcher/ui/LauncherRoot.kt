@@ -32,6 +32,7 @@ import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.Focus
+import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.util.SystemActions
 import kotlinx.coroutines.delay
@@ -66,6 +67,9 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = LocalDateTime.now() }
     val screenTime by produceState(emptyMap<String, Long>(), now, settings.showScreenTime) {
         value = if (settings.showScreenTime) vm.screenTimeToday() else emptyMap()
+    }
+    val weather by produceState<WeatherInfo?>(null, now, settings.showWeather, settings.weatherCity) {
+        value = if (settings.showWeather) vm.weather() else null
     }
     var showScreenTimeDialog by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf(false) }
@@ -161,6 +165,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onPageChange = vm::setCurrentPage,
                 screenTimeTotal = if (settings.showScreenTime && screenTime.isNotEmpty()) screenTime.values.sum() else null,
                 onScreenTimeClick = { showScreenTimeDialog = true },
+                weather = weather,
                 onNoteClick = { editingNote = true },
                 onStartShortcut = { app, id -> vm.startShortcutById(app, id) },
                 perform = perform,

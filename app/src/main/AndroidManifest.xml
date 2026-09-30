@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Nur für das optionale Wetter (standardmäßig aus) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- Bildschirmzeit (Nutzer muss „Nutzungszugriff“ erlauben) -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"

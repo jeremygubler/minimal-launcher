@@ -82,6 +82,10 @@ data class LauncherSettings(
     /** Dauer der Denkpause im Fokus-Modus in Sekunden (0 = keine). */
     val focusPauseSeconds: Int = 5,
     val showScreenTime: Boolean = false,
+    /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
+    val showWeather: Boolean = false,
+    /** Fester Ort fürs Wetter; leer = ungefährer Standort. */
+    val weatherCity: String = "",
     /** Schnellnotiz auf dem Startbildschirm. */
     val note: String = "",
     val widgets: List<Int> = emptyList(),
@@ -158,6 +162,8 @@ data class LauncherSettings(
         focusSchedule?.let { put("focusSchedule", scheduleToJson(it)) }
         put("focusPauseSeconds", focusPauseSeconds)
         put("showScreenTime", showScreenTime)
+        put("showWeather", showWeather)
+        put("weatherCity", weatherCity)
         put("note", note)
         put("widgets", JSONArray(widgets))
         put("firstRunDone", firstRunDone)
@@ -230,6 +236,8 @@ data class LauncherSettings(
                 focusSchedule = o.optJSONObject("focusSchedule")?.let(::scheduleFromJson),
                 focusPauseSeconds = o.optInt("focusPauseSeconds", d.focusPauseSeconds).coerceIn(0, 60),
                 showScreenTime = o.optBoolean("showScreenTime", d.showScreenTime),
+                showWeather = o.optBoolean("showWeather", d.showWeather),
+                weatherCity = o.optString("weatherCity", ""),
                 note = o.optString("note", ""),
                 widgets = keepWidgets ?: o.optJSONArray("widgets")?.let { arr ->
                     (0 until arr.length()).map { arr.getInt(it) }

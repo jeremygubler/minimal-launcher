@@ -8,6 +8,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 **Startbildschirm**
 - Vertikale Favoritenliste, einhändig bedienbar (unten ausgerichtet)
 - Uhr, Datum, nächster Wecker und nächster Termin (antippen öffnet Uhr, Kalender bzw. den Termin)
+- **Wetter** (optional, standardmäßig aus): Open-Meteo ohne Konto, fester Ort oder gerundeter Standort
 - Akku-Hinweis beim Laden oder unter 20 %
 - **Bildschirmzeit** heute unter der Uhr (antippen: Top-Apps), Nutzung pro App im App-Menü – benötigt „Nutzungszugriff“, bleibt lokal
 - **Schnellnotiz** auf dem Startbildschirm (Home-Menü oder in der Suche `notiz …`)
