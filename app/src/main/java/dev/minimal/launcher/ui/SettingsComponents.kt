@@ -71,6 +71,15 @@ import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.util.SystemActions
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import dev.minimal.launcher.data.ContextState
+import dev.minimal.launcher.data.ContextType
+import dev.minimal.launcher.data.PageContext
+
 // Wiederverwendbare Bausteine der Einstellungen.
 
 @Composable
@@ -244,6 +253,101 @@ internal fun ScheduleDialog(
                 enabled = days.isNotEmpty() && start != end,
                 onClick = { onSave(PageSchedule(days, start, end)) },
             ) { Text("Speichern") }
+        },
+        dismissButton = {
+            Row {
+                if (existing != null) TextButton(onClick = { onSave(null) }) { Text("Entfernen") }
+                TextButton(onClick = onDismiss) { Text("Abbrechen") }
+            }
+        },
+    )
+}
+
+@Composable
+internal fun ContextDialog(
+    title: String,
+    existing: PageContext?,
+    current: ContextState,
+    bondedDevices: List<String>,
+    hasBluetooth: Boolean,
+    hasWifi: Boolean,
+    onRequestBluetooth: () -> Unit,
+    onRequestWifi: () -> Unit,
+    onDismiss: () -> Unit,
+    onSave: (PageContext?) -> Unit,
+) {
+    var type by remember { mutableStateOf(existing?.type) }
+    var value by remember { mutableStateOf(existing?.value.orEmpty()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                Modifier
+                    .heightIn(max = 460.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                ContextType.entries.forEach { t ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { type = t },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = type == t, onClick = { type = t })
+                        Text(t.label)
+                    }
+                }
+                Spacer(Modifier.size(8.dp))
+                when (type) {
+                    ContextType.HEADPHONES -> Hint("Gerade: " + if (current.headphones) "verbunden" else "nicht verbunden")
+                    ContextType.CHARGING -> Hint("Gerade: " + if (current.charging) "lädt" else "lädt nicht")
+                    ContextType.BLUETOOTH -> if (!hasBluetooth) {
+                        Text("Dafür braucht der Launcher die Berechtigung „Geräte in der Nähe“.")
+                        TextButton(onClick = onRequestBluetooth) { Text("Berechtigung erteilen") }
+                    } else {
+                        if (bondedDevices.isEmpty()) Text("Keine gekoppelten Geräte gefunden.")
+                        bondedDevices.forEach { name ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { value = name },
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(selected = value == name, onClick = { value = name })
+                                Text(name + if (name in current.bluetooth) " · verbunden" else "")
+                            }
+                        }
+                    }
+                    ContextType.WIFI -> {
+                        if (!hasWifi) {
+                            Text("Android gibt den WLAN-Namen nur mit Standortberechtigung heraus.")
+                            TextButton(onClick = onRequestWifi) { Text("Standort erlauben") }
+                        }
+                        OutlinedTextField(
+                            value = value,
+                            onValueChange = { value = it },
+                            singleLine = true,
+                            label = { Text("WLAN-Name") },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        current.wifi?.let { ssid ->
+                            TextButton(onClick = { value = ssid }) { Text("Aktuelles WLAN übernehmen: $ssid") }
+                        }
+                    }
+                    null -> Unit
+                }
+            }
+        },
+        confirmButton = {
+            val t = type
+            val valid = t != null && (t == ContextType.HEADPHONES || t == ContextType.CHARGING || value.isNotBlank())
+            TextButton(enabled = valid, onClick = {
+                if (t != null) {
+                    onSave(PageContext(t, value.trim().ifBlank { null }.takeIf { t == ContextType.BLUETOOTH || t == ContextType.WIFI }))
+                }
+            }) { Text("Speichern") }
         },
         dismissButton = {
             Row {

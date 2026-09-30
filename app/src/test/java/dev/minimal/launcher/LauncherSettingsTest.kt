@@ -4,6 +4,8 @@ import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.MAIN_PAGE
 import dev.minimal.launcher.data.PageSchedule
+import dev.minimal.launcher.data.PageContext
+import dev.minimal.launcher.data.ContextType
 import dev.minimal.launcher.data.SearchEngine
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.HomeFont
@@ -56,6 +58,8 @@ class LauncherSettingsTest {
         pages = listOf(
             FavoritePage(MAIN_PAGE, "Start"),
             FavoritePage("work", "Arbeit", PageSchedule(setOf(1, 2, 3, 4, 5), 8 * 60, 17 * 60)),
+            FavoritePage("car", "Fahren", context = PageContext(ContextType.BLUETOOTH, "Mein Auto")),
+            FavoritePage("music", "Musik", context = PageContext(ContextType.HEADPHONES)),
         ),
         currentPage = "work",
         autoPages = true,

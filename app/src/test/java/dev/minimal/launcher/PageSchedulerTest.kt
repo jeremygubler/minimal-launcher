@@ -5,6 +5,9 @@ import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.MAIN_PAGE
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.PageScheduler
+import dev.minimal.launcher.data.PageContext
+import dev.minimal.launcher.data.ContextType
+import dev.minimal.launcher.data.ContextState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -58,5 +61,49 @@ class PageSchedulerTest {
         assertEquals("Mo–Fr 08:00–17:00", work.describe())
         assertEquals("Täglich 22:00–06:00", night.describe())
         assertEquals("Sa, So 10:00–12:00", PageSchedule(setOf(6, 7), 600, 720).describe())
+    }
+}
+
+class PageContextTest {
+    private val monday10 = LocalDateTime.of(2026, 9, 28, 10, 0)
+    private val work = PageSchedule(setOf(1, 2, 3, 4, 5), 8 * 60, 17 * 60)
+    private val settings = LauncherSettings(
+        pages = listOf(
+            FavoritePage(MAIN_PAGE, "Start"),
+            FavoritePage("work", "Arbeit", schedule = work),
+            FavoritePage("car", "Fahren", context = PageContext(ContextType.BLUETOOTH, "Mein Auto")),
+            FavoritePage("music", "Musik", context = PageContext(ContextType.HEADPHONES)),
+            FavoritePage("office", "Büro", context = PageContext(ContextType.WIFI, "Firma-WLAN")),
+        ),
+    )
+
+    @Test
+    fun contextBeatsSchedule() {
+        val ctx = ContextState(headphones = true)
+        assertEquals("music", PageScheduler.pageFor(settings, monday10, ctx))
+    }
+
+    @Test
+    fun firstMatchingContextWins() {
+        val ctx = ContextState(headphones = true, bluetooth = setOf("mein auto"))
+        assertEquals("car", PageScheduler.pageFor(settings, monday10, ctx))
+    }
+
+    @Test
+    fun wifiMatchesIgnoringCase() {
+        assertEquals("office", PageScheduler.pageFor(settings, monday10, ContextState(wifi = "firma-wlan")))
+        assertEquals("work", PageScheduler.pageFor(settings, monday10, ContextState(wifi = "Zuhause")))
+    }
+
+    @Test
+    fun defaultIsFirstPageWithoutRules() {
+        val evening = LocalDateTime.of(2026, 9, 28, 20, 0)
+        assertEquals(MAIN_PAGE, PageScheduler.pageFor(settings, evening, ContextState()))
+    }
+
+    @Test
+    fun rulesWithoutValueNeverMatch() {
+        assertFalse(PageContext(ContextType.BLUETOOTH, null).matches(ContextState(bluetooth = setOf("x"))))
+        assertTrue(PageContext(ContextType.CHARGING).matches(ContextState(charging = true)))
     }
 }

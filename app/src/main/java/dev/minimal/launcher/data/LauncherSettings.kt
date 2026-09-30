@@ -50,7 +50,13 @@ data class Favorite(
 const val MAIN_PAGE = "main"
 
 /** Eine Favoriten-Seite, z. B. „Start“, „Arbeit“, „Privat“. */
-data class FavoritePage(val id: String, val name: String, val schedule: PageSchedule? = null)
+data class FavoritePage(
+    val id: String,
+    val name: String,
+    val schedule: PageSchedule? = null,
+    /** Kontextregel (hat Vorrang vor dem Zeitplan). */
+    val context: PageContext? = null,
+)
 
 data class LauncherSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -187,6 +193,12 @@ data class LauncherSettings(
                     p.schedule?.let { sch ->
                         put("schedule", scheduleToJson(sch))
                     }
+                    p.context?.let { c ->
+                        put("context", JSONObject().apply {
+                            put("type", c.type.name)
+                            c.value?.let { put("value", it) }
+                        })
+                    }
                 })
             }
         })
@@ -273,6 +285,10 @@ data class LauncherSettings(
                             id = p.optString("id").ifEmpty { return@mapNotNull null },
                             name = p.optString("name", "Seite"),
                             schedule = p.optJSONObject("schedule")?.let(::scheduleFromJson),
+                            context = p.optJSONObject("context")?.let { c ->
+                                enumValues<ContextType>().firstOrNull { it.name == c.optString("type") }
+                                    ?.let { PageContext(it, c.optString("value").ifEmpty { null }) }
+                            },
                         )
                     }
                 }?.takeIf { it.isNotEmpty() } ?: d.pages,

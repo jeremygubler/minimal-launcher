@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.ContextMonitor
 import dev.minimal.launcher.data.SearchEngine
 import dev.minimal.launcher.data.Weather
 import kotlin.math.roundToInt
@@ -86,6 +87,17 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var editFolderId by remember { mutableStateOf<String?>(null) }
     var renamePageId by remember { mutableStateOf<String?>(null) }
     var schedulePageId by remember { mutableStateOf<String?>(null) }
+    var contextPageId by remember { mutableStateOf<String?>(null) }
+    val contextState by ContextMonitor.state.collectAsStateWithLifecycle()
+    var permissionTick by remember { mutableIntStateOf(0) }
+    val requestBluetooth = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        ContextMonitor.refresh(context)
+        permissionTick++
+    }
+    val requestFineLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        ContextMonitor.refresh(context)
+        permissionTick++
+    }
     var editFocusSchedule by remember { mutableStateOf(false) }
     var editGrayscale by remember { mutableStateOf(false) }
     var pickingFocusApp by remember { mutableStateOf(false) }
@@ -345,14 +357,14 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { Hint("Auf dem Startbildschirm nach links/rechts wischen oder den Seitennamen antippen, um die Seite zu wechseln.") }
             if (s.pages.size > 1) {
                 item {
-                    SwitchRow("Seite automatisch nach Zeitplan wechseln", s.autoPages) { v -> vm.setAutoPages(v) }
+                    SwitchRow("Seite automatisch wechseln (Zeitplan & Kontext)", s.autoPages) { v -> vm.setAutoPages(v) }
                 }
                 if (s.autoPages) {
                     item {
                         Hint(
-                            "Mit ⏰ einer Seite Tage und Uhrzeit zuweisen. Außerhalb aller Zeitpläne gilt die erste " +
-                                "Seite ohne Zeitplan. Gewechselt wird nur zu Beginn und Ende eines Zeitfensters – " +
-                                "dazwischen kannst du frei wechseln."
+                            "⏰ Zeitplan (Tage + Uhrzeit) und 📍 Kontext (Kopfhörer, Laden, Bluetooth-Gerät, WLAN) " +
+                                "pro Seite. Kontext hat Vorrang vor Zeitplänen; sonst gilt die erste Seite ohne Regeln. " +
+                                "Gewechselt wird nur, wenn sich etwas ändert – dazwischen kannst du frei wechseln."
                         )
                     }
                 }
@@ -375,12 +387,16 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                         TextButton(onClick = { vm.movePage(page.id, -1) }, enabled = pageIndex > 0) { Text("↑") }
                         TextButton(onClick = { vm.movePage(page.id, 1) }, enabled = pageIndex < s.pages.lastIndex) { Text("↓") }
                         if (s.autoPages && s.pages.size > 1) TextButton(onClick = { schedulePageId = page.id }) { Text("⏰") }
+                        if (s.autoPages && s.pages.size > 1) TextButton(onClick = { contextPageId = page.id }) { Text("📍") }
                         TextButton(onClick = { renamePageId = page.id }) { Text("✎") }
                         if (s.pages.size > 1) TextButton(onClick = { deletePageId = page.id }) { Text("✕") }
                     }
                 }
                 if (s.autoPages && page.schedule != null) {
                     item(key = "page_schedule_${page.id}") { Hint("⏰ " + page.schedule.describe()) }
+                }
+                if (s.autoPages && page.context != null) {
+                    item(key = "page_context_${page.id}") { Hint("📍 " + page.context.describe()) }
                 }
                 val pageFavs = s.pageFavorites(page.id)
                 if (pageFavs.isEmpty()) {
@@ -687,6 +703,30 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             },
         )
+    }
+    contextPageId?.let { id ->
+        s.pages.firstOrNull { it.id == id }?.let { page ->
+            val hasBluetooth = remember(permissionTick, resumeTick) { ContextMonitor.hasBluetoothPermission(context) }
+            val hasWifi = remember(permissionTick, resumeTick) { ContextMonitor.hasWifiPermission(context) }
+            val bonded = remember(permissionTick, resumeTick) { ContextMonitor.bondedDevices(context) }
+            ContextDialog(
+                title = "Kontext: ${page.name}",
+                existing = page.context,
+                current = contextState,
+                bondedDevices = bonded,
+                hasBluetooth = hasBluetooth,
+                hasWifi = hasWifi,
+                onRequestBluetooth = {
+                    if (Build.VERSION.SDK_INT >= 31) requestBluetooth.launch(Manifest.permission.BLUETOOTH_CONNECT)
+                },
+                onRequestWifi = { requestFineLocation.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+                onDismiss = { contextPageId = null },
+                onSave = { ctx ->
+                    vm.setPageContext(id, ctx)
+                    contextPageId = null
+                },
+            )
+        }
     }
     schedulePageId?.let { id ->
         s.pages.firstOrNull { it.id == id }?.let { page ->

@@ -37,9 +37,13 @@ data class PageSchedule(val days: Set<Int>, val start: Int, val end: Int) {
 }
 
 object PageScheduler {
-    /** Seite, die laut Zeitplan jetzt aktiv sein soll. */
-    fun pageFor(settings: LauncherSettings, now: LocalDateTime): String =
-        settings.pages.firstOrNull { it.schedule?.matches(now) == true }?.id
-            ?: settings.pages.firstOrNull { it.schedule == null }?.id
+    /**
+     * Seite, die jetzt aktiv sein soll: zuerst Kontextregeln (genauer), dann Zeitpläne,
+     * sonst die erste Seite ohne Regeln.
+     */
+    fun pageFor(settings: LauncherSettings, now: LocalDateTime, context: ContextState = ContextState()): String =
+        settings.pages.firstOrNull { it.context?.matches(context) == true }?.id
+            ?: settings.pages.firstOrNull { it.schedule?.matches(now) == true }?.id
+            ?: settings.pages.firstOrNull { it.schedule == null && it.context == null }?.id
             ?: settings.pages.first().id
 }

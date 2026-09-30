@@ -13,6 +13,8 @@ import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
+import dev.minimal.launcher.data.PageContext
+import dev.minimal.launcher.data.ContextMonitor
 import dev.minimal.launcher.data.PageScheduler
 import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.data.Weather
@@ -74,6 +76,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val homePressed: SharedFlow<Boolean> = _homePressed
 
     init {
+        // Kontextänderungen (Kopfhörer, Laden, Bluetooth, WLAN) sofort auswerten.
+        viewModelScope.launch {
+            ContextMonitor.state.collect { checkSchedule() }
+        }
         // Zeitplan jede Minute prüfen (zur vollen Minute).
         viewModelScope.launch {
             while (true) {
@@ -220,11 +226,17 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             lastScheduledPage = null
             return
         }
-        val target = PageScheduler.pageFor(s, now)
+        val target = PageScheduler.pageFor(s, now, ContextMonitor.state.value)
         if (target != lastScheduledPage) {
             lastScheduledPage = target
             setCurrentPage(target)
         }
+    }
+
+    fun setPageContext(id: String, context: PageContext?) {
+        store.update { s -> s.copy(pages = s.pages.map { if (it.id == id) it.copy(context = context) else it }) }
+        lastScheduledPage = null
+        checkSchedule()
     }
 
     fun setPageSchedule(id: String, schedule: PageSchedule?) {
