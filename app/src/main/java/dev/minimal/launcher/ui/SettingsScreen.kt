@@ -373,7 +373,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             if (s.showScreenTime && !usageAccess) {
                 item {
-                    Hint("Dafür „Nutzungszugriff“ für Minimal Launcher erlauben. Die Daten bleiben auf dem Gerät.")
+                    Hint("Dafür „Nutzungszugriff“ für Kanso erlauben. Die Daten bleiben auf dem Gerät.")
                 }
                 item { ClickRow("Nutzungszugriff erlauben", null) { SystemActions.openUsageAccess(context) } }
             }
@@ -635,7 +635,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     ClickRow("Protokoll teilen", "Zum Beispiel per E-Mail oder Chat senden") {
                         val send = Intent(Intent.ACTION_SEND)
                             .setType("text/plain")
-                            .putExtra(Intent.EXTRA_SUBJECT, "Minimal Launcher – Fehlerprotokoll")
+                            .putExtra(Intent.EXTRA_SUBJECT, "Kanso – Fehlerprotokoll")
                             .putExtra(Intent.EXTRA_TEXT, log)
                         SystemActions.start(context, Intent.createChooser(send, "Protokoll teilen"))
                     }
@@ -653,7 +653,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 ClickRow("Diagnose teilen", "Technische Infos für die Fehlersuche (Profile, Berechtigungen)") {
                     val send = Intent(Intent.ACTION_SEND)
                         .setType("text/plain")
-                        .putExtra(Intent.EXTRA_SUBJECT, "Minimal Launcher – Diagnose")
+                        .putExtra(Intent.EXTRA_SUBJECT, "Kanso – Diagnose")
                         .putExtra(Intent.EXTRA_TEXT, vm.diagnostics())
                     SystemActions.start(context, Intent.createChooser(send, "Diagnose teilen"))
                 }
@@ -691,7 +691,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     }
                 }
             }
-            item { ClickRow("Einstellungen exportieren", "Als JSON-Datei speichern") { exportLauncher.launch("minimal-launcher-backup.json") } }
+            item { ClickRow("Einstellungen exportieren", "Als JSON-Datei speichern") { exportLauncher.launch("kanso-backup.json") } }
             item { ClickRow("Einstellungen importieren", "Aus JSON-Datei wiederherstellen") { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) } }
         }
     }

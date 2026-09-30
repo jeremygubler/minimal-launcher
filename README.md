@@ -1,4 +1,6 @@
-# Minimal Launcher
+# Kanso
+
+*Kanso (簡素) – japanisch für Einfachheit durch Weglassen des Unnötigen.*
 
 Ein minimalistischer Android-Launcher im Stil von Niagara – geschrieben in Kotlin mit Jetpack Compose.
 Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.

@@ -1,8 +1,8 @@
-# Datenschutzerklärung – Minimal Launcher
+# Datenschutzerklärung – Kanso
 
 *Stand: 30. September 2026*
 
-Minimal Launcher („die App“) ist ein Startbildschirm für Android. Grundsatz: **Alles bleibt auf deinem Gerät.**
+Kanso („die App“) ist ein Startbildschirm für Android. Grundsatz: **Alles bleibt auf deinem Gerät.**
 Die App hat kein Konto, keine Werbung, keine Analyse- oder Tracking-Dienste und keinen eigenen Server.
 
 ## Welche Daten die App verarbeitet – und wo
@@ -44,9 +44,9 @@ Fragen zum Datenschutz: *[deine E-Mail-Adresse eintragen]*
 
 ---
 
-# Privacy Policy – Minimal Launcher (English)
+# Privacy Policy – Kanso (English)
 
-Minimal Launcher is an Android home screen app. **All data stays on your device.** There are no accounts, ads,
+Kanso is an Android home screen app. **All data stays on your device.** There are no accounts, ads,
 analytics or trackers, and no own server. Permissions (notifications, usage access, contacts, calendar, Bluetooth,
 location, accessibility) are optional and used only for the features described above; none of this data leaves the
 device. The only network connection is to **Open-Meteo** for the optional weather feature (off by default), sending

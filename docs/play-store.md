@@ -4,8 +4,8 @@
 
 1. **Google-Play-Entwicklerkonto** anlegen (einmalig 25 USD): https://play.google.com/console
 2. **Namen & Paketnamen festlegen** – in `gradle.properties`:
-   - `launcherName=…` (Anzeigename)
-   - `playApplicationId=…` (z. B. `ch.deinname.launcher` – danach nicht mehr änderbar)
+   - `launcherName=…` (Anzeigename, gesetzt: `Kanso`)
+   - `playApplicationId=…` (gesetzt: `ch.gubler.kanso` – nach dem ersten Upload nicht mehr änderbar)
 3. **Upload-Schlüssel erzeugen** (auf deinem Rechner, gut aufbewahren):
    ```bash
    keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000
@@ -13,7 +13,7 @@
    ```
    In GitHub unter *Settings → Secrets and variables → Actions* anlegen:
    `UPLOAD_KEYSTORE_BASE64` (Inhalt von upload.b64), `UPLOAD_STORE_PASSWORD`, `UPLOAD_KEY_ALIAS` (= upload),
-   `UPLOAD_KEY_PASSWORD`. Danach baut jeder Push ein signiertes **AAB** (Artefakt „minimal-launcher-play-aab“).
+   `UPLOAD_KEY_PASSWORD`. Danach baut jeder Push ein signiertes **AAB** (Artefakt „kanso-play-aab“).
    In der Play Console **Play App Signing** aktivieren (Standard) – der Upload-Schlüssel ist dann ersetzbar.
 4. **Datenschutzerklärung veröffentlichen** (öffentliche URL nötig): Inhalt aus `docs/privacy-policy.md`,
    z. B. als GitHub Pages (Repo müsste dafür öffentlich sein) oder auf einer eigenen Webseite.
@@ -23,6 +23,11 @@
 6. **Test**: interne Testspur anlegen, dich als Lizenztester eintragen, AAB hochladen, Kauf testen.
 
 ## 2. Store-Eintrag
+
+**App-Name (max. 30 Zeichen)**
+> Kanso – Minimal Launcher
+
+*Kanso (簡素) ist ein japanisches Gestaltungsprinzip: Einfachheit durch Weglassen des Unnötigen.*
 
 **Kurzbeschreibung (max. 80 Zeichen)**
 > Minimalistischer Launcher: Favoriten, Buchstabenleiste, Fokus-Modus, Bildschirmzeit.

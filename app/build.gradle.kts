@@ -45,14 +45,14 @@ android {
         create("sideload") {
             dimension = "store"
             buildConfigField("boolean", "STORE_BUILD", "false")
-            resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Minimal Launcher"))
+            resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Kanso"))
             signingConfig = signingConfigs.getByName("shared")
         }
         create("play") {
             dimension = "store"
-            applicationId = providers.gradleProperty("playApplicationId").getOrElse("dev.minimal.launcher.play")
+            applicationId = providers.gradleProperty("playApplicationId").getOrElse("ch.gubler.kanso")
             buildConfigField("boolean", "STORE_BUILD", "true")
-            resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Minimal Launcher"))
+            resValue("string", "app_name", providers.gradleProperty("launcherName").getOrElse("Kanso"))
             signingConfig = signingConfigs.getByName("upload")
         }
     }
