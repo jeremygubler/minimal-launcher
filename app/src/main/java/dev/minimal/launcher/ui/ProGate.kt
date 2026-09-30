@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -38,30 +39,32 @@ fun PaywallDialog(feature: String?, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pro freischalten") },
+        title = { Text(tr("Pro freischalten", "Unlock Pro")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (feature != null) Text("„$feature“ gehört zu Pro.", style = MaterialTheme.typography.bodyLarge)
+                if (feature != null) Text(tr("„$feature“ gehört zu Pro.", "“$feature” is part of Pro."), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    "Einmal kaufen, für immer nutzen – kein Abo:\n" +
-                        "• Kontextbasierte Seiten (Auto, Kopfhörer, WLAN, Laden)\n" +
-                        "• Eigene Icons pro App\n" +
-                        "• Automatische tägliche Sicherung\n" +
-                        "• Wochenbericht, Tagesziel & Kategorie-Limits\n" +
-                        "• Aufgabenliste auf dem Startbildschirm",
+                    tr("Einmal kaufen, für immer nutzen – kein Abo:\n", "Buy once, use forever – no subscription:\n") +
+                        tr("• Kontextbasierte Seiten (Auto, Kopfhörer, WLAN, Laden)\n", "• Context-based pages (car, headphones, Wi-Fi, charging)\n") +
+                        tr("• Pop-up-Widgets auf Favoriten\n", "• Pop-up widgets on favorites\n") +
+                        tr("• Absichtsfrage mit Timer-Erinnerung\n", "• Intention prompt with timer reminder\n") +
+                        tr("• Wochenbericht, Tagesziel, Kategorie-Limits & Abendrückblick\n", "• Weekly report, daily goal, category limits & evening recap\n") +
+                        tr("• Eigene Icons pro App\n", "• Custom icons per app\n") +
+                        tr("• Aufgabenliste auf dem Startbildschirm\n", "• Task list on the home screen\n") +
+                        tr("• Automatische tägliche Sicherung", "• Automatic daily backup"),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = { context.findActivity()?.let(Pro::purchase) }) {
-                Text(if (price != null) "Freischalten · $price" else "Freischalten")
+                Text(if (price != null) tr("Freischalten · $price", "Unlock · $price") else tr("Freischalten", "Unlock"))
             }
         },
         dismissButton = {
             Row {
-                TextButton(onClick = { Pro.restore() }) { Text("Wiederherstellen") }
-                TextButton(onClick = onDismiss) { Text("Später") }
+                TextButton(onClick = { Pro.restore() }) { Text(tr("Wiederherstellen", "Restore")) }
+                TextButton(onClick = onDismiss) { Text(tr("Später", "Later")) }
             }
         },
     )
@@ -70,27 +73,27 @@ fun PaywallDialog(feature: String?, onDismiss: () -> Unit) {
 /** Hinweise vor Berechtigungsanfragen (von Google Play für Standort & Bedienungshilfe verlangt). */
 enum class Disclosure(val title: String, val text: String, val accept: String) {
     ACCESSIBILITY(
-        "Bedienungshilfe",
-        "Der Launcher nutzt die Bedienungshilfen-Schnittstelle von Android ausschließlich, um auf deinen Wunsch " +
-            "den Bildschirm per Doppeltipp zu sperren und die Benachrichtigungs- oder Schnelleinstellungsleiste per " +
-            "Wischgeste zu öffnen. Er liest keine Bildschirminhalte, beobachtet keine Eingaben und sammelt oder " +
-            "überträgt keine Daten.\n\nIm nächsten Schritt den Eintrag „… – Gesten“ aktivieren.",
-        "Weiter",
+        tr("Bedienungshilfe", "Accessibility service"),
+        tr("Der Launcher nutzt die Bedienungshilfen-Schnittstelle von Android ausschließlich, um auf deinen Wunsch ", "The launcher uses Android's accessibility API solely to, at your request, ") +
+            tr("den Bildschirm per Doppeltipp zu sperren und die Benachrichtigungs- oder Schnelleinstellungsleiste per ", "lock the screen with a double tap and open the notification or quick settings shade with a ") +
+            tr("Wischgeste zu öffnen. Er liest keine Bildschirminhalte, beobachtet keine Eingaben und sammelt oder ", "swipe gesture. It does not read screen content, observe input, or collect or ") +
+            tr("überträgt keine Daten.\n\nIm nächsten Schritt den Eintrag „… – Gesten“ aktivieren.", "transmit any data.\n\nIn the next step, enable the entry “… – Gestures”."),
+        tr("Weiter", "Continue"),
     ),
     WEATHER_LOCATION(
-        "Standort fürs Wetter",
-        "Für das Wetter am aktuellen Ort liest der Launcher deinen ungefähren Standort, rundet ihn auf ca. 1 km " +
-            "und sendet nur diese gerundeten Koordinaten an Open-Meteo, um die Vorhersage abzurufen. Der Standort " +
-            "wird nicht gespeichert und nur abgefragt, solange das Wetter eingeschaltet ist. Alternativ kannst du " +
-            "einen festen Ort eintragen – dann ist keine Standortberechtigung nötig.",
-        "Standort erlauben",
+        tr("Standort fürs Wetter", "Location for weather"),
+        tr("Für das Wetter am aktuellen Ort liest der Launcher deinen ungefähren Standort, rundet ihn auf ca. 1 km ", "For weather at your current location, the launcher reads your approximate location, rounds it to about 1 km ") +
+            tr("und sendet nur diese gerundeten Koordinaten an Open-Meteo, um die Vorhersage abzurufen. Der Standort ", "and sends only these rounded coordinates to Open-Meteo to fetch the forecast. The location ") +
+            tr("wird nicht gespeichert und nur abgefragt, solange das Wetter eingeschaltet ist. Alternativ kannst du ", "is not stored and only requested while weather is turned on. Alternatively you can ") +
+            tr("einen festen Ort eintragen – dann ist keine Standortberechtigung nötig.", "enter a fixed place – then no location permission is needed."),
+        tr("Standort erlauben", "Allow location"),
     ),
     WIFI_LOCATION(
-        "Standort für WLAN-Regeln",
-        "Android gibt den Namen des verbundenen WLANs nur mit Standortberechtigung heraus. Der Launcher nutzt sie " +
-            "ausschließlich, um den WLAN-Namen mit deiner Seitenregel zu vergleichen. Es werden keine Standortdaten " +
-            "gespeichert oder übertragen.",
-        "Standort erlauben",
+        tr("Standort für WLAN-Regeln", "Location for Wi-Fi rules"),
+        tr("Android gibt den Namen des verbundenen WLANs nur mit Standortberechtigung heraus. Der Launcher nutzt sie ", "Android only reveals the name of the connected Wi-Fi with location permission. The launcher uses it ") +
+            tr("ausschließlich, um den WLAN-Namen mit deiner Seitenregel zu vergleichen. Es werden keine Standortdaten ", "solely to compare the Wi-Fi name with your page rule. No location data ") +
+            tr("gespeichert oder übertragen.", "is stored or transmitted."),
+        tr("Standort erlauben", "Allow location"),
     ),
 }
 
@@ -106,6 +109,6 @@ fun DisclosureDialog(disclosure: Disclosure, onAccept: () -> Unit, onDismiss: ()
                 onAccept()
             }) { Text(disclosure.accept) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Nicht jetzt") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Nicht jetzt", "Not now")) } },
     )
 }

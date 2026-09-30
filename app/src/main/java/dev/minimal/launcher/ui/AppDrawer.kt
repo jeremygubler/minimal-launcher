@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -141,18 +142,18 @@ private fun PrivateSpaceHeader(locked: Boolean, padding: PaddingValues, onToggle
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Vertrauliches Profil",
+                tr("Vertrauliches Profil", "Private space"),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.secondary,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onSettings) { Text("Einstellungen") }
-            TextButton(onClick = onToggle) { Text(if (locked) "Entsperren" else "Sperren") }
+            TextButton(onClick = onSettings) { Text(tr("Einstellungen", "Settings")) }
+            TextButton(onClick = onToggle) { Text(if (locked) tr("Entsperren", "Unlock") else tr("Sperren", "Lock")) }
         }
         if (locked) {
             Text(
-                "Gesperrt – Apps sind ausgeblendet.",
+                tr("Gesperrt – Apps sind ausgeblendet.", "Locked – apps are hidden."),
                 style = homeTextStyle(14.sp).copy(color = colors.secondary),
             )
         }

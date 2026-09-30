@@ -1,5 +1,6 @@
 package dev.minimal.launcher.data
 
+import dev.minimal.launcher.util.tr
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -91,7 +92,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
                 throw e
             } catch (e: Exception) {
                 // z. B. Profil wird gerade gesperrt – beim nächsten Ereignis erneut versuchen, nicht abstürzen.
-                Log.w("AppRepository", "App-Liste konnte nicht geladen werden", e)
+                Log.w("AppRepository", tr("App-Liste konnte nicht geladen werden", "Couldn't load app list"), e)
             }
         }
     }
@@ -147,7 +148,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         try {
             userManager.requestQuietModeEnabled(locked, space.user)
         } catch (e: Exception) {
-            Toast.makeText(context, "Vertrauliches Profil konnte nicht geändert werden", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, tr("Vertrauliches Profil konnte nicht geändert werden", "Couldn't change private space"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -235,7 +236,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         try {
             launcherApps.startMainActivity(app.component, app.user, bounds, null)
         } catch (e: Exception) {
-            Toast.makeText(context, "App konnte nicht gestartet werden", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, tr("App konnte nicht gestartet werden", "Couldn't start app"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -296,7 +297,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         try {
             launcherApps.startShortcut(app.packageName, id, null, null, app.user)
         } catch (e: Exception) {
-            Toast.makeText(context, "Aktion nicht mehr verfügbar", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, tr("Aktion nicht mehr verfügbar", "Action no longer available"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -304,7 +305,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         try {
             launcherApps.startShortcut(shortcut, null, null)
         } catch (e: Exception) {
-            Toast.makeText(context, "Verknüpfung konnte nicht geöffnet werden", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, tr("Verknüpfung konnte nicht geöffnet werden", "Couldn't open shortcut"), Toast.LENGTH_SHORT).show()
         }
     }
 }

@@ -80,6 +80,10 @@ android {
         compose = true
         buildConfig = true
     }
+    // Die Tests prüfen die deutschen Texte; Englisch wird gezielt in LangTest geprüft.
+    testOptions {
+        unitTests.all { it.jvmArgs("-Duser.language=de", "-Duser.country=CH") }
+    }
 }
 
 dependencies {

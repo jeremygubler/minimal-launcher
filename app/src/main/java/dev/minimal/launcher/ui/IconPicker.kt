@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -55,7 +56,7 @@ fun IconPickerDialog(app: AppInfo, vm: LauncherViewModel, settings: LauncherSett
                 vm.setCustomIcon(app.key, spec)
                 onDismiss()
             } else {
-                Toast.makeText(context, "Bild konnte nicht geladen werden", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, tr("Bild konnte nicht geladen werden", "Couldn't load image"), Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -77,30 +78,30 @@ fun IconPickerDialog(app: AppInfo, vm: LauncherViewModel, settings: LauncherSett
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Icon für ${app.label}") },
+        title = { Text(tr("Icon für ${app.label}", "Icon for ${app.label}")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 packs.forEach { (pkg, label) ->
-                    SheetAction("Aus „$label“ wählen") { browsing = pkg to label }
+                    SheetAction(tr("Aus „$label“ wählen", "Choose from “$label”")) { browsing = pkg to label }
                 }
                 if (packs.isEmpty()) {
                     Text(
-                        "Kein Icon-Pack installiert. Icon-Packs gibt es im Play Store (Suche „icon pack“).",
+                        tr("Kein Icon-Pack installiert. Icon-Packs gibt es im Play Store (Suche „icon pack“).", "No icon pack installed. Get icon packs from the Play Store (search “icon pack”)."),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                SheetAction("Aus Galerie wählen") {
+                SheetAction(tr("Aus Galerie wählen", "Choose from gallery")) {
                     pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }
                 if (app.key in settings.customIcons) {
-                    SheetAction("Auf Standard zurücksetzen") {
+                    SheetAction(tr("Auf Standard zurücksetzen", "Reset to default")) {
                         vm.setCustomIcon(app.key, null)
                         onDismiss()
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) } },
     )
 }
 
@@ -128,7 +129,7 @@ private fun PackIconGrid(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,
-                    placeholder = { Text("Icon suchen, z. B. whatsapp") },
+                    placeholder = { Text(tr("Icon suchen, z. B. whatsapp", "Search icons, e.g. whatsapp")) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text("${shown.size} Icons", style = MaterialTheme.typography.bodySmall)
@@ -153,6 +154,6 @@ private fun PackIconGrid(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onBack) { Text("Zurück") } },
+        confirmButton = { TextButton(onClick = onBack) { Text(tr("Zurück", "Back")) } },
     )
 }

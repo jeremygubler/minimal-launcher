@@ -1,5 +1,6 @@
 package dev.minimal.launcher.util
 
+import dev.minimal.launcher.util.tr
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -15,17 +16,17 @@ sealed interface QuickAction {
     val icon: String
 
     data class OpenUrl(val url: String) : QuickAction {
-        override val title get() = "Öffnen: " + url.removePrefix("https://").removePrefix("http://")
+        override val title get() = tr("Öffnen: ", "Open: ") + url.removePrefix("https://").removePrefix("http://")
         override val icon get() = "🌐"
     }
 
     data class Call(val number: String) : QuickAction {
-        override val title get() = "Anrufen: $number"
+        override val title get() = tr("Anrufen: $number", "Call: $number")
         override val icon get() = "📞"
     }
 
     data class Sms(val number: String) : QuickAction {
-        override val title get() = "SMS an $number"
+        override val title get() = tr("SMS an $number", "Text $number")
         override val icon get() = "💬"
     }
 
@@ -35,12 +36,12 @@ sealed interface QuickAction {
     }
 
     data class Timer(val seconds: Int) : QuickAction {
-        override val title get() = "Timer starten: " + describeDuration(seconds)
+        override val title get() = tr("Timer starten: ", "Start timer: ") + describeDuration(seconds)
         override val icon get() = "⏱"
     }
 
     data class Alarm(val hour: Int, val minute: Int) : QuickAction {
-        override val title get() = "Wecker stellen: %02d:%02d".format(hour, minute)
+        override val title get() = tr("Wecker stellen: %02d:%02d", "Set alarm: %02d:%02d").format(hour, minute)
         override val icon get() = "⏰"
     }
 
@@ -79,7 +80,7 @@ object QuickActions {
     // --- Timer & Wecker -------------------------------------------------------
 
     private val timerRegex = Regex(
-        """^(?:timer|countdown)\s+(\d+)\s*(s|sek|sekunden|sec|m|min|minuten|h|std|stunden)?$|^(\d+)\s*(s|sek|sekunden|sec|m|min|minuten|h|std|stunden)\s+timer$""",
+        """^(?:timer|countdown)\s+(\d+)\s*(s|sek|sekunden|sec|secs|seconds?|m|min|mins|minuten|minutes?|h|std|stunden|hrs?|hours?)?$|^(\d+)\s*(s|sek|sekunden|sec|secs|seconds?|m|min|mins|minuten|minutes?|h|std|stunden|hrs?|hours?)\s+timer$""",
         RegexOption.IGNORE_CASE,
     )
 
@@ -88,8 +89,8 @@ object QuickActions {
         val amount = (m.groupValues[1].ifEmpty { m.groupValues[3] }).toIntOrNull() ?: return null
         val unit = m.groupValues[2].ifEmpty { m.groupValues[4] }.lowercase()
         val seconds = when (unit) {
-            "s", "sek", "sekunden", "sec" -> amount
-            "h", "std", "stunden" -> amount * 3600
+            "s", "sek", "sekunden", "sec", "secs", "second", "seconds" -> amount
+            "h", "std", "stunden", "hr", "hrs", "hour", "hours" -> amount * 3600
             else -> amount * 60
         }
         return if (seconds in 1..86_400) QuickAction.Timer(seconds) else null
@@ -127,24 +128,24 @@ object QuickActions {
 
     private data class SettingEntry(val label: String, val action: String, val keywords: List<String>)
 
-    private val settingEntries = listOf(
-        SettingEntry("WLAN-Einstellungen", Settings.ACTION_WIFI_SETTINGS, listOf("wlan", "wifi", "wi-fi")),
-        SettingEntry("Bluetooth-Einstellungen", Settings.ACTION_BLUETOOTH_SETTINGS, listOf("bluetooth", "bt")),
-        SettingEntry("Netzwerk & Internet", Settings.ACTION_WIRELESS_SETTINGS, listOf("netzwerk", "internet", "mobile daten", "daten")),
-        SettingEntry("Flugmodus", Settings.ACTION_AIRPLANE_MODE_SETTINGS, listOf("flugmodus", "flugzeug")),
-        SettingEntry("Akku", Intent.ACTION_POWER_USAGE_SUMMARY, listOf("akku", "batterie", "energie")),
-        SettingEntry("Display", Settings.ACTION_DISPLAY_SETTINGS, listOf("display", "bildschirm", "helligkeit", "dunkelmodus")),
-        SettingEntry("Töne & Vibration", Settings.ACTION_SOUND_SETTINGS, listOf("ton", "töne", "lautstärke", "klingelton", "vibration")),
-        SettingEntry("Standort", Settings.ACTION_LOCATION_SOURCE_SETTINGS, listOf("standort", "gps", "ortung")),
-        SettingEntry("Apps", Settings.ACTION_APPLICATION_SETTINGS, listOf("apps", "anwendungen")),
-        SettingEntry("Speicher", Settings.ACTION_INTERNAL_STORAGE_SETTINGS, listOf("speicher", "speicherplatz")),
-        SettingEntry("NFC", Settings.ACTION_NFC_SETTINGS, listOf("nfc", "kontaktlos")),
-        SettingEntry("Datum & Uhrzeit", Settings.ACTION_DATE_SETTINGS, listOf("datum", "uhrzeit", "zeitzone")),
-        SettingEntry("Sprache", Settings.ACTION_LOCALE_SETTINGS, listOf("sprache", "language")),
-        SettingEntry("Sicherheit & Datenschutz", Settings.ACTION_SECURITY_SETTINGS, listOf("sicherheit", "datenschutz", "fingerabdruck")),
-        SettingEntry("Bedienungshilfen", Settings.ACTION_ACCESSIBILITY_SETTINGS, listOf("bedienungshilfe", "barrierefreiheit")),
-        SettingEntry("Entwickleroptionen", Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS, listOf("entwickler", "developer")),
-        SettingEntry("Einstellungen", Settings.ACTION_SETTINGS, listOf("einstellungen", "settings")),
+    private val settingEntries: List<SettingEntry> get() = listOf(
+        SettingEntry(tr("WLAN-Einstellungen", "Wi-Fi settings"), Settings.ACTION_WIFI_SETTINGS, listOf("wlan", "wifi", "wi-fi")),
+        SettingEntry(tr("Bluetooth-Einstellungen", "Bluetooth settings"), Settings.ACTION_BLUETOOTH_SETTINGS, listOf("bluetooth", "bt")),
+        SettingEntry(tr("Netzwerk & Internet", "Network & internet"), Settings.ACTION_WIRELESS_SETTINGS, listOf("netzwerk", "internet", "mobile daten", "daten", "network", "mobile data")),
+        SettingEntry(tr("Flugmodus", "Airplane mode"), Settings.ACTION_AIRPLANE_MODE_SETTINGS, listOf("flugmodus", "flugzeug", "airplane", "flight mode")),
+        SettingEntry(tr("Akku", "Battery"), Intent.ACTION_POWER_USAGE_SUMMARY, listOf("akku", "batterie", "energie", "battery")),
+        SettingEntry("Display", Settings.ACTION_DISPLAY_SETTINGS, listOf("display", "bildschirm", "helligkeit", "dunkelmodus", "screen", "brightness", "dark mode")),
+        SettingEntry(tr("Töne & Vibration", "Sound & vibration"), Settings.ACTION_SOUND_SETTINGS, listOf("ton", "töne", "lautstärke", "klingelton", "vibration", "sound", "volume", "ringtone")),
+        SettingEntry(tr("Standort", "Location"), Settings.ACTION_LOCATION_SOURCE_SETTINGS, listOf("standort", "gps", "ortung", "location")),
+        SettingEntry("Apps", Settings.ACTION_APPLICATION_SETTINGS, listOf("apps", "anwendungen", "applications")),
+        SettingEntry(tr("Speicher", "Storage"), Settings.ACTION_INTERNAL_STORAGE_SETTINGS, listOf("speicher", "speicherplatz", "storage")),
+        SettingEntry("NFC", Settings.ACTION_NFC_SETTINGS, listOf("nfc", "kontaktlos", "contactless")),
+        SettingEntry(tr("Datum & Uhrzeit", "Date & time"), Settings.ACTION_DATE_SETTINGS, listOf("datum", "uhrzeit", "zeitzone", "date", "time", "time zone")),
+        SettingEntry(tr("Sprache", "Language"), Settings.ACTION_LOCALE_SETTINGS, listOf("sprache", "language")),
+        SettingEntry(tr("Sicherheit & Datenschutz", "Security & privacy"), Settings.ACTION_SECURITY_SETTINGS, listOf("sicherheit", "datenschutz", "fingerabdruck", "security", "privacy", "fingerprint")),
+        SettingEntry(tr("Bedienungshilfen", "Accessibility"), Settings.ACTION_ACCESSIBILITY_SETTINGS, listOf("bedienungshilfe", "barrierefreiheit", "accessibility")),
+        SettingEntry(tr("Entwickleroptionen", "Developer options"), Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS, listOf("entwickler", "developer")),
+        SettingEntry(tr("Einstellungen", "Settings"), Settings.ACTION_SETTINGS, listOf("einstellungen", "settings")),
     )
 
     private fun settings(q: String): List<QuickAction.SystemSetting> {

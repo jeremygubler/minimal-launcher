@@ -1,5 +1,6 @@
 package dev.minimal.launcher.data
 
+import dev.minimal.launcher.util.tr
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
@@ -34,8 +35,8 @@ object AutoBackup {
 
         children(resolver, tree, rootId).filter { it.second == name }.forEach { delete(resolver, tree, it.first) }
         val doc = DocumentsContract.createDocument(resolver, parent, "application/json", name)
-            ?: error("Datei konnte nicht angelegt werden")
-        resolver.openOutputStream(doc)?.use { it.write(json.toByteArray()) } ?: error("Kein Schreibzugriff")
+            ?: error(tr("Datei konnte nicht angelegt werden", "Couldn't create file"))
+        resolver.openOutputStream(doc)?.use { it.write(json.toByteArray()) } ?: error(tr("Kein Schreibzugriff", "No write access"))
 
         children(resolver, tree, rootId)
             .filter { it.second.startsWith(PREFIX) && it.second.endsWith(".json") }
@@ -52,7 +53,7 @@ object AutoBackup {
 
     /** Lesbarer Ordnername aus der Tree-URI, z. B. „Documents/Backups“. */
     fun folderLabel(folder: String): String =
-        Uri.decode(Uri.parse(folder).lastPathSegment ?: folder).substringAfter(':').ifEmpty { "Hauptordner" }
+        Uri.decode(Uri.parse(folder).lastPathSegment ?: folder).substringAfter(':').ifEmpty { tr("Hauptordner", "Main folder") }
 
     private fun children(resolver: ContentResolver, tree: Uri, rootId: String): List<Pair<String, String>> {
         val uri = DocumentsContract.buildChildDocumentsUriUsingTree(tree, rootId)

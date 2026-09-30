@@ -1,31 +1,44 @@
 package dev.minimal.launcher.data
 
+import dev.minimal.launcher.util.tr
 import org.json.JSONArray
 import org.json.JSONObject
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
-enum class SearchEngine(val label: String, val url: String?) {
-    SYSTEM("Standard-App des Systems", null),
-    GOOGLE("Google", "https://www.google.com/search?q="),
-    DUCKDUCKGO("DuckDuckGo", "https://duckduckgo.com/?q="),
-    STARTPAGE("Startpage", "https://www.startpage.com/do/search?q="),
-    ECOSIA("Ecosia", "https://www.ecosia.org/search?q="),
-    BING("Bing", "https://www.bing.com/search?q="),
+enum class SearchEngine(private val de: String, private val en: String, val url: String?) {
+    SYSTEM("Standard-App des Systems", "System default app", null),
+    GOOGLE("Google", "Google", "https://www.google.com/search?q="),
+    DUCKDUCKGO("DuckDuckGo", "DuckDuckGo", "https://duckduckgo.com/?q="),
+    STARTPAGE("Startpage", "Startpage", "https://www.startpage.com/do/search?q="),
+    ECOSIA("Ecosia", "Ecosia", "https://www.ecosia.org/search?q="),
+    BING("Bing", "Bing", "https://www.bing.com/search?q=");
+
+    val label: String get() = tr(de, en)
 }
 
-enum class HomeFont(val label: String) { SYSTEM("System"), SERIF("Serif"), MONO("Monospace"), CURSIVE("Handschrift") }
+enum class HomeFont(private val de: String, private val en: String) {
+    SYSTEM("System", "System"), SERIF("Serif", "Serif"), MONO("Monospace", "Monospace"), CURSIVE("Handschrift", "Handwriting");
 
-enum class HomeWeight(val label: String) { LIGHT("Leicht"), NORMAL("Normal"), MEDIUM("Kräftig") }
+    val label: String get() = tr(de, en)
+}
 
-enum class GestureAction(val label: String) {
-    NONE("Keine Aktion"),
-    NOTIFICATIONS("Benachrichtigungen öffnen"),
-    QUICK_SETTINGS("Schnelleinstellungen öffnen"),
-    SEARCH("Suche öffnen"),
-    DRAWER("Alle Apps öffnen"),
-    LOCK("Bildschirm sperren"),
-    ASSISTANT("Gemini / Assistant öffnen"),
+enum class HomeWeight(private val de: String, private val en: String) {
+    LIGHT("Leicht", "Light"), NORMAL("Normal", "Regular"), MEDIUM("Kräftig", "Bold");
+
+    val label: String get() = tr(de, en)
+}
+
+enum class GestureAction(private val de: String, private val en: String) {
+    NONE("Keine Aktion", "No action"),
+    NOTIFICATIONS("Benachrichtigungen öffnen", "Open notifications"),
+    QUICK_SETTINGS("Schnelleinstellungen öffnen", "Open quick settings"),
+    SEARCH("Suche öffnen", "Open search"),
+    DRAWER("Alle Apps öffnen", "Open all apps"),
+    LOCK("Bildschirm sperren", "Lock screen"),
+    ASSISTANT("Gemini / Assistant öffnen", "Open Gemini / Assistant");
+
+    val label: String get() = tr(de, en)
 }
 
 /** Ein Favorit ist entweder eine einzelne App oder ein Ordner (mehrere Apps). */
@@ -116,7 +129,7 @@ data class LauncherSettings(
     val declutterKeep: Set<String> = emptySet(),
     val renamed: Map<String, String> = emptyMap(),
     val favorites: List<Favorite> = emptyList(),
-    val pages: List<FavoritePage> = listOf(FavoritePage(MAIN_PAGE, "Start")),
+    val pages: List<FavoritePage> = listOf(FavoritePage(MAIN_PAGE, tr("Start", "Home"))),
     val currentPage: String = MAIN_PAGE,
     val autoPages: Boolean = false,
     /** Als ablenkend markierte Apps. */
@@ -337,7 +350,7 @@ data class LauncherSettings(
                         val p = arr.optJSONObject(i) ?: return@mapNotNull null
                         FavoritePage(
                             id = p.optString("id").ifEmpty { return@mapNotNull null },
-                            name = p.optString("name", "Seite"),
+                            name = p.optString("name", tr("Seite", "Page")),
                             schedule = p.optJSONObject("schedule")?.let(::scheduleFromJson),
                             context = p.optJSONObject("context")?.let { c ->
                                 enumValues<ContextType>().firstOrNull { it.name == c.optString("type") }

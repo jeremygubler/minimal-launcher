@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,16 +65,16 @@ fun ScreenTimeReport(
     var tab by remember { mutableIntStateOf(0) }
     val pro = isPro()
     var paywall by remember { mutableStateOf(false) }
-    if (paywall) PaywallDialog(feature = "Wochenbericht", onDismiss = { paywall = false })
+    if (paywall) PaywallDialog(feature = tr("Wochenbericht", "Weekly report"), onDismiss = { paywall = false })
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {
-                Text("Bildschirmzeit")
+                Text(tr("Bildschirmzeit", "Screen time"))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    TabChip("Heute", tab == 0) { tab = 0 }
-                    TabChip("Woche", tab == 1) { tab = 1 }
+                    TabChip(tr("Heute", "Today"), tab == 0) { tab = 0 }
+                    TabChip(tr("Woche", "Week"), tab == 1) { tab = 1 }
                 }
             }
         },
@@ -85,11 +86,11 @@ fun ScreenTimeReport(
             ) {
                 val d = days
                 when {
-                    d == null -> Text("Wird berechnet …")
+                    d == null -> Text(tr("Wird berechnet …", "Calculating …"))
                     tab == 0 -> TodayView(d.last().second, appsByPackage)
                     !pro -> {
-                        Text("Wochenbericht, Tagesziel und Serie gehören zu Pro.")
-                        TextButton(onClick = { paywall = true }) { Text("Pro freischalten") }
+                        Text(tr("Wochenbericht, Tagesziel und Serie gehören zu Pro.", "Weekly report, daily goal and streak are part of Pro."))
+                        TextButton(onClick = { paywall = true }) { Text(tr("Pro freischalten", "Unlock Pro")) }
                     }
                     else -> {
                         WeekView(d, settings.dailyGoalMinutes * 60_000L, appsByPackage)
@@ -98,7 +99,7 @@ fun ScreenTimeReport(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Schließen") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Schließen", "Close")) } },
     )
 }
 
@@ -124,7 +125,7 @@ private fun TodayView(usage: Map<String, Long>, appsByPackage: Map<String, AppIn
         .filterValues { it >= 60_000 }
         .entries.sortedByDescending { it.value }
     if (byCategory.isNotEmpty()) {
-        SectionTitle("Nach Kategorie")
+        SectionTitle(tr("Nach Kategorie", "By category"))
         val max = byCategory.first().value
         byCategory.forEach { (cat, ms) -> UsageBarRow(AppCategories.label(cat), ms, max, icon = null) }
         Spacer(Modifier.height(12.dp))
@@ -132,7 +133,7 @@ private fun TodayView(usage: Map<String, Long>, appsByPackage: Map<String, AppIn
 
     val top = usage.entries.filter { it.value >= 60_000 }.sortedByDescending { it.value }.take(10)
     SectionTitle("Apps")
-    if (top.isEmpty()) Text("Heute noch keine App länger als eine Minute genutzt.")
+    if (top.isEmpty()) Text(tr("Heute noch keine App länger als eine Minute genutzt.", "No app used for more than a minute today."))
     val max = top.firstOrNull()?.value ?: 1L
     top.forEach { (pkg, ms) -> UsageBarRow(appsByPackage[pkg]?.label ?: pkg, ms, max, icon = appsByPackage[pkg]) }
 }
@@ -146,11 +147,11 @@ private fun WeekView(days: List<Pair<LocalDate, Map<String, Long>>>, goalMs: Lon
     // Durchschnitt über abgeschlossene Tage mit Daten (heute läuft noch).
     val fullDays = totals.dropLast(1).filter { it.second > 0 }
     val average = if (fullDays.isNotEmpty()) fullDays.sumOf { it.second } / fullDays.size else totals.last().second
-    Text("Ø ${ScreenTime.format(average)} pro Tag", style = MaterialTheme.typography.headlineSmall)
+    Text(tr("Ø ${ScreenTime.format(average)} pro Tag", "Ø ${ScreenTime.format(average)} per day"), style = MaterialTheme.typography.headlineSmall)
     if (goalMs > 0) {
         val streak = ScreenTimeMath.streak(totals.map { it.second }, goalMs)
         Text(
-            "Ziel ${ScreenTime.format(goalMs)} (gestrichelt) · Serie: $streak ${if (streak == 1) "Tag" else "Tage"} im Ziel",
+            tr("Ziel ${ScreenTime.format(goalMs)} (gestrichelt) · Serie: $streak ${if (streak == 1) "Tag" else "Tage"} im Ziel", "Goal ${ScreenTime.format(goalMs)} (dashed) · Streak: $streak ${if (streak == 1) "day" else "days"} within goal"),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -168,11 +169,11 @@ private fun WeekView(days: List<Pair<LocalDate, Map<String, Long>>>, goalMs: Lon
     val week = HashMap<String, Long>()
     days.forEach { (_, usage) -> usage.forEach { (pkg, ms) -> week[pkg] = (week[pkg] ?: 0L) + ms } }
     val top = week.entries.filter { it.value >= 60_000 }.sortedByDescending { it.value }.take(5)
-    SectionTitle("Meistgenutzt diese Woche")
+    SectionTitle(tr("Meistgenutzt diese Woche", "Most used this week"))
     val max = top.firstOrNull()?.value ?: 1L
     top.forEach { (pkg, ms) -> UsageBarRow(appsByPackage[pkg]?.label ?: pkg, ms, max, icon = appsByPackage[pkg]) }
     Text(
-        "Android bewahrt Nutzungsdaten nur einige Tage auf – ältere Tage können daher fehlen.",
+        tr("Android bewahrt Nutzungsdaten nur einige Tage auf – ältere Tage können daher fehlen.", "Android keeps usage data for only a few days – older days may be missing."),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 12.dp),
@@ -255,25 +256,25 @@ private fun UsageBarRow(label: String, ms: Long, max: Long, icon: AppInfo?) =
 @Composable
 private fun IntentionsSection(summary: IntentionSummary, appsByPackage: Map<String, AppInfo>) {
     Spacer(Modifier.height(16.dp))
-    SectionTitle("Absichten")
+    SectionTitle(tr("Absichten", "Intentions"))
     Text(
         buildString {
-            append(if (summary.opened == 1) "1 bewusste Öffnung" else "${summary.opened} bewusste Öffnungen")
-            if (summary.skipped > 0) append(" · ${summary.skipped}× verzichtet")
+            append(if (summary.opened == 1) tr("1 bewusste Öffnung", "1 mindful open") else tr("${summary.opened} bewusste Öffnungen", "${summary.opened} mindful opens"))
+            if (summary.skipped > 0) append(tr(" · ${summary.skipped}× verzichtet", " · ${summary.skipped}× skipped"))
         },
         style = MaterialTheme.typography.bodyLarge,
     )
     if (summary.boredom > 0) {
         val app = summary.boredomTopApp?.let { appsByPackage[it]?.label ?: it }
         Text(
-            "${summary.boredom}× aus Langeweile" + (app?.let { " – meist bei $it" } ?: ""),
+            tr("${summary.boredom}× aus Langeweile", "${summary.boredom}× out of boredom") + (app?.let { tr(" – meist bei $it", " – mostly $it") } ?: ""),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
         )
     }
     if (summary.skipped > 0) {
         Text(
-            "Jedes „Lieber nicht“ ist gewonnene Zeit.",
+            tr("Jedes „Lieber nicht“ ist gewonnene Zeit.", "Every “Not now” is time won back."),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -287,12 +288,12 @@ private fun IntentionsSection(summary: IntentionSummary, appsByPackage: Map<Stri
     val apps = summary.byApp.take(5)
     if (apps.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))
-        SectionTitle("Nach App")
+        SectionTitle(tr("Nach App", "By app"))
         val max = apps.maxOf { it.second + it.third }.toFloat()
         apps.forEach { (pkg, opened, skipped) ->
             BarRow(
                 appsByPackage[pkg]?.label ?: pkg,
-                "$opened× geöffnet" + if (skipped > 0) " · $skipped× verzichtet" else "",
+                tr("$opened× geöffnet", "$opened× opened") + if (skipped > 0) tr(" · $skipped× verzichtet", " · $skipped× skipped") else "",
                 (opened + skipped) / max,
                 icon = appsByPackage[pkg],
             )
@@ -326,10 +327,10 @@ private fun dayLabel(date: LocalDate, long: Boolean): String {
     val today = LocalDate.now()
     if (long) {
         return when (date) {
-            today -> "Heute"
-            today.minusDays(1) -> "Gestern"
-            else -> date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.GERMAN) + ", ${date.dayOfMonth}.${date.monthValue}."
+            today -> tr("Heute", "Today")
+            today.minusDays(1) -> tr("Gestern", "Yesterday")
+            else -> date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()) + ", ${date.dayOfMonth}.${date.monthValue}."
         }
     }
-    return date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.GERMAN).take(2)
+    return date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()).take(2)
 }

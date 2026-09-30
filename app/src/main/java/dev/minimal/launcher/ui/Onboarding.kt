@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,7 +52,7 @@ fun OnboardingDialog(onDone: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = {},
-        title = { Text("Willkommen 👋") },
+        title = { Text(tr("Willkommen 👋", "Welcome 👋")) },
         text = {
             Column(
                 Modifier
@@ -59,43 +60,43 @@ fun OnboardingDialog(onDone: () -> Unit) {
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Ein paar Schritte, damit alles funktioniert. Alles ist optional und später in den Einstellungen änderbar.")
+                Text(tr("Ein paar Schritte, damit alles funktioniert. Alles ist optional und später in den Einstellungen änderbar.", "A few steps so everything works. All optional and changeable later in settings."))
 
-                Step("Als Standard-Launcher festlegen", isDefault, "Festlegen") {
+                Step(tr("Als Standard-Launcher festlegen", "Set as default launcher"), isDefault, tr("Festlegen", "Set")) {
                     SystemActions.openHomeSettings(context)
                 }
-                Step("Benachrichtigungszugriff (Punkte, Vorschau, Mediensteuerung)", notifications, "Erlauben") {
+                Step(tr("Benachrichtigungszugriff (Punkte, Vorschau, Mediensteuerung)", "Notification access (dots, preview, media controls)"), notifications, tr("Erlauben", "Allow")) {
                     SystemActions.openNotificationAccess(context)
                 }
-                Step("Bedienungshilfe (Sperren per Doppeltipp)", accessibility, "Aktivieren") {
+                Step(tr("Bedienungshilfe (Sperren per Doppeltipp)", "Accessibility service (double tap to lock)"), accessibility, tr("Aktivieren", "Enable")) {
                     showAccessibilityInfo = true
                 }
                 if (!notifications || !accessibility) {
                     Text(
-                        "Meldet Android „Eingeschränkte Einstellung“? Dann in der App-Info oben rechts ⋮ → " +
-                            "„Eingeschränkte Einstellungen zulassen“ und danach erneut erlauben.",
+                        tr("Meldet Android „Eingeschränkte Einstellung“? Dann in der App-Info oben rechts ⋮ → ", "Android says “Restricted setting”? Then in app info tap ⋮ at the top right → ") +
+                            tr("„Eingeschränkte Einstellungen zulassen“ und danach erneut erlauben.", "“Allow restricted settings” and allow again."),
                         style = MaterialTheme.typography.bodySmall,
                     )
-                    TextButton(onClick = { SystemActions.openAppDetails(context) }) { Text("App-Info öffnen") }
+                    TextButton(onClick = { SystemActions.openAppDetails(context) }) { Text(tr("App-Info öffnen", "Open app info")) }
                 }
                 DeviceCompat.aggressiveVendor?.let { vendor ->
-                    Step("Von Akku-Optimierung ausnehmen ($vendor)", battery, "Ausnehmen") {
+                    Step(tr("Von Akku-Optimierung ausnehmen ($vendor)", "Exclude from battery optimization ($vendor)"), battery, tr("Ausnehmen", "Exclude")) {
                         DeviceCompat.requestIgnoreBatteryOptimizations(context)
                     }
-                    TextButton(onClick = { DeviceCompat.openAutostart(context) }) { Text("Autostart erlauben") }
+                    TextButton(onClick = { DeviceCompat.openAutostart(context) }) { Text(tr("Autostart erlauben", "Allow autostart")) }
                 }
 
-                Text("Kurz erklärt", style = MaterialTheme.typography.titleSmall)
+                Text(tr("Kurz erklärt", "Quick guide"), style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "• Buchstabenleiste am Rand ziehen → alle Apps\n" +
-                        "• Nach oben wischen → Suche (auch Rechner, Timer, Einstellungen …)\n" +
-                        "• App lange drücken → Favoriten, Wisch-Aktionen, Sperre, Limits\n" +
-                        "• Leeren Bereich lange drücken → Widgets, Notiz, Fokus-Modus, Einstellungen",
+                    tr("• Buchstabenleiste am Rand ziehen → alle Apps\n", "• Drag the letter bar at the edge → all apps\n") +
+                        tr("• Nach oben wischen → Suche (auch Rechner, Timer, Einstellungen …)\n", "• Swipe up → search (also calculator, timer, settings …)\n") +
+                        tr("• App lange drücken → Favoriten, Wisch-Aktionen, Sperre, Limits\n", "• Long-press an app → favorites, swipe actions, lock, limits\n") +
+                        tr("• Leeren Bereich lange drücken → Widgets, Notiz, Fokus-Modus, Einstellungen", "• Long-press an empty area → widgets, note, focus mode, settings"),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDone) { Text("Los geht's") } },
+        confirmButton = { TextButton(onClick = onDone) { Text(tr("Los geht's", "Let's go")) } },
     )
 }
 

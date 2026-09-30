@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -128,7 +129,7 @@ fun AppRow(
         if (isNew) {
             Spacer(Modifier.width(10.dp))
             Text(
-                "Neu",
+                tr("Neu", "New"),
                 style = homeTextStyle(12.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold),
             )
         }
@@ -169,7 +170,7 @@ fun AppPickerDialog(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,
-                    placeholder = { Text("Suchen…") },
+                    placeholder = { Text(tr("Suchen…", "Search…")) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 LazyColumn(Modifier.heightIn(max = 380.dp)) {
@@ -201,7 +202,7 @@ fun AppPickerDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) } },
     )
 }
 
@@ -227,7 +228,7 @@ fun TextInputDialog(
             )
         },
         confirmButton = { TextButton(onClick = { onConfirm(text) }) { Text("OK") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) } },
     )
 }
 
@@ -255,7 +256,7 @@ fun <T> ChoiceDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Schließen") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Schließen", "Close")) } },
     )
 }
 
@@ -266,7 +267,7 @@ fun FocusPauseDialog(
     seconds: Int,
     onOpen: () -> Unit,
     onDismiss: () -> Unit,
-    message: String = "Der Fokus-Modus ist aktiv. Brauchst du ${app.label} gerade wirklich?",
+    message: String = tr("Der Fokus-Modus ist aktiv. Brauchst du ${app.label} gerade wirklich?", "Focus mode is on. Do you really need ${app.label} right now?"),
 ) {
     var remaining by remember { mutableIntStateOf(seconds) }
     LaunchedEffect(Unit) {
@@ -277,7 +278,7 @@ fun FocusPauseDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Kurz durchatmen") },
+        title = { Text(tr("Kurz durchatmen", "Take a breath")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -292,8 +293,8 @@ fun FocusPauseDialog(
             TextButton(enabled = remaining == 0, onClick = {
                 onOpen()
                 onDismiss()
-            }) { Text(if (remaining > 0) "Trotzdem öffnen ($remaining)" else "Trotzdem öffnen") }
+            }) { Text(if (remaining > 0) tr("Trotzdem öffnen ($remaining)", "Open anyway ($remaining)") else tr("Trotzdem öffnen", "Open anyway")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Lieber nicht") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Lieber nicht", "Not now")) } },
     )
 }

@@ -17,7 +17,10 @@ data class TaskItem(
 /** Reine Logik der Aufgabenliste (testbar ohne Android). */
 object Tasks {
     private val prefix = Regex("^(todo|aufgabe|task)\\s+(.+)$", RegexOption.IGNORE_CASE)
-    private val dueWords = listOf("übermorgen" to 2L, "uebermorgen" to 2L, "morgen" to 1L, "heute" to 0L)
+    private val dueWords = listOf(
+        "übermorgen" to 2L, "uebermorgen" to 2L, "day after tomorrow" to 2L,
+        "morgen" to 1L, "tomorrow" to 1L, "heute" to 0L, "today" to 0L,
+    )
 
     /** Erkennt „todo …“ in der Suche. */
     fun parseCommand(input: String, today: LocalDate): Pair<String, LocalDate?>? {

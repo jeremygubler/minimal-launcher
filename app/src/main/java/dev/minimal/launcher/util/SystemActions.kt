@@ -1,5 +1,6 @@
 package dev.minimal.launcher.util
 
+import dev.minimal.launcher.util.tr
 import android.accessibilityservice.AccessibilityService
 import android.annotation.SuppressLint
 import android.app.AlarmManager
@@ -34,7 +35,7 @@ object SystemActions {
         ) return
         Toast.makeText(
             context,
-            "Zum Sperren per Doppeltipp: Launcher-Einstellungen → Einrichtung → Bedienungshilfe aktivieren",
+            tr("Zum Sperren per Doppeltipp: Launcher-Einstellungen → Einrichtung → Bedienungshilfe aktivieren", "To lock with a double tap: launcher settings → Setup → enable accessibility service"),
             Toast.LENGTH_LONG,
         ).show()
     }
@@ -82,7 +83,7 @@ object SystemActions {
         context.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.triggerTime
 
     fun chooseWallpaper(context: Context) =
-        start(context, Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), "Hintergrundbild wählen"))
+        start(context, Intent.createChooser(Intent(Intent.ACTION_SET_WALLPAPER), tr("Hintergrundbild wählen", "Choose wallpaper")))
 
     fun openHomeSettings(context: Context) = start(context, Intent(Settings.ACTION_HOME_SETTINGS))
 

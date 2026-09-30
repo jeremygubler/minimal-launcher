@@ -1,5 +1,7 @@
 package dev.minimal.launcher.data
 
+import dev.minimal.launcher.util.tr
+import dev.minimal.launcher.util.isGerman
 import java.time.LocalDateTime
 
 /**
@@ -20,10 +22,10 @@ data class PageSchedule(val days: Set<Int>, val start: Int, val end: Int) {
     }
 
     fun describe(): String {
-        val names = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
+        val names = dayNames()
         val sorted = days.sorted()
         val dayText = when {
-            sorted.size == 7 -> "Täglich"
+            sorted.size == 7 -> tr("Täglich", "Daily")
             sorted.isNotEmpty() && sorted == (sorted.first()..sorted.last()).toList() && sorted.size > 2 ->
                 "${names[sorted.first() - 1]}–${names[sorted.last() - 1]}"
             else -> sorted.joinToString(", ") { names[it - 1] }
@@ -32,6 +34,10 @@ data class PageSchedule(val days: Set<Int>, val start: Int, val end: Int) {
     }
 
     companion object {
+        /** Kurze Wochentagsnamen, Montag zuerst. */
+        fun dayNames(): List<String> =
+            if (isGerman) listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So") else listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
+
         fun format(minutes: Int) = "%02d:%02d".format(minutes / 60, minutes % 60)
     }
 }

@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -43,17 +44,17 @@ val LocalGrayscale = staticCompositionLocalOf { false }
 /** Ist der Fokus-Modus gerade aktiv? */
 val LocalFocusActive = staticCompositionLocalOf { false }
 
-val ACCENT_COLORS = listOf(
-    0 to "Systemfarbe (Material You)",
-    0xFF8AB4F8.toInt() to "Blau",
-    0xFF81C995.toInt() to "Grün",
-    0xFFF28B82.toInt() to "Rot",
-    0xFFFDD663.toInt() to "Gelb",
-    0xFFC58AF9.toInt() to "Lila",
+val ACCENT_COLORS: List<Pair<Int, String>> get() = listOf(
+    0 to tr("Systemfarbe (Material You)", "System color (Material You)"),
+    0xFF8AB4F8.toInt() to tr("Blau", "Blue"),
+    0xFF81C995.toInt() to tr("Grün", "Green"),
+    0xFFF28B82.toInt() to tr("Rot", "Red"),
+    0xFFFDD663.toInt() to tr("Gelb", "Yellow"),
+    0xFFC58AF9.toInt() to tr("Lila", "Purple"),
     0xFFFCAD70.toInt() to "Orange",
-    0xFF78D9EC.toInt() to "Türkis",
+    0xFF78D9EC.toInt() to tr("Türkis", "Turquoise"),
     0xFFFF8BCB.toInt() to "Pink",
-    0xFFFFFFFF.toInt() to "Weiß",
+    0xFFFFFFFF.toInt() to tr("Weiß", "White"),
 )
 
 @Composable

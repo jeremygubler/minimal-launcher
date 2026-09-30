@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.Manifest
 import android.app.TimePickerDialog
 import android.text.format.DateFormat
@@ -189,7 +190,7 @@ internal fun ScheduleDialog(
     var days by remember { mutableStateOf(initial.days) }
     var start by remember { mutableIntStateOf(initial.start) }
     var end by remember { mutableIntStateOf(initial.end) }
-    val dayNames = listOf("Mo", "Di", "Mi", "Do", "Fr", "Sa", "So")
+    val dayNames = PageSchedule.dayNames()
 
     fun pickTime(current: Int, set: (Int) -> Unit) {
         TimePickerDialog(
@@ -206,7 +207,7 @@ internal fun ScheduleDialog(
         title = { Text(title) },
         text = {
             Column {
-                Text("Tage", style = MaterialTheme.typography.labelLarge)
+                Text(tr("Tage", "Days"), style = MaterialTheme.typography.labelLarge)
                 Spacer(Modifier.size(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     dayNames.forEachIndexed { i, name ->
@@ -233,15 +234,15 @@ internal fun ScheduleDialog(
                 }
                 Spacer(Modifier.size(12.dp))
                 Row {
-                    TextButton(onClick = { pickTime(start) { start = it } }) { Text("Von ${PageSchedule.format(start)}") }
-                    TextButton(onClick = { pickTime(end) { end = it } }) { Text("Bis ${PageSchedule.format(end)}") }
+                    TextButton(onClick = { pickTime(start) { start = it } }) { Text(tr("Von ${PageSchedule.format(start)}", "From ${PageSchedule.format(start)}")) }
+                    TextButton(onClick = { pickTime(end) { end = it } }) { Text(tr("Bis ${PageSchedule.format(end)}", "To ${PageSchedule.format(end)}")) }
                 }
                 if (end < start) {
-                    Text("Endet am nächsten Tag.", style = MaterialTheme.typography.bodySmall)
+                    Text(tr("Endet am nächsten Tag.", "Ends the next day."), style = MaterialTheme.typography.bodySmall)
                 }
                 if (start == end) {
                     Text(
-                        "Beginn und Ende müssen verschieden sein.",
+                        tr("Beginn und Ende müssen verschieden sein.", "Start and end must differ."),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -252,12 +253,12 @@ internal fun ScheduleDialog(
             TextButton(
                 enabled = days.isNotEmpty() && start != end,
                 onClick = { onSave(PageSchedule(days, start, end)) },
-            ) { Text("Speichern") }
+            ) { Text(tr("Speichern", "Save")) }
         },
         dismissButton = {
             Row {
-                if (existing != null) TextButton(onClick = { onSave(null) }) { Text("Entfernen") }
-                TextButton(onClick = onDismiss) { Text("Abbrechen") }
+                if (existing != null) TextButton(onClick = { onSave(null) }) { Text(tr("Entfernen", "Remove")) }
+                TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) }
             }
         },
     )
@@ -301,13 +302,13 @@ internal fun ContextDialog(
                 }
                 Spacer(Modifier.size(8.dp))
                 when (type) {
-                    ContextType.HEADPHONES -> Hint("Gerade: " + if (current.headphones) "verbunden" else "nicht verbunden")
-                    ContextType.CHARGING -> Hint("Gerade: " + if (current.charging) "lädt" else "lädt nicht")
+                    ContextType.HEADPHONES -> Hint(tr("Gerade: ", "Currently: ") + if (current.headphones) tr("verbunden", "connected") else tr("nicht verbunden", "not connected"))
+                    ContextType.CHARGING -> Hint(tr("Gerade: ", "Currently: ") + if (current.charging) tr("lädt", "charging") else tr("lädt nicht", "not charging"))
                     ContextType.BLUETOOTH -> if (!hasBluetooth) {
-                        Text("Dafür braucht der Launcher die Berechtigung „Geräte in der Nähe“.")
-                        TextButton(onClick = onRequestBluetooth) { Text("Berechtigung erteilen") }
+                        Text(tr("Dafür braucht der Launcher die Berechtigung „Geräte in der Nähe“.", "The launcher needs the “Nearby devices” permission for this."))
+                        TextButton(onClick = onRequestBluetooth) { Text(tr("Berechtigung erteilen", "Grant permission")) }
                     } else {
-                        if (bondedDevices.isEmpty()) Text("Keine gekoppelten Geräte gefunden.")
+                        if (bondedDevices.isEmpty()) Text(tr("Keine gekoppelten Geräte gefunden.", "No paired devices found."))
                         bondedDevices.forEach { name ->
                             Row(
                                 Modifier
@@ -316,24 +317,24 @@ internal fun ContextDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 RadioButton(selected = value == name, onClick = { value = name })
-                                Text(name + if (name in current.bluetooth) " · verbunden" else "")
+                                Text(name + if (name in current.bluetooth) tr(" · verbunden", " · connected") else "")
                             }
                         }
                     }
                     ContextType.WIFI -> {
                         if (!hasWifi) {
-                            Text("Android gibt den WLAN-Namen nur mit Standortberechtigung heraus.")
-                            TextButton(onClick = onRequestWifi) { Text("Standort erlauben") }
+                            Text(tr("Android gibt den WLAN-Namen nur mit Standortberechtigung heraus.", "Android only reveals the Wi-Fi name with location permission."))
+                            TextButton(onClick = onRequestWifi) { Text(tr("Standort erlauben", "Allow location")) }
                         }
                         OutlinedTextField(
                             value = value,
                             onValueChange = { value = it },
                             singleLine = true,
-                            label = { Text("WLAN-Name") },
+                            label = { Text(tr("WLAN-Name", "Wi-Fi name")) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                         current.wifi?.let { ssid ->
-                            TextButton(onClick = { value = ssid }) { Text("Aktuelles WLAN übernehmen: $ssid") }
+                            TextButton(onClick = { value = ssid }) { Text(tr("Aktuelles WLAN übernehmen: $ssid", "Use current Wi-Fi: $ssid")) }
                         }
                     }
                     null -> Unit
@@ -347,12 +348,12 @@ internal fun ContextDialog(
                 if (t != null) {
                     onSave(PageContext(t, value.trim().ifBlank { null }.takeIf { t == ContextType.BLUETOOTH || t == ContextType.WIFI }))
                 }
-            }) { Text("Speichern") }
+            }) { Text(tr("Speichern", "Save")) }
         },
         dismissButton = {
             Row {
-                if (existing != null) TextButton(onClick = { onSave(null) }) { Text("Entfernen") }
-                TextButton(onClick = onDismiss) { Text("Abbrechen") }
+                if (existing != null) TextButton(onClick = { onSave(null) }) { Text(tr("Entfernen", "Remove")) }
+                TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) }
             }
         },
     )

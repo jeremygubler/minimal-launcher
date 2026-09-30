@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.pm.PackageManager
@@ -101,8 +102,8 @@ fun AppActionsSheet(
                     }
                     val sub = listOfNotNull(
                         app.originalLabel.takeIf { it != app.label },
-                        "Arbeitsprofil".takeIf { app.isWork },
-                        usageToday?.let { "Heute: " + ScreenTime.format(it) },
+                        tr("Arbeitsprofil", "Work profile").takeIf { app.isWork },
+                        usageToday?.let { tr("Heute: ", "Today: ") + ScreenTime.format(it) },
                     ).joinToString(" · ")
                     if (sub.isNotEmpty()) Text(sub, style = MaterialTheme.typography.bodySmall)
                 }
@@ -119,62 +120,62 @@ fun AppActionsSheet(
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
             }
 
-            SheetAction(if (isFavorite) "Aus Favoriten entfernen" else "Zu Favoriten hinzufügen") {
+            SheetAction(if (isFavorite) tr("Aus Favoriten entfernen", "Remove from favorites") else tr("Zu Favoriten hinzufügen", "Add to favorites")) {
                 vm.toggleFavorite(app)
                 onDismiss()
             }
             if (favorite != null) {
                 val swipeLabel = when {
-                    favorite.widgetId != null -> "Pop-up-Widget"
-                    else -> favorite.swipeApp?.let { appsByKey[it]?.label } ?: "keine"
+                    favorite.widgetId != null -> tr("Pop-up-Widget", "Pop-up widget")
+                    else -> favorite.swipeApp?.let { appsByKey[it]?.label } ?: tr("keine", "none")
                 }
-                SheetAction("Wisch-Aktion (nach rechts): $swipeLabel") { pickingSwipe = true }
-                SheetAction(if (favorite.widgetId != null) "Pop-up-Widget ändern" else "Pop-up-Widget festlegen") {
-                    if (pro) pickingWidget = true else paywall = "Pop-up-Widgets"
+                SheetAction(tr("Wisch-Aktion (nach rechts): $swipeLabel", "Swipe action (right): $swipeLabel")) { pickingSwipe = true }
+                SheetAction(if (favorite.widgetId != null) tr("Pop-up-Widget ändern", "Change pop-up widget") else tr("Pop-up-Widget festlegen", "Set pop-up widget")) {
+                    if (pro) pickingWidget = true else paywall = tr("Pop-up-Widgets", "Pop-up widgets")
                 }
                 if (favorite.widgetId != null) {
-                    SheetAction("Pop-up-Widget entfernen") {
+                    SheetAction(tr("Pop-up-Widget entfernen", "Remove pop-up widget")) {
                         vm.setFavoriteWidget(app.key, null)
                         onDismiss()
                     }
                 }
                 if (shortcuts.isNotEmpty()) {
-                    SheetAction("Wisch-Aktion (nach links): ${favorite.swipeLeftLabel ?: "keine"}") { pickingLeft = true }
+                    SheetAction(tr("Wisch-Aktion (nach links): ${favorite.swipeLeftLabel ?: "keine"}", "Swipe action (left): ${favorite.swipeLeftLabel ?: "none"}")) { pickingLeft = true }
                 }
             }
             if (favorite != null && settings.pages.size > 1) {
-                SheetAction("Auf andere Seite verschieben") { movingToPage = true }
+                SheetAction(tr("Auf andere Seite verschieben", "Move to another page")) { movingToPage = true }
             }
             if (folders.isNotEmpty()) {
-                SheetAction("Zu Ordner hinzufügen") { pickingFolder = true }
+                SheetAction(tr("Zu Ordner hinzufügen", "Add to folder")) { pickingFolder = true }
             }
-            SheetAction("Neuen Ordner mit dieser App") { creatingFolder = true }
+            SheetAction(tr("Neuen Ordner mit dieser App", "New folder with this app")) { creatingFolder = true }
             SheetAction(
-                if (app.key in settings.focusApps) "Nicht mehr als ablenkend markieren" else "Als ablenkend markieren (Fokus-Modus)"
+                if (app.key in settings.focusApps) tr("Nicht mehr als ablenkend markieren", "Unmark as distracting") else tr("Als ablenkend markieren (Fokus-Modus)", "Mark as distracting (focus mode)")
             ) {
                 vm.toggleFocusApp(app.key)
                 onDismiss()
             }
-            SheetAction("Tageslimit: " + (settings.appLimits[app.key]?.let { "$it min" } ?: "keins")) {
+            SheetAction(tr("Tageslimit: ", "Daily limit: ") + (settings.appLimits[app.key]?.let { "$it min" } ?: "keins")) {
                 pickingLimit = true
             }
             SheetAction(
-                if (app.key in settings.lockedApps) "App-Sperre aufheben" else "Mit Fingerabdruck/PIN sperren"
+                if (app.key in settings.lockedApps) tr("App-Sperre aufheben", "Remove app lock") else tr("Mit Fingerabdruck/PIN sperren", "Lock with fingerprint/PIN")
             ) {
                 vm.toggleLockedApp(app.key)
                 onDismiss()
             }
-            SheetAction("Icon ändern") { if (pro) pickingIcon = true else paywall = "Eigene Icons" }
-            SheetAction("Umbenennen") { renaming = true }
-            SheetAction("Ausblenden") {
+            SheetAction(tr("Icon ändern", "Change icon")) { if (pro) pickingIcon = true else paywall = tr("Eigene Icons", "Custom icons") }
+            SheetAction(tr("Umbenennen", "Rename")) { renaming = true }
+            SheetAction(tr("Ausblenden", "Hide")) {
                 vm.hide(app)
                 onDismiss()
             }
-            SheetAction("App-Info") {
+            SheetAction(tr("App-Info", "App info")) {
                 vm.openAppInfo(app)
                 onDismiss()
             }
-            SheetAction("Deinstallieren") {
+            SheetAction(tr("Deinstallieren", "Uninstall")) {
                 SystemActions.uninstall(context, app.packageName)
                 onDismiss()
             }
@@ -183,7 +184,7 @@ fun AppActionsSheet(
 
     if (renaming) {
         TextInputDialog(
-            title = "Umbenennen",
+            title = tr("Umbenennen", "Rename"),
             initial = app.label,
             hint = app.originalLabel,
             onDismiss = { renaming = false },
@@ -196,9 +197,9 @@ fun AppActionsSheet(
     }
     if (pickingSwipe) {
         AppPickerDialog(
-            title = "Beim Wischen nach rechts öffnen",
+            title = tr("Beim Wischen nach rechts öffnen", "Open on swipe right"),
             apps = pickerApps.filter { it.key != app.key },
-            noneLabel = "Keine Wisch-Aktion",
+            noneLabel = tr("Keine Wisch-Aktion", "No swipe action"),
             onDismiss = { pickingSwipe = false },
             onPick = {
                 vm.setSwipeApp(app.key, it?.key)
@@ -210,7 +211,7 @@ fun AppActionsSheet(
     paywall?.let { PaywallDialog(feature = it, onDismiss = { paywall = null }) }
     if (pickingWidget) {
         WidgetPickerDialog(
-            title = "Pop-up-Widget",
+            title = tr("Pop-up-Widget", "Pop-up widget"),
             packageName = app.packageName,
             onDismiss = { pickingWidget = false },
             onPick = { info ->
@@ -228,15 +229,15 @@ fun AppActionsSheet(
     }
     if (pickingLimit) {
         ChoiceDialog(
-            title = "Tageslimit für ${app.label}",
-            options = listOf(0 to "Kein Limit") + listOf(15, 30, 45, 60, 90, 120, 180).map { it to "$it Minuten" },
+            title = tr("Tageslimit für ${app.label}", "Daily limit for ${app.label}"),
+            options = listOf(0 to tr("Kein Limit", "No limit")) + listOf(15, 30, 45, 60, 90, 120, 180).map { it to tr("$it Minuten", "$it minutes") },
             selected = settings.appLimits[app.key] ?: 0,
             onDismiss = { pickingLimit = false },
         ) { minutes ->
             vm.setAppLimit(app.key, minutes)
             pickingLimit = false
             if (minutes > 0 && !ScreenTime.hasAccess(context)) {
-                Toast.makeText(context, "Für Tageslimits bitte „Nutzungszugriff“ erlauben", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, tr("Für Tageslimits bitte „Nutzungszugriff“ erlauben", "Please allow “Usage access” for daily limits"), Toast.LENGTH_LONG).show()
                 SystemActions.openUsageAccess(context)
             }
             onDismiss()
@@ -244,8 +245,8 @@ fun AppActionsSheet(
     }
     if (pickingLeft) {
         ChoiceDialog(
-            title = "Beim Wischen nach links",
-            options = listOf("" to "Keine Aktion") + shortcuts.map { it.id to (it.shortLabel ?: it.longLabel ?: it.id).toString() },
+            title = tr("Beim Wischen nach links", "On swipe left"),
+            options = listOf("" to tr("Keine Aktion", "No action")) + shortcuts.map { it.id to (it.shortLabel ?: it.longLabel ?: it.id).toString() },
             selected = favorite?.swipeLeftShortcut ?: "",
             onDismiss = { pickingLeft = false },
         ) { id ->
@@ -257,12 +258,12 @@ fun AppActionsSheet(
     }
     if (creatingFolder) {
         TextInputDialog(
-            title = "Neuer Ordner",
+            title = tr("Neuer Ordner", "New folder"),
             initial = "",
-            hint = "z. B. Social, Arbeit, Tools",
+            hint = tr("z. B. Social, Arbeit, Tools", "e.g. Social, Work, Tools"),
             onDismiss = { creatingFolder = false },
             onConfirm = { name ->
-                vm.createFolder(name.ifBlank { "Ordner" }, listOf(app.key))
+                vm.createFolder(name.ifBlank { tr("Ordner", "Folder") }, listOf(app.key))
                 creatingFolder = false
                 onDismiss()
             },
@@ -270,7 +271,7 @@ fun AppActionsSheet(
     }
     if (movingToPage && favorite != null) {
         ChoiceDialog(
-            title = "Auf Seite verschieben",
+            title = tr("Auf Seite verschieben", "Move to page"),
             options = settings.pages.filter { it.id != favorite.page }.map { it.id to it.name },
             selected = null,
             onDismiss = { movingToPage = false },
@@ -282,8 +283,8 @@ fun AppActionsSheet(
     }
     if (pickingFolder) {
         ChoiceDialog(
-            title = "Ordner wählen",
-            options = folders.map { it.id to (it.name ?: "Ordner") },
+            title = tr("Ordner wählen", "Choose folder"),
+            options = folders.map { it.id to (it.name ?: tr("Ordner", "Folder")) },
             selected = null,
             onDismiss = { pickingFolder = false },
             onPick = {
@@ -355,18 +356,18 @@ fun HomeMenuSheet(
                 .padding(bottom = 16.dp)
                 .navigationBarsPadding()
         ) {
-            SheetAction(if (focusOn) "Fokus-Modus ausschalten" else "Fokus-Modus einschalten", onToggleFocus)
-            SheetAction("Aufgabe hinzufügen", onAddTask)
-            SheetAction(if (hasNote) "Notiz bearbeiten" else "Notiz hinzufügen", onEditNote)
-            SheetAction("Widget hinzufügen", onAddWidget)
-            if (hasWidgets) SheetAction("Widgets bearbeiten", onEditWidgets)
-            SheetAction("Hintergrundbild ändern") {
+            SheetAction(if (focusOn) tr("Fokus-Modus ausschalten", "Turn off focus mode") else tr("Fokus-Modus einschalten", "Turn on focus mode"), onToggleFocus)
+            SheetAction(tr("Aufgabe hinzufügen", "Add task"), onAddTask)
+            SheetAction(if (hasNote) tr("Notiz bearbeiten", "Edit note") else tr("Notiz hinzufügen", "Add note"), onEditNote)
+            SheetAction(tr("Widget hinzufügen", "Add widget"), onAddWidget)
+            if (hasWidgets) SheetAction(tr("Widgets bearbeiten", "Edit widgets"), onEditWidgets)
+            SheetAction(tr("Hintergrundbild ändern", "Change wallpaper")) {
                 onDismiss()
                 SystemActions.chooseWallpaper(context)
             }
-            SheetAction("Launcher-Einstellungen", onSettings)
+            SheetAction(tr("Launcher-Einstellungen", "Launcher settings"), onSettings)
             if (!SystemActions.isDefaultLauncher(context)) {
-                SheetAction("Als Standard-Launcher festlegen") {
+                SheetAction(tr("Als Standard-Launcher festlegen", "Set as default launcher")) {
                     onDismiss()
                     SystemActions.openHomeSettings(context)
                 }
@@ -389,7 +390,7 @@ fun FolderEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(folder.name ?: "Ordner") },
+        title = { Text(folder.name ?: tr("Ordner", "Folder")) },
         text = {
             Column {
                 LazyColumn(Modifier.heightIn(max = 320.dp)) {
@@ -408,23 +409,23 @@ fun FolderEditDialog(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { adding = true }) { Text("App hinzufügen") }
-                    TextButton(onClick = { renaming = true }) { Text("Umbenennen") }
+                    TextButton(onClick = { adding = true }) { Text(tr("App hinzufügen", "Add app")) }
+                    TextButton(onClick = { renaming = true }) { Text(tr("Umbenennen", "Rename")) }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fertig") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Fertig", "Done")) } },
         dismissButton = {
             TextButton(onClick = {
                 vm.removeFavorite(folder.id)
                 onDismiss()
-            }) { Text("Ordner löschen") }
+            }) { Text(tr("Ordner löschen", "Delete folder")) }
         },
     )
 
     if (adding) {
         AppPickerDialog(
-            title = "App hinzufügen",
+            title = tr("App hinzufügen", "Add app"),
             apps = pickerApps.filter { it.key !in folder.apps },
             onDismiss = { adding = false },
             onPick = { app ->
@@ -435,11 +436,11 @@ fun FolderEditDialog(
     }
     if (renaming) {
         TextInputDialog(
-            title = "Ordner umbenennen",
+            title = tr("Ordner umbenennen", "Rename folder"),
             initial = folder.name.orEmpty(),
             onDismiss = { renaming = false },
             onConfirm = {
-                vm.renameFolder(folder.id, it.ifBlank { "Ordner" })
+                vm.renameFolder(folder.id, it.ifBlank { tr("Ordner", "Folder") })
                 renaming = false
             },
         )
@@ -451,7 +452,7 @@ private data class WidgetEntry(val info: AppWidgetProviderInfo, val appLabel: St
 @Composable
 fun WidgetPickerDialog(
     onDismiss: () -> Unit,
-    title: String = "Widget hinzufügen",
+    title: String = tr("Widget hinzufügen", "Add widget"),
     /** Nur Widgets dieser App anzeigen (für Pop-up-Widgets). */
     packageName: String? = null,
     onPick: (AppWidgetProviderInfo) -> Unit,
@@ -479,14 +480,14 @@ fun WidgetPickerDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (entries.isEmpty()) {
-                    Text("Diese App bietet keine Widgets an.")
+                    Text(tr("Diese App bietet keine Widgets an.", "This app doesn't offer any widgets."))
                     return@Column
                 }
                 if (packageName == null) OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,
-                    placeholder = { Text("Suchen…") },
+                    placeholder = { Text(tr("Suchen…", "Search…")) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 LazyColumn(Modifier.heightIn(max = 400.dp)) {
@@ -504,7 +505,7 @@ fun WidgetPickerDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Abbrechen") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) } },
     )
 }
 
@@ -528,12 +529,12 @@ fun TaskEditDialog(
     var due by remember { mutableStateOf(task.due) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Aufgabe") },
+        title = { Text(tr("Aufgabe", "Task")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth())
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    listOf<Pair<String, java.time.LocalDate?>>("Ohne Datum" to null, "Heute" to today, "Morgen" to today.plusDays(1))
+                    listOf<Pair<String, java.time.LocalDate?>>(tr("Ohne Datum", "No date") to null, tr("Heute", "Today") to today, tr("Morgen", "Tomorrow") to today.plusDays(1))
                         .forEach { (label, date) ->
                             TextButton(onClick = { due = date }) {
                                 Text(
@@ -545,7 +546,7 @@ fun TaskEditDialog(
                 }
             }
         },
-        confirmButton = { TextButton(enabled = title.isNotBlank(), onClick = { onSave(title, due) }) { Text("Speichern") } },
-        dismissButton = { TextButton(onClick = onDelete) { Text("Löschen") } },
+        confirmButton = { TextButton(enabled = title.isNotBlank(), onClick = { onSave(title, due) }) { Text(tr("Speichern", "Save")) } },
+        dismissButton = { TextButton(onClick = onDelete) { Text(tr("Löschen", "Delete")) } },
     )
 }

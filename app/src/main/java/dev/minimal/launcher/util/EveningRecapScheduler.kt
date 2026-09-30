@@ -1,5 +1,6 @@
 package dev.minimal.launcher.util
 
+import dev.minimal.launcher.util.tr
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -77,7 +78,7 @@ object EveningRecapScheduler {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Leise: erscheint in der Leiste, ohne Ton.
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Abendrückblick", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(CHANNEL, tr("Abendrückblick", "Evening recap"), NotificationManager.IMPORTANCE_LOW)
             )
         }
         val open = PendingIntent.getActivity(

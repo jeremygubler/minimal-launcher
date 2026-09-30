@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -283,14 +284,14 @@ private fun TasksBlock(tasks: List<TaskItem>, onToggle: (String) -> Unit, onLong
                 if (!task.isDone && due != null && due.isBefore(today)) {
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        if (due == today.minusDays(1)) "seit gestern" else "überfällig",
+                        if (due == today.minusDays(1)) tr("seit gestern", "since yesterday") else tr("überfällig", "overdue"),
                         style = homeTextStyle(12.sp).copy(color = colors.secondary),
                     )
                 }
             }
         }
         if (visible.size > shown.size) {
-            Text("+${visible.size - shown.size} weitere", style = homeTextStyle(13.sp).copy(color = colors.secondary))
+            Text(tr("+${visible.size - shown.size} weitere", "+${visible.size - shown.size} more"), style = homeTextStyle(13.sp).copy(color = colors.secondary))
         }
     }
 }
@@ -362,13 +363,13 @@ private fun ClockBlock(
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .clickable(noRipple, null) {
-                        SystemActions.webSearch(context, "Wetter " + (weather.place ?: ""), settings.searchEngine)
+                        SystemActions.webSearch(context, tr("Wetter ", "weather ") + (weather.place ?: ""), settings.searchEngine)
                     },
             )
         }
         if (alarm != null) {
             Text(
-                "Wecker · " + timeFormat.format(Date(alarm)),
+                tr("Wecker · ", "Alarm · ") + timeFormat.format(Date(alarm)),
                 style = homeTextStyle(15.sp).copy(color = colors.secondary),
                 modifier = Modifier
                     .padding(top = 4.dp)
@@ -377,14 +378,14 @@ private fun ClockBlock(
         }
         if (LocalFocusActive.current) {
             Text(
-                "Fokus aktiv",
+                tr("Fokus aktiv", "Focus on"),
                 style = homeTextStyle(15.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium),
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
         if (screenTimeTotal != null) {
             Text(
-                "Bildschirmzeit heute · " + ScreenTime.format(screenTimeTotal),
+                tr("Bildschirmzeit heute · ", "Screen time today · ") + ScreenTime.format(screenTimeTotal),
                 style = homeTextStyle(15.sp).copy(color = colors.secondary),
                 modifier = Modifier
                     .padding(top = 4.dp)
@@ -401,10 +402,10 @@ private fun ClockBlock(
         }
         events.forEach { e ->
             val whenText = when {
-                e.allDay -> "Heute"
-                e.begin <= now -> "Jetzt"
+                e.allDay -> tr("Heute", "Today")
+                e.begin <= now -> tr("Jetzt", "Now")
                 DateUtils.isToday(e.begin) -> timeFormat.format(Date(e.begin))
-                else -> "Morgen " + timeFormat.format(Date(e.begin))
+                else -> tr("Morgen ", "Tomorrow ") + timeFormat.format(Date(e.begin))
             }
             Text(
                 "$whenText · ${e.title}",
@@ -448,9 +449,9 @@ private fun BatteryLine() {
 
     if (level < 0 || (!charging && level > 20)) return
     val text = when {
-        full -> "Akku voll"
-        charging -> "Lädt · $level %"
-        else -> "Akku schwach · $level %"
+        full -> tr("Akku voll", "Battery full")
+        charging -> tr("Lädt · $level %", "Charging · $level %")
+        else -> tr("Akku schwach · $level %", "Battery low · $level %")
     }
     Text(
         text,
@@ -491,11 +492,11 @@ private fun MediaBlock() {
                 )
             }
         }
-        MediaButton("⏮\uFE0E", "Zurück") { NowPlaying.previous() }
-        MediaButton(if (info.playing) "⏸\uFE0E" else "▶\uFE0E", if (info.playing) "Pause" else "Abspielen") {
+        MediaButton("⏮\uFE0E", tr("Zurück", "Previous")) { NowPlaying.previous() }
+        MediaButton(if (info.playing) "⏸\uFE0E" else "▶\uFE0E", if (info.playing) tr("Pause", "Pause") else tr("Abspielen", "Play")) {
             NowPlaying.playPause()
         }
-        MediaButton("⏭\uFE0E", "Weiter") { NowPlaying.next() }
+        MediaButton("⏭\uFE0E", tr("Weiter", "Next")) { NowPlaying.next() }
     }
 }
 
@@ -553,7 +554,7 @@ private fun WidgetsArea(
                             ) {
                                 TextButton(onClick = { onMove(id, -1) }) { Text("↑") }
                                 TextButton(onClick = { onMove(id, 1) }) { Text("↓") }
-                                TextButton(onClick = { onRemove(id) }) { Text("Entfernen") }
+                                TextButton(onClick = { onRemove(id) }) { Text(tr("Entfernen", "Remove")) }
                             }
                         }
                     }
@@ -561,7 +562,7 @@ private fun WidgetsArea(
             }
         }
         if (edit) {
-            TextButton(onClick = onDone) { Text("Fertig") }
+            TextButton(onClick = onDone) { Text(tr("Fertig", "Done")) }
         }
     }
 }
@@ -687,8 +688,8 @@ private fun FavoritesList(
     Column {
         if (favorites.isEmpty()) {
             Text(
-                "Halte eine App gedrückt, um sie zu den Favoriten hinzuzufügen. " +
-                    "Ziehe an der Buchstabenleiste, um alle Apps zu sehen.",
+                tr("Halte eine App gedrückt, um sie zu den Favoriten hinzuzufügen. ", "Long-press an app to add it to your favorites. ") +
+                    tr("Ziehe an der Buchstabenleiste, um alle Apps zu sehen.", "Drag along the letter bar to see all apps."),
                 style = homeTextStyle(15.sp).copy(color = LocalHomeColors.current.secondary),
             )
         }
@@ -731,7 +732,7 @@ private fun FavoritesList(
                                 swipeApp = fav.swipeApp?.let { appsByKey[it] },
                                 hasWidget = fav.widgetId != null,
                                 onWidget = { fav.widgetId?.let { popup = app to it } },
-                                leftShortcutLabel = fav.swipeLeftShortcut?.let { fav.swipeLeftLabel ?: "Aktion" },
+                                leftShortcutLabel = fav.swipeLeftShortcut?.let { fav.swipeLeftLabel ?: tr("Aktion", "Action") },
                                 onLeftSwipe = { fav.swipeLeftShortcut?.let { onStartShortcut(app, it) } },
                                 notifications = notifications[app.notificationKey].orEmpty(),
                                 settings = settings,
@@ -762,15 +763,15 @@ private fun FavoritesList(
     removingContact?.let { fav ->
         AlertDialog(
             onDismissRequest = { removingContact = null },
-            title = { Text(fav.name ?: "Kontakt") },
-            text = { Text("Aus den Favoriten entfernen?") },
+            title = { Text(fav.name ?: tr("Kontakt", "Contact")) },
+            text = { Text(tr("Aus den Favoriten entfernen?", "Remove from favorites?")) },
             confirmButton = {
                 TextButton(onClick = {
                     onRemoveFavorite(fav.id)
                     removingContact = null
-                }) { Text("Entfernen") }
+                }) { Text(tr("Entfernen", "Remove")) }
             },
-            dismissButton = { TextButton(onClick = { removingContact = null }) { Text("Abbrechen") } },
+            dismissButton = { TextButton(onClick = { removingContact = null }) { Text(tr("Abbrechen", "Cancel")) } },
         )
     }
 }
@@ -778,7 +779,7 @@ private fun FavoritesList(
 @Composable
 private fun ContactFavoriteEntry(fav: Favorite, settings: LauncherSettings, fontSize: TextUnit, reorder: Modifier) {
     val context = LocalContext.current
-    val name = fav.name ?: "Kontakt"
+    val name = fav.name ?: tr("Kontakt", "Contact")
     Row(
         Modifier
             .fillMaxWidth()
@@ -950,7 +951,7 @@ private fun NotificationPreviewBlock(items: List<NotificationPreview>, startPadd
         }
         if (items.size > 1) {
             Text(
-                "+${items.size - 1} weitere",
+                tr("+${items.size - 1} weitere", "+${items.size - 1} more"),
                 style = homeTextStyle(12.sp).copy(color = colors.secondary),
             )
         }
@@ -988,7 +989,7 @@ private fun FolderEntry(
                 Spacer(Modifier.width(16.dp))
             }
             Text(
-                folder.name ?: "Ordner",
+                folder.name ?: tr("Ordner", "Folder"),
                 style = homeTextStyle(fontSize),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1014,7 +1015,7 @@ private fun FolderEntry(
                     )
                 }
                 if (apps.isEmpty()) {
-                    Text("Leer – lange drücken zum Bearbeiten", style = homeTextStyle(14.sp).copy(color = colors.secondary))
+                    Text(tr("Leer – lange drücken zum Bearbeiten", "Empty – long-press to edit"), style = homeTextStyle(14.sp).copy(color = colors.secondary))
                 }
             }
         }

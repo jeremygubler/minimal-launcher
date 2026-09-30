@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.Manifest
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -143,7 +144,7 @@ fun SearchScreen(
         Spacer(Modifier.height(32.dp))
         Box(Modifier.fillMaxWidth()) {
             if (query.isEmpty()) {
-                Text("Suchen…", style = homeTextStyle(30.sp).copy(color = colors.secondary))
+                Text(tr("Suchen…", "Search…"), style = homeTextStyle(30.sp).copy(color = colors.secondary))
             }
             BasicTextField(
                 value = query,
@@ -182,8 +183,8 @@ fun SearchScreen(
                             .fillMaxWidth()
                             .clickable {
                                 val cm = context.getSystemService(ClipboardManager::class.java)
-                                cm?.setPrimaryClip(ClipData.newPlainText("Ergebnis", calc))
-                                Toast.makeText(context, "Ergebnis kopiert", Toast.LENGTH_SHORT).show()
+                                cm?.setPrimaryClip(ClipData.newPlainText(tr("Ergebnis", "Result"), calc))
+                                Toast.makeText(context, tr("Ergebnis kopiert", "Result copied"), Toast.LENGTH_SHORT).show()
                             }
                             .padding(vertical = 12.dp),
                     )
@@ -192,9 +193,9 @@ fun SearchScreen(
             val noteText = Regex("^notiz\\s+(.+)$", RegexOption.IGNORE_CASE).find(query.trim())?.groupValues?.get(1)
             if (noteText != null) {
                 item(key = "note") {
-                    ActionLine("📝  Als Notiz auf den Startbildschirm: „$noteText“") {
+                    ActionLine(tr("📝  Als Notiz auf den Startbildschirm: „$noteText“", "📝  Pin as note to home screen: “$noteText”")) {
                         onSetNote(noteText)
-                        Toast.makeText(context, "Notiz gespeichert", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, tr("Notiz gespeichert", "Note saved"), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -204,13 +205,13 @@ fun SearchScreen(
                     val (title, due) = taskCommand
                     val whenText = when (due) {
                         null -> ""
-                        java.time.LocalDate.now() -> " (heute)"
-                        java.time.LocalDate.now().plusDays(1) -> " (morgen)"
-                        else -> " (übermorgen)"
+                        java.time.LocalDate.now() -> tr(" (heute)", " (today)")
+                        java.time.LocalDate.now().plusDays(1) -> tr(" (morgen)", " (tomorrow)")
+                        else -> tr(" (übermorgen)", " (day after tomorrow)")
                     }
-                    ActionLine("☐  Aufgabe hinzufügen: „$title“$whenText") {
+                    ActionLine(tr("☐  Aufgabe hinzufügen: „$title“$whenText", "☐  Add task: “$title”$whenText")) {
                         onAddTask(title, due)
-                        Toast.makeText(context, "Aufgabe gespeichert", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, tr("Aufgabe gespeichert", "Task saved"), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -221,8 +222,8 @@ fun SearchScreen(
                         .clickable {
                             if (action is QuickAction.Conversion) {
                                 val cm = context.getSystemService(ClipboardManager::class.java)
-                                cm?.setPrimaryClip(ClipData.newPlainText("Ergebnis", action.value))
-                                Toast.makeText(context, "Ergebnis kopiert", Toast.LENGTH_SHORT).show()
+                                cm?.setPrimaryClip(ClipData.newPlainText(tr("Ergebnis", "Result"), action.value))
+                                Toast.makeText(context, tr("Ergebnis kopiert", "Result copied"), Toast.LENGTH_SHORT).show()
                             } else {
                                 QuickActions.perform(context, action)
                             }
@@ -245,7 +246,7 @@ fun SearchScreen(
                 }
             }
             if (query.isBlank() && suggestions.isNotEmpty()) {
-                item(key = "suggestions_header") { SectionLabel("Vorschläge") }
+                item(key = "suggestions_header") { SectionLabel(tr("Vorschläge", "Suggestions")) }
                 items(suggestions, key = { "s_" + it.key }) { app ->
                     AppRow(
                         app = app,
@@ -270,7 +271,7 @@ fun SearchScreen(
                 )
             }
             if (shortcutResults.isNotEmpty()) {
-                item(key = "shortcuts_header") { SectionLabel("Aktionen") }
+                item(key = "shortcuts_header") { SectionLabel(tr("Aktionen", "Actions")) }
                 items(shortcutResults, key = { "sc_${it.`package`}_${it.id}_${it.userHandle.hashCode()}" }) { sc ->
                     ShortcutResultRow(
                         shortcut = sc,
@@ -282,7 +283,7 @@ fun SearchScreen(
                 }
             }
             if (contacts.isNotEmpty()) {
-                item(key = "contacts_header") { SectionLabel("Kontakte") }
+                item(key = "contacts_header") { SectionLabel(tr("Kontakte", "Contacts")) }
                 items(contacts, key = { "contact_${it.id}" }) { contact ->
                     ContactRow(
                         contact,
@@ -290,24 +291,24 @@ fun SearchScreen(
                         onClick = { ContactSearch.open(context, contact) },
                         onLongClick = {
                             onPinContact(contact.uri.toString(), contact.name)
-                            Toast.makeText(context, "${contact.name} zu Favoriten hinzugefügt", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, tr("${contact.name} zu Favoriten hinzugefügt", "${contact.name} added to favorites"), Toast.LENGTH_SHORT).show()
                         },
                     )
                 }
             }
             if (settings.searchContacts && !contactsAllowed && query.trim().length >= 2) {
                 item(key = "contacts_permission") {
-                    ActionLine("Auch Kontakte durchsuchen – Zugriff erlauben") {
+                    ActionLine(tr("Auch Kontakte durchsuchen – Zugriff erlauben", "Also search contacts – allow access")) {
                         requestContacts.launch(Manifest.permission.READ_CONTACTS)
                     }
                 }
             }
             if (query.isNotBlank()) {
                 item(key = "web") {
-                    ActionLine("Im Web suchen: „$query“") { SystemActions.webSearch(context, query, settings.searchEngine) }
+                    ActionLine(tr("Im Web suchen: „$query“", "Search the web: “$query”")) { SystemActions.webSearch(context, query, settings.searchEngine) }
                 }
                 item(key = "store") {
-                    ActionLine("Im Play Store suchen") { SystemActions.storeSearch(context, query) }
+                    ActionLine(tr("Im Play Store suchen", "Search the Play Store")) { SystemActions.storeSearch(context, query) }
                 }
             }
         }

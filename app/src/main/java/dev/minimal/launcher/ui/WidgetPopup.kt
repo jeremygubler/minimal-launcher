@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
 import android.os.Build
@@ -75,11 +76,11 @@ fun WidgetPopup(
                             Spacer(Modifier.width(8.dp))
                             Text(app.label, style = MaterialTheme.typography.titleSmall)
                         }
-                        TextButton(onClick = onOpenApp) { Text("Öffnen") }
+                        TextButton(onClick = onOpenApp) { Text(tr("Öffnen", "Open")) }
                     }
                     if (info == null) {
                         Text(
-                            "Das Widget ist nicht mehr verfügbar. Lege es im App-Menü neu fest.",
+                            tr("Das Widget ist nicht mehr verfügbar. Lege es im App-Menü neu fest.", "The widget is no longer available. Set it again in the app menu."),
                             modifier = Modifier.padding(16.dp),
                             style = MaterialTheme.typography.bodyMedium,
                         )

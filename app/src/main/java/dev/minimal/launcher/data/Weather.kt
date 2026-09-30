@@ -1,5 +1,6 @@
 package dev.minimal.launcher.data
 
+import dev.minimal.launcher.util.tr
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -146,21 +147,21 @@ object Weather {
     }
 
     fun describe(code: Int): String = when (code) {
-        0 -> "Sonnig"
-        1 -> "Überwiegend sonnig"
-        2 -> "Teilweise bewölkt"
-        3 -> "Bewölkt"
-        45, 48 -> "Nebel"
-        in 51..55 -> "Nieselregen"
-        56, 57 -> "Gefrierender Niesel"
-        61, 63 -> "Regen"
-        65 -> "Starker Regen"
-        66, 67 -> "Gefrierender Regen"
-        in 71..75, 77 -> "Schnee"
-        in 80..82 -> "Regenschauer"
-        85, 86 -> "Schneeschauer"
-        95 -> "Gewitter"
-        96, 99 -> "Gewitter mit Hagel"
-        else -> "Wetter"
+        0 -> tr("Sonnig", "Sunny")
+        1 -> tr("Überwiegend sonnig", "Mostly sunny")
+        2 -> tr("Teilweise bewölkt", "Partly cloudy")
+        3 -> tr("Bewölkt", "Cloudy")
+        45, 48 -> tr("Nebel", "Fog")
+        in 51..55 -> tr("Nieselregen", "Drizzle")
+        56, 57 -> tr("Gefrierender Niesel", "Freezing drizzle")
+        61, 63 -> tr("Regen", "Rain")
+        65 -> tr("Starker Regen", "Heavy rain")
+        66, 67 -> tr("Gefrierender Regen", "Freezing rain")
+        in 71..75, 77 -> tr("Schnee", "Snow")
+        in 80..82 -> tr("Regenschauer", "Rain showers")
+        85, 86 -> tr("Schneeschauer", "Snow showers")
+        95 -> tr("Gewitter", "Thunderstorm")
+        96, 99 -> tr("Gewitter mit Hagel", "Thunderstorm with hail")
+        else -> tr("Wetter", "Weather")
     }
 }

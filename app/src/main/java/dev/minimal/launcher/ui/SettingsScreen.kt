@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.Manifest
 import kotlinx.coroutines.Dispatchers
 import dev.minimal.launcher.util.IntentionReminder
@@ -121,7 +122,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val requestRecapNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted) {
             vm.update { it.copy(eveningRecap = false) }
-            Toast.makeText(context, "Ohne Benachrichtigungen kein Abendrückblick", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, tr("Ohne Benachrichtigungen kein Abendrückblick", "No evening recap without notifications"), Toast.LENGTH_SHORT).show()
         }
         EveningRecapScheduler.sync(context)
     }
@@ -134,7 +135,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var backupTick by remember { mutableIntStateOf(0) }
     val lastBackupText = remember(backupTick, resumeTick) {
         val last = AutoBackup.lastRun(context)
-        if (last == 0L) "noch keine" else DateUtils.getRelativeTimeSpanString(last).toString()
+        if (last == 0L) tr("noch keine", "none yet") else DateUtils.getRelativeTimeSpanString(last).toString()
     }
     val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -147,7 +148,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         scope.launch {
             val ok = vm.backupNow()
             backupTick++
-            Toast.makeText(context, if (ok) "Erste Sicherung gespeichert" else "Ordner nicht beschreibbar", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, if (ok) tr("Erste Sicherung gespeichert", "First backup saved") else tr("Ordner nicht beschreibbar", "Folder not writable"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -162,7 +163,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var editingCity by remember { mutableStateOf(false) }
     val requestLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted) {
-            Toast.makeText(context, "Ohne Standort bitte einen festen Ort eintragen", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, tr("Ohne Standort bitte einen festen Ort eintragen", "Without location, please enter a fixed place"), Toast.LENGTH_LONG).show()
             editingCity = true
         }
     }
@@ -170,7 +171,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val requestCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         calendarAllowed = granted
         vm.update { it.copy(showEvents = granted) }
-        if (!granted) Toast.makeText(context, "Ohne Kalenderzugriff können keine Termine angezeigt werden", Toast.LENGTH_SHORT).show()
+        if (!granted) Toast.makeText(context, tr("Ohne Kalenderzugriff können keine Termine angezeigt werden", "Without calendar access, events can't be shown"), Toast.LENGTH_SHORT).show()
     }
 
     val store = context.launcherApp.settings
@@ -181,7 +182,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         } catch (e: Exception) {
             false
         }
-        Toast.makeText(context, if (ok) "Sicherung gespeichert" else "Sicherung fehlgeschlagen", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, if (ok) tr("Sicherung gespeichert", "Backup saved") else tr("Sicherung fehlgeschlagen", "Backup failed"), Toast.LENGTH_SHORT).show()
     }
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri ?: return@rememberLauncherForActivityResult
@@ -191,16 +192,16 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             null
         }
         val ok = json != null && store.importJson(json)
-        Toast.makeText(context, if (ok) "Einstellungen wiederhergestellt" else "Datei ungültig", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, if (ok) tr("Einstellungen wiederhergestellt", "Settings restored") else tr("Datei ungültig", "Invalid file"), Toast.LENGTH_SHORT).show()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Launcher-Einstellungen") },
+                title = { Text(tr("Launcher-Einstellungen", "Launcher settings")) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Zurück")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Zurück", "Back"))
                     }
                 },
             )
@@ -217,118 +218,118 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 item { Section("Pro") }
                 item {
                     if (pro) {
-                        StatusRow("Pro ist freigeschaltet – danke!", true, "") {}
+                        StatusRow(tr("Pro ist freigeschaltet – danke!", "Pro is unlocked – thank you!"), true, "") {}
                     } else {
-                        ClickRow("Pro freischalten", "Einmalkauf – kontextbasierte Seiten, eigene Icons, Sicherung, Wochenbericht, Aufgaben") {
+                        ClickRow(tr("Pro freischalten", "Unlock Pro"), tr("Einmalkauf – kontextbasierte Seiten, eigene Icons, Sicherung, Wochenbericht, Aufgaben", "One-time purchase – context pages, pop-up widgets, intentions, weekly report & more")) {
                             paywallFor = null
                             showPaywall = true
                         }
                     }
                 }
-                if (!pro) item { ClickRow("Käufe wiederherstellen", null) { Pro.restore() } }
+                if (!pro) item { ClickRow(tr("Käufe wiederherstellen", "Restore purchases"), null) { Pro.restore() } }
             }
-            item { Section("Einrichtung") }
-            item { ClickRow("Einrichtungsassistent erneut zeigen", null) { vm.update { it.copy(onboardingDone = false) } } }
+            item { Section(tr("Einrichtung", "Setup")) }
+            item { ClickRow(tr("Einrichtungsassistent erneut zeigen", "Show setup assistant again"), null) { vm.update { it.copy(onboardingDone = false) } } }
             item {
-                StatusRow("Standard-Launcher", isDefault, "Festlegen") { SystemActions.openHomeSettings(context) }
+                StatusRow(tr("Standard-Launcher", "Default launcher"), isDefault, tr("Festlegen", "Set")) { SystemActions.openHomeSettings(context) }
             }
             item {
-                StatusRow("Benachrichtigungszugriff (Punkte & Vorschau)", hasNotificationAccess, "Erlauben") {
+                StatusRow(tr("Benachrichtigungszugriff (Punkte & Vorschau)", "Notification access (dots & preview)"), hasNotificationAccess, tr("Erlauben", "Allow")) {
                     SystemActions.openNotificationAccess(context)
                 }
             }
             item {
-                StatusRow("Bedienungshilfe (Sperren per Doppeltipp)", accessibilityOn, "Aktivieren") {
+                StatusRow(tr("Bedienungshilfe (Sperren per Doppeltipp)", "Accessibility service (double tap to lock)"), accessibilityOn, tr("Aktivieren", "Enable")) {
                     disclosure = Disclosure.ACCESSIBILITY
                 }
             }
             if (listenerDisconnected) {
                 item {
                     Hint(
-                        "Der Benachrichtigungsdienst wurde vom System beendet – Punkte und Mediensteuerung " +
-                            "fehlen deshalb. Der Launcher versucht, ihn neu zu verbinden. Hilft das nicht, " +
-                            "den Launcher unten von der Akku-Optimierung ausnehmen."
+                        tr("Der Benachrichtigungsdienst wurde vom System beendet – Punkte und Mediensteuerung ", "The notification service was stopped by the system – dots and media controls ") +
+                            tr("fehlen deshalb. Der Launcher versucht, ihn neu zu verbinden. Hilft das nicht, ", "are missing. The launcher tries to reconnect it. If that doesn't help, ") +
+                            tr("den Launcher unten von der Akku-Optimierung ausnehmen.", "exclude the launcher from battery optimization below.")
                     )
                 }
             }
             DeviceCompat.aggressiveVendor?.let { vendor ->
                 item {
-                    StatusRow("Von Akku-Optimierung ausgenommen", batteryUnrestricted, "Ausnehmen") {
+                    StatusRow(tr("Von Akku-Optimierung ausgenommen", "Excluded from battery optimization"), batteryUnrestricted, tr("Ausnehmen", "Exclude")) {
                         DeviceCompat.requestIgnoreBatteryOptimizations(context)
                     }
                 }
                 item {
-                    ClickRow("Autostart / Hintergrundaktivität erlauben ($vendor)", "Öffnet die Seite des Herstellers") {
+                    ClickRow(tr("Autostart / Hintergrundaktivität erlauben ($vendor)", "Allow autostart / background activity ($vendor)"), tr("Öffnet die Seite des Herstellers", "Opens the manufacturer's page")) {
                         DeviceCompat.openAutostart(context)
                     }
                 }
                 item {
                     Hint(
-                        "$vendor beendet Hintergrunddienste oft aggressiv. Damit Benachrichtigungspunkte und " +
-                            "Mediensteuerung zuverlässig bleiben: Akku-Optimierung ausnehmen und Autostart erlauben."
+                        tr("$vendor beendet Hintergrunddienste oft aggressiv. Damit Benachrichtigungspunkte und ", "$vendor often kills background services aggressively. To keep notification dots and ") +
+                            tr("Mediensteuerung zuverlässig bleiben: Akku-Optimierung ausnehmen und Autostart erlauben.", "media controls reliable: exclude from battery optimization and allow autostart.")
                     )
                 }
             }
             if (!hasNotificationAccess || !accessibilityOn) {
                 item {
                     Hint(
-                        "Meldet Android „App wurde Zugriff verweigert“ / „Eingeschränkte Einstellung“? " +
-                            "Dann zuerst in der App-Info oben rechts auf ⋮ tippen und " +
-                            "„Eingeschränkte Einstellungen zulassen“ wählen. Danach klappt das Erlauben."
+                        tr("Meldet Android „App wurde Zugriff verweigert“ / „Eingeschränkte Einstellung“? ", "Android says “App was denied access” / “Restricted setting”? ") +
+                            tr("Dann zuerst in der App-Info oben rechts auf ⋮ tippen und ", "Then first tap ⋮ at the top right in app info and ") +
+                            tr("„Eingeschränkte Einstellungen zulassen“ wählen. Danach klappt das Erlauben.", "choose “Allow restricted settings”. Allowing works after that.")
                     )
                 }
-                item { ClickRow("App-Info öffnen", "Um eingeschränkte Einstellungen zuzulassen") { SystemActions.openAppDetails(context) } }
+                item { ClickRow(tr("App-Info öffnen", "Open app info"), tr("Um eingeschränkte Einstellungen zuzulassen", "To allow restricted settings")) { SystemActions.openAppDetails(context) } }
             }
 
-            item { Section("Darstellung") }
+            item { Section(tr("Darstellung", "Appearance")) }
             item {
-                ClickRow("Design", when (s.themeMode) {
-                    ThemeMode.SYSTEM -> "Wie System"
-                    ThemeMode.LIGHT -> "Hell"
-                    ThemeMode.DARK -> "Dunkel"
+                ClickRow(tr("Design", "Theme"), when (s.themeMode) {
+                    ThemeMode.SYSTEM -> tr("Wie System", "System default")
+                    ThemeMode.LIGHT -> tr("Hell", "Light")
+                    ThemeMode.DARK -> tr("Dunkel", "Dark")
                 }) { dialog = SettingsDialog.THEME }
             }
             item {
-                ClickRow("Akzentfarbe", ACCENT_COLORS.firstOrNull { it.first == s.accent }?.second ?: "Eigene") {
+                ClickRow(tr("Akzentfarbe", "Accent color"), ACCENT_COLORS.firstOrNull { it.first == s.accent }?.second ?: tr("Eigene", "Custom")) {
                     dialog = SettingsDialog.ACCENT
                 }
             }
             item {
-                ClickRow("Icon-Pack", iconPacks.firstOrNull { it.first == s.iconPack }?.second ?: "Standard") {
+                ClickRow(tr("Icon-Pack", "Icon pack"), iconPacks.firstOrNull { it.first == s.iconPack }?.second ?: tr("Standard", "Default")) {
                     dialog = SettingsDialog.ICON_PACK
                 }
             }
-            item { SwitchRow("App-Icons anzeigen", s.showIcons) { v -> vm.update { it.copy(showIcons = v) } } }
+            item { SwitchRow(tr("App-Icons anzeigen", "Show app icons"), s.showIcons) { v -> vm.update { it.copy(showIcons = v) } } }
             if (Build.VERSION.SDK_INT >= 33) {
                 item {
-                    SwitchRow("Designsymbole (einfarbig in Systemfarbe)", s.themedIcons) { v ->
+                    SwitchRow(tr("Designsymbole (einfarbig in Systemfarbe)", "Themed icons (monochrome in system color)"), s.themedIcons) { v ->
                         vm.update { it.copy(themedIcons = v) }
                     }
                 }
             }
             item {
-                SliderRow("Icon-Größe", s.iconSize.toFloat(), 24f..56f, "${s.iconSize} dp") { v ->
+                SliderRow(tr("Icon-Größe", "Icon size"), s.iconSize.toFloat(), 24f..56f, "${s.iconSize} dp") { v ->
                     vm.update { it.copy(iconSize = v.toInt()) }
                 }
             }
-            item { ClickRow("Schriftart", s.font.label) { dialog = SettingsDialog.FONT } }
-            item { ClickRow("Schriftstärke", s.fontWeight.label) { dialog = SettingsDialog.WEIGHT } }
+            item { ClickRow(tr("Schriftart", "Font"), s.font.label) { dialog = SettingsDialog.FONT } }
+            item { ClickRow(tr("Schriftstärke", "Font weight"), s.fontWeight.label) { dialog = SettingsDialog.WEIGHT } }
             item {
-                SliderRow("Schriftgröße", s.textScale, 0.7f..1.5f, "${(s.textScale * 100).toInt()} %") { v ->
+                SliderRow(tr("Schriftgröße", "Font size"), s.textScale, 0.7f..1.5f, "${(s.textScale * 100).toInt()} %") { v ->
                     vm.update { it.copy(textScale = v) }
                 }
             }
             item {
-                SliderRow("Hintergrund abdunkeln", s.wallpaperDim, 0f..0.8f, "${(s.wallpaperDim * 100).toInt()} %") { v ->
+                SliderRow(tr("Hintergrund abdunkeln", "Dim wallpaper"), s.wallpaperDim, 0f..0.8f, "${(s.wallpaperDim * 100).toInt()} %") { v ->
                     vm.update { it.copy(wallpaperDim = v) }
                 }
             }
-            item { SwitchRow("Hintergrund weichzeichnen (Android 12+)", s.blur) { v -> vm.update { it.copy(blur = v) } } }
-            item { SwitchRow("Uhr anzeigen", s.showClock) { v -> vm.update { it.copy(showClock = v) } } }
-            item { SwitchRow("Datum anzeigen", s.showDate) { v -> vm.update { it.copy(showDate = v) } } }
-            item { SwitchRow("Nächsten Wecker anzeigen", s.showAlarm) { v -> vm.update { it.copy(showAlarm = v) } } }
+            item { SwitchRow(tr("Hintergrund weichzeichnen (Android 12+)", "Blur wallpaper (Android 12+)"), s.blur) { v -> vm.update { it.copy(blur = v) } } }
+            item { SwitchRow(tr("Uhr anzeigen", "Show clock"), s.showClock) { v -> vm.update { it.copy(showClock = v) } } }
+            item { SwitchRow(tr("Datum anzeigen", "Show date"), s.showDate) { v -> vm.update { it.copy(showDate = v) } } }
+            item { SwitchRow(tr("Nächsten Wecker anzeigen", "Show next alarm"), s.showAlarm) { v -> vm.update { it.copy(showAlarm = v) } } }
             item {
-                SwitchRow("Nächsten Termin anzeigen", s.showEvents && calendarAllowed) { v ->
+                SwitchRow(tr("Nächsten Termin anzeigen", "Show next event"), s.showEvents && calendarAllowed) { v ->
                     if (v && !CalendarEvents.hasPermission(context)) {
                         requestCalendar.launch(Manifest.permission.READ_CALENDAR)
                     } else {
@@ -338,24 +339,24 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             if (s.showEvents) {
                 item {
-                    SliderRow("Anzahl Termine", s.eventCount.toFloat(), 1f..3f, "${s.eventCount}") { v ->
+                    SliderRow(tr("Anzahl Termine", "Number of events"), s.eventCount.toFloat(), 1f..3f, "${s.eventCount}") { v ->
                         vm.update { it.copy(eventCount = v.roundToInt().coerceIn(1, 3)) }
                     }
                 }
             }
-            item { SwitchRow("Aufgaben unter der Uhr anzeigen", s.showTasks) { v -> vm.update { it.copy(showTasks = v) } } }
+            item { SwitchRow(tr("Aufgaben unter der Uhr anzeigen", "Show tasks below the clock"), s.showTasks) { v -> vm.update { it.copy(showTasks = v) } } }
             if (s.tasks.any { it.isDone }) {
-                item { ClickRow("Erledigte Aufgaben jetzt entfernen", null) { vm.clearDoneTasks() } }
+                item { ClickRow(tr("Erledigte Aufgaben jetzt entfernen", "Remove completed tasks now"), null) { vm.clearDoneTasks() } }
             }
-            item { SwitchRow("Neue Apps in der Liste markieren", s.markNewApps) { v -> vm.update { it.copy(markNewApps = v) } } }
+            item { SwitchRow(tr("Neue Apps in der Liste markieren", "Mark new apps in the list"), s.markNewApps) { v -> vm.update { it.copy(markNewApps = v) } } }
             item {
-                SwitchRow("Mediensteuerung (Musik, Podcasts)", s.showMedia) { v -> vm.update { it.copy(showMedia = v) } }
-            }
-            item {
-                SwitchRow("Akku beim Laden und unter 20 % anzeigen", s.showBattery) { v -> vm.update { it.copy(showBattery = v) } }
+                SwitchRow(tr("Mediensteuerung (Musik, Podcasts)", "Media controls (music, podcasts)"), s.showMedia) { v -> vm.update { it.copy(showMedia = v) } }
             }
             item {
-                SwitchRow("Wetter unter der Uhr (Internet, Open-Meteo)", s.showWeather) { v ->
+                SwitchRow(tr("Akku beim Laden und unter 20 % anzeigen", "Show battery when charging and below 20 %"), s.showBattery) { v -> vm.update { it.copy(showBattery = v) } }
+            }
+            item {
+                SwitchRow(tr("Wetter unter der Uhr (Internet, Open-Meteo)", "Weather below the clock (internet, Open-Meteo)"), s.showWeather) { v ->
                     vm.update { it.copy(showWeather = v) }
                     if (v && s.weatherCity.isBlank() && !Weather.hasLocationPermission(context)) {
                         disclosure = Disclosure.WEATHER_LOCATION
@@ -365,69 +366,69 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             if (s.showWeather) {
                 item {
                     ClickRow(
-                        "Ort fürs Wetter",
-                        s.weatherCity.ifBlank { "Automatisch (ungefährer Standort)" },
+                        tr("Ort fürs Wetter", "Place for weather"),
+                        s.weatherCity.ifBlank { tr("Automatisch (ungefährer Standort)", "Automatic (approximate location)") },
                     ) { editingCity = true }
                 }
                 item {
                     Hint(
-                        "Wetterdaten von Open-Meteo, ohne Konto und Tracking. Mit festem Ort ist keine " +
-                            "Standortberechtigung nötig; sonst wird der Standort auf ca. 1 km gerundet. " +
-                            "Aktualisierung alle 30 Minuten."
+                        tr("Wetterdaten von Open-Meteo, ohne Konto und Tracking. Mit festem Ort ist keine ", "Weather data from Open-Meteo, no account or tracking. With a fixed place no ") +
+                            tr("Standortberechtigung nötig; sonst wird der Standort auf ca. 1 km gerundet. ", "location permission is needed; otherwise the location is rounded to about 1 km. ") +
+                            tr("Aktualisierung alle 30 Minuten.", "Updated every 30 minutes.")
                     )
                 }
             }
             item {
-                SwitchRow("Bildschirmzeit unter der Uhr", s.showScreenTime) { v ->
+                SwitchRow(tr("Bildschirmzeit unter der Uhr", "Screen time below the clock"), s.showScreenTime) { v ->
                     vm.update { it.copy(showScreenTime = v) }
                     if (v && !ScreenTime.hasAccess(context)) SystemActions.openUsageAccess(context)
                 }
             }
             if (s.showScreenTime && !usageAccess) {
                 item {
-                    Hint("Dafür „Nutzungszugriff“ für Kanso erlauben. Die Daten bleiben auf dem Gerät.")
+                    Hint(tr("Dafür „Nutzungszugriff“ für Kanso erlauben. Die Daten bleiben auf dem Gerät.", "Allow “Usage access” for Kanso. The data stays on the device."))
                 }
-                item { ClickRow("Nutzungszugriff erlauben", null) { SystemActions.openUsageAccess(context) } }
+                item { ClickRow(tr("Nutzungszugriff erlauben", "Allow usage access"), null) { SystemActions.openUsageAccess(context) } }
             }
-            item { SwitchRow("Buchstabenleiste links (Linkshänder)", s.alphabetLeft) { v -> vm.update { it.copy(alphabetLeft = v) } } }
+            item { SwitchRow(tr("Buchstabenleiste links (Linkshänder)", "Letter bar on the left (left-handed)"), s.alphabetLeft) { v -> vm.update { it.copy(alphabetLeft = v) } } }
 
-            item { Section("Benachrichtigungen") }
-            item { SwitchRow("Benachrichtigungspunkte", s.notificationDots) { v -> vm.update { it.copy(notificationDots = v) } } }
+            item { Section(tr("Benachrichtigungen", "Notifications")) }
+            item { SwitchRow(tr("Benachrichtigungspunkte", "Notification dots"), s.notificationDots) { v -> vm.update { it.copy(notificationDots = v) } } }
             item {
-                SwitchRow("Vorschau unter Favoriten", s.notificationPreview) { v ->
+                SwitchRow(tr("Vorschau unter Favoriten", "Preview below favorites"), s.notificationPreview) { v ->
                     vm.update { it.copy(notificationPreview = v) }
                 }
             }
 
-            item { Section("Gesten") }
-            item { ClickRow("Doppeltippen", s.doubleTap.label) { dialog = SettingsDialog.DOUBLE_TAP } }
-            item { ClickRow("Nach unten wischen", s.swipeDown.label) { dialog = SettingsDialog.SWIPE_DOWN } }
-            item { ClickRow("Nach oben wischen", s.swipeUp.label) { dialog = SettingsDialog.SWIPE_UP } }
-            item { ClickRow("Home-Taste auf dem Startbildschirm", s.homePress.label) { dialog = SettingsDialog.HOME_PRESS } }
-            item { ClickRow("Suchmaschine", s.searchEngine.label) { dialog = SettingsDialog.ENGINE } }
-            item { SwitchRow("Tastatur bei Suche automatisch öffnen", s.autoKeyboard) { v -> vm.update { it.copy(autoKeyboard = v) } } }
-            item { SwitchRow("Kontakte in der Suche", s.searchContacts) { v -> vm.update { it.copy(searchContacts = v) } } }
-            item { SwitchRow("App-Aktionen in der Suche (z. B. „Neue Nachricht“)", s.searchShortcuts) { v -> vm.update { it.copy(searchShortcuts = v) } } }
-            item { SwitchRow("Vorschläge (meistgenutzte Apps)", s.showSuggestions) { v -> vm.update { it.copy(showSuggestions = v) } } }
+            item { Section(tr("Gesten", "Gestures")) }
+            item { ClickRow(tr("Doppeltippen", "Double tap"), s.doubleTap.label) { dialog = SettingsDialog.DOUBLE_TAP } }
+            item { ClickRow(tr("Nach unten wischen", "Swipe down"), s.swipeDown.label) { dialog = SettingsDialog.SWIPE_DOWN } }
+            item { ClickRow(tr("Nach oben wischen", "Swipe up"), s.swipeUp.label) { dialog = SettingsDialog.SWIPE_UP } }
+            item { ClickRow(tr("Home-Taste auf dem Startbildschirm", "Home button on the home screen"), s.homePress.label) { dialog = SettingsDialog.HOME_PRESS } }
+            item { ClickRow(tr("Suchmaschine", "Search engine"), s.searchEngine.label) { dialog = SettingsDialog.ENGINE } }
+            item { SwitchRow(tr("Tastatur bei Suche automatisch öffnen", "Open keyboard automatically in search"), s.autoKeyboard) { v -> vm.update { it.copy(autoKeyboard = v) } } }
+            item { SwitchRow(tr("Kontakte in der Suche", "Contacts in search"), s.searchContacts) { v -> vm.update { it.copy(searchContacts = v) } } }
+            item { SwitchRow(tr("App-Aktionen in der Suche (z. B. „Neue Nachricht“)", "App actions in search (e.g. “New message”)"), s.searchShortcuts) { v -> vm.update { it.copy(searchShortcuts = v) } } }
+            item { SwitchRow(tr("Vorschläge (meistgenutzte Apps)", "Suggestions (most used apps)"), s.showSuggestions) { v -> vm.update { it.copy(showSuggestions = v) } } }
             item {
-                ClickRow("Nutzungsverlauf löschen", "Setzt Vorschläge und Sortierung zurück") {
+                ClickRow(tr("Nutzungsverlauf löschen", "Clear usage history"), tr("Setzt Vorschläge und Sortierung zurück", "Resets suggestions and sorting")) {
                     vm.clearUsage()
-                    Toast.makeText(context, "Nutzungsverlauf gelöscht", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, tr("Nutzungsverlauf gelöscht", "Usage history cleared"), Toast.LENGTH_SHORT).show()
                 }
             }
 
-            item { Section("Favoriten & Seiten") }
-            item { Hint("Auf dem Startbildschirm nach links/rechts wischen oder den Seitennamen antippen, um die Seite zu wechseln.") }
+            item { Section(tr("Favoriten & Seiten", "Favorites & pages")) }
+            item { Hint(tr("Auf dem Startbildschirm nach links/rechts wischen oder den Seitennamen antippen, um die Seite zu wechseln.", "On the home screen, swipe left/right or tap the page name to switch pages.")) }
             if (s.pages.size > 1) {
                 item {
-                    SwitchRow("Seite automatisch wechseln (Zeitplan & Kontext)", s.autoPages) { v -> vm.setAutoPages(v) }
+                    SwitchRow(tr("Seite automatisch wechseln (Zeitplan & Kontext)", "Switch pages automatically (schedule & context)"), s.autoPages) { v -> vm.setAutoPages(v) }
                 }
                 if (s.autoPages) {
                     item {
                         Hint(
-                            "⏰ Zeitplan (Tage + Uhrzeit) und 📍 Kontext (Kopfhörer, Laden, Bluetooth-Gerät, WLAN) " +
-                                "pro Seite. Kontext hat Vorrang vor Zeitplänen; sonst gilt die erste Seite ohne Regeln. " +
-                                "Gewechselt wird nur, wenn sich etwas ändert – dazwischen kannst du frei wechseln."
+                            tr("⏰ Zeitplan (Tage + Uhrzeit) und 📍 Kontext (Kopfhörer, Laden, Bluetooth-Gerät, WLAN) ", "⏰ Schedule (days + time) and 📍 context (headphones, charging, Bluetooth device, Wi-Fi) ") +
+                                tr("pro Seite. Kontext hat Vorrang vor Zeitplänen; sonst gilt die erste Seite ohne Regeln. ", "per page. Context takes priority over schedules; otherwise the first page without rules applies. ") +
+                                tr("Gewechselt wird nur, wenn sich etwas ändert – dazwischen kannst du frei wechseln.", "Pages only switch when something changes – in between you can switch freely.")
                         )
                     }
                 }
@@ -451,7 +452,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                         TextButton(onClick = { vm.movePage(page.id, 1) }, enabled = pageIndex < s.pages.lastIndex) { Text("↓") }
                         if (s.autoPages && s.pages.size > 1) TextButton(onClick = { schedulePageId = page.id }) { Text("⏰") }
                         if (s.autoPages && s.pages.size > 1) TextButton(onClick = {
-                            if (pro) contextPageId = page.id else paywallFor = "Kontextbasierte Seiten"
+                            if (pro) contextPageId = page.id else paywallFor = tr("Kontextbasierte Seiten", "Context-based pages")
                         }) { Text("📍") }
                         TextButton(onClick = { renamePageId = page.id }) { Text("✎") }
                         if (s.pages.size > 1) TextButton(onClick = { deletePageId = page.id }) { Text("✕") }
@@ -465,16 +466,16 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
                 val pageFavs = s.pageFavorites(page.id)
                 if (pageFavs.isEmpty()) {
-                    item(key = "page_empty_${page.id}") { Hint("Keine Favoriten auf dieser Seite.") }
+                    item(key = "page_empty_${page.id}") { Hint(tr("Keine Favoriten auf dieser Seite.", "No favorites on this page.")) }
                 }
                 pageFavs.forEachIndexed { index, fav ->
                     item(key = "fav_${fav.id}") {
                         val label = if (fav.isContact) {
-                            "👤 " + (fav.name ?: "Kontakt")
+                            "👤 " + (fav.name ?: tr("Kontakt", "Contact"))
                         } else if (fav.isFolder) {
-                            "📁 " + (fav.name ?: "Ordner") + " (${fav.apps.size})"
+                            "📁 " + (fav.name ?: tr("Ordner", "Folder")) + " (${fav.apps.size})"
                         } else {
-                            fav.apps.firstOrNull()?.let { appsByKey[it]?.label } ?: "Nicht installiert"
+                            fav.apps.firstOrNull()?.let { appsByKey[it]?.label } ?: tr("Nicht installiert", "Not installed")
                         }
                         Row(
                             Modifier
@@ -492,43 +493,43 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     }
                 }
             }
-            item { ClickRow("Seite hinzufügen", "z. B. „Arbeit“ oder „Privat“") { dialog = SettingsDialog.NEW_PAGE } }
-            item { ClickRow("Ordner erstellen", "Mehrere Apps unter einem Favoriten") { dialog = SettingsDialog.NEW_FOLDER } }
+            item { ClickRow(tr("Seite hinzufügen", "Add page"), tr("z. B. „Arbeit“ oder „Privat“", "e.g. “Work” or “Personal”")) { dialog = SettingsDialog.NEW_PAGE } }
+            item { ClickRow(tr("Ordner erstellen", "Create folder"), tr("Mehrere Apps unter einem Favoriten", "Several apps under one favorite")) { dialog = SettingsDialog.NEW_FOLDER } }
 
-            item { Section("Fokus-Modus") }
+            item { Section(tr("Fokus-Modus", "Focus mode")) }
             item {
                 Hint(
-                    "Ablenkende Apps werden im Fokus-Modus ausgegraut, ihre Benachrichtigungen ausgeblendet, " +
-                        "und vor dem Öffnen gibt es eine kurze Denkpause. Schnell umschalten: leeren Bereich " +
-                        "auf dem Startbildschirm lange drücken."
+                    tr("Ablenkende Apps werden im Fokus-Modus ausgegraut, ihre Benachrichtigungen ausgeblendet, ", "In focus mode, distracting apps are grayed out, their notifications hidden, ") +
+                        tr("und vor dem Öffnen gibt es eine kurze Denkpause. Schnell umschalten: leeren Bereich ", "and there is a short pause before opening them. Quick toggle: long-press an empty area ") +
+                        tr("auf dem Startbildschirm lange drücken.", "on the home screen.")
                 )
             }
-            item { SwitchRow("Fokus-Modus jetzt aktiv", s.focusManual) { v -> vm.setFocusManual(v) } }
+            item { SwitchRow(tr("Fokus-Modus jetzt aktiv", "Focus mode on now"), s.focusManual) { v -> vm.setFocusManual(v) } }
             item {
-                ClickRow("Zeitplan", s.focusSchedule?.describe() ?: "Kein Zeitplan – nur manuell") { editFocusSchedule = true }
+                ClickRow(tr("Zeitplan", "Schedule"), s.focusSchedule?.describe() ?: tr("Kein Zeitplan – nur manuell", "No schedule – manual only")) { editFocusSchedule = true }
             }
             item {
                 SliderRow(
-                    "Denkpause vor dem Öffnen",
+                    tr("Denkpause vor dem Öffnen", "Pause before opening"),
                     s.focusPauseSeconds.toFloat(),
                     0f..30f,
-                    if (s.focusPauseSeconds == 0) "keine" else "${s.focusPauseSeconds} s",
+                    if (s.focusPauseSeconds == 0) tr("keine", "none") else "${s.focusPauseSeconds} s",
                 ) { v -> vm.update { it.copy(focusPauseSeconds = v.roundToInt()) } }
             }
             item {
-                SwitchRow("Absichtsfrage" + if (pro) "" else " (Pro)", s.intentionPrompt && pro) { v ->
-                    if (!pro) paywallFor = "Absichtsfrage" else vm.update { it.copy(intentionPrompt = v) }
+                SwitchRow(tr("Absichtsfrage", "Intention prompt") + if (pro) "" else " (Pro)", s.intentionPrompt && pro) { v ->
+                    if (!pro) paywallFor = tr("Absichtsfrage", "Intention prompt") else vm.update { it.copy(intentionPrompt = v) }
                 }
             }
             item {
                 Hint(
-                    "Statt nur zu warten fragt Kanso: „Wozu öffnest du …?“ – mit Zähler, wie oft du die App heute " +
-                        "schon geöffnet hast, und optionalem Timer, der dich danach an deine Absicht erinnert."
+                    tr("Statt nur zu warten fragt Kanso: „Wozu öffnest du …?“ – mit Zähler, wie oft du die App heute ", "Instead of just waiting, Kanso asks: “Why are you opening …?” – with a count of how often you opened the app today ") +
+                        tr("schon geöffnet hast, und optionalem Timer, der dich danach an deine Absicht erinnert.", "and an optional timer that reminds you of your intention afterwards.")
                 )
             }
             if (s.intentionPrompt && pro) {
                 item {
-                    SwitchRow("Auch ausserhalb des Fokus-Modus fragen", s.intentionAlways) { v ->
+                    SwitchRow(tr("Auch ausserhalb des Fokus-Modus fragen", "Also ask outside focus mode"), s.intentionAlways) { v ->
                         vm.update { it.copy(intentionAlways = v) }
                     }
                 }
@@ -546,31 +547,31 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     }
                 }
             }
-            item { ClickRow("Ablenkende App hinzufügen", if (s.focusApps.isEmpty()) "Noch keine ausgewählt" else "${s.focusApps.size} ausgewählt") { pickingFocusApp = true } }
+            item { ClickRow(tr("Ablenkende App hinzufügen", "Add distracting app"), if (s.focusApps.isEmpty()) tr("Noch keine ausgewählt", "None selected yet") else tr("${s.focusApps.size} ausgewählt", "${s.focusApps.size} selected")) { pickingFocusApp = true } }
 
             item {
                 ClickRow(
-                    "Icons in Graustufen",
-                    s.grayscaleSchedule?.describe() ?: "Aus – z. B. abends, damit bunte Apps weniger locken",
+                    tr("Icons in Graustufen", "Grayscale icons"),
+                    s.grayscaleSchedule?.describe() ?: tr("Aus – z. B. abends, damit bunte Apps weniger locken", "Off – e.g. in the evening, so colorful apps tempt less"),
                 ) { editGrayscale = true }
             }
-            item { Section("Tageslimits") }
+            item { Section(tr("Tageslimits", "Daily limits")) }
             if (!pro) {
-                item { ClickRow("Tagesziel & Kategorie-Limits (Pro)", "Wochenbericht, Ziel mit Serie, Limits pro Kategorie") { paywallFor = "Tagesziel & Kategorie-Limits" } }
+                item { ClickRow(tr("Tagesziel & Kategorie-Limits (Pro)", "Daily goal & category limits (Pro)"), tr("Wochenbericht, Ziel mit Serie, Limits pro Kategorie", "Weekly report, goal with streak, limits per category")) { paywallFor = tr("Tagesziel & Kategorie-Limits", "Daily goal & category limits") } }
             }
             if (pro) item {
                 SliderRow(
-                    "Tagesziel Bildschirmzeit",
+                    tr("Tagesziel Bildschirmzeit", "Daily screen time goal"),
                     s.dailyGoalMinutes.toFloat(),
                     0f..480f,
-                    if (s.dailyGoalMinutes == 0) "aus" else ScreenTime.format(s.dailyGoalMinutes * 60_000L),
+                    if (s.dailyGoalMinutes == 0) tr("aus", "off") else ScreenTime.format(s.dailyGoalMinutes * 60_000L),
                 ) { v -> vm.update { it.copy(dailyGoalMinutes = ((v / 15).roundToInt() * 15)) } }
             }
-            item { Hint("Das Ziel erscheint im Wochenbericht (Bildschirmzeit unter der Uhr antippen) samt Serie.") }
+            item { Hint(tr("Das Ziel erscheint im Wochenbericht (Bildschirmzeit unter der Uhr antippen) samt Serie.", "The goal appears in the weekly report (tap screen time below the clock) with your streak.")) }
             item {
-                SwitchRow("Abendrückblick" + if (pro) "" else " (Pro)", s.eveningRecap && pro) { v ->
+                SwitchRow(tr("Abendrückblick", "Evening recap") + if (pro) "" else " (Pro)", s.eveningRecap && pro) { v ->
                     if (!pro) {
-                        paywallFor = "Abendrückblick"
+                        paywallFor = tr("Abendrückblick", "Evening recap")
                     } else {
                         vm.update { it.copy(eveningRecap = v) }
                         if (v && !IntentionReminder.canNotify(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -583,32 +584,32 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             if (s.eveningRecap && pro) {
                 item {
-                    ClickRow("Uhrzeit", "%02d:%02d".format(s.eveningRecapMinute / 60, s.eveningRecapMinute % 60)) {
+                    ClickRow(tr("Uhrzeit", "Time"), "%02d:%02d".format(s.eveningRecapMinute / 60, s.eveningRecapMinute % 60)) {
                         pickingRecapTime = true
                     }
                 }
                 item {
-                    ClickRow("Rückblick jetzt anzeigen", "Vorschau mit den Zahlen von heute") {
+                    ClickRow(tr("Rückblick jetzt anzeigen", "Show recap now"), tr("Vorschau mit den Zahlen von heute", "Preview with today's numbers")) {
                         scope.launch(Dispatchers.IO) { EveningRecapScheduler.show(context) }
                     }
                 }
             }
             item {
                 Hint(
-                    "Jeden Abend eine leise Benachrichtigung: Bildschirmzeit, Tagesziel, bewusste Öffnungen " +
-                        "und erledigte Aufgaben. Antippen öffnet den Wochenbericht."
+                    tr("Jeden Abend eine leise Benachrichtigung: Bildschirmzeit, Tagesziel, bewusste Öffnungen ", "A quiet notification every evening: screen time, daily goal, mindful opens ") +
+                        tr("und erledigte Aufgaben. Antippen öffnet den Wochenbericht.", "and completed tasks. Tap to open the weekly report.")
                 )
             }
             if (pro) AppCategories.all.forEach { (category, label) ->
                 item(key = "cat_$category") {
                     ClickRow(
-                        "Limit $label",
-                        s.categoryLimits[category.toString()]?.let { "$it min pro Tag (alle $label-Apps zusammen)" } ?: "Kein Limit",
+                        tr("Limit $label", "Limit $label"),
+                        s.categoryLimits[category.toString()]?.let { tr("$it min pro Tag (alle $label-Apps zusammen)", "$it min per day (all $label apps together)") } ?: tr("Kein Limit", "No limit"),
                     ) { categoryLimitFor = category }
                 }
             }
             if (s.appLimits.isEmpty()) {
-                item { Hint("Keine. App lange drücken → „Tageslimit“. Benötigt „Nutzungszugriff“.") }
+                item { Hint(tr("Keine. App lange drücken → „Tageslimit“. Benötigt „Nutzungszugriff“.", "None. Long-press an app → “Daily limit”. Requires “Usage access”.")) }
             }
             s.appLimits.forEach { (key, minutes) ->
                 item(key = "limit_$key") {
@@ -624,13 +625,13 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
-            item { Section("App-Sperre") }
+            item { Section(tr("App-Sperre", "App lock")) }
             item {
                 Hint(
-                    "Gesperrte Apps öffnen sich aus dem Launcher nur nach Fingerabdruck oder PIN; ihre " +
-                        "Benachrichtigungsvorschau wird ausgeblendet. Hinzufügen: App lange drücken → „Mit " +
-                        "Fingerabdruck/PIN sperren“. Hinweis: Über „Zuletzt verwendet“ oder Benachrichtigungen " +
-                        "bleibt die App erreichbar – das kann nur Android selbst verhindern."
+                    tr("Gesperrte Apps öffnen sich aus dem Launcher nur nach Fingerabdruck oder PIN; ihre ", "Locked apps only open from the launcher after fingerprint or PIN; their ") +
+                        tr("Benachrichtigungsvorschau wird ausgeblendet. Hinzufügen: App lange drücken → „Mit ", "notification preview is hidden. To add: long-press an app → “Lock with ") +
+                        tr("Fingerabdruck/PIN sperren“. Hinweis: Über „Zuletzt verwendet“ oder Benachrichtigungen ", "fingerprint/PIN”. Note: via “Recents” or notifications ") +
+                        tr("bleibt die App erreichbar – das kann nur Android selbst verhindern.", "the app stays reachable – only Android itself can prevent that.")
                 )
             }
             s.lockedApps.forEach { key ->
@@ -647,10 +648,10 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
-            item { Section("Ausgeblendete Apps") }
-            item { ClickRow("Aufräumen", "Apps finden, die du lange nicht geöffnet hast") { showDeclutter = true } }
+            item { Section(tr("Ausgeblendete Apps", "Hidden apps")) }
+            item { ClickRow(tr("Aufräumen", "Declutter"), tr("Apps finden, die du lange nicht geöffnet hast", "Find apps you haven't opened in a long time")) { showDeclutter = true } }
             if (s.hidden.isEmpty()) {
-                item { Hint("Keine. Halte eine App gedrückt und wähle „Ausblenden“.") }
+                item { Hint(tr("Keine. Halte eine App gedrückt und wähle „Ausblenden“.", "None. Long-press an app and choose “Hide”.")) }
             }
             s.hidden.forEach { key ->
                 item(key = "hidden_$key") {
@@ -661,13 +662,13 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(appsByKey[key]?.label ?: key, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        TextButton(onClick = { vm.unhide(key) }) { Text("Einblenden") }
+                        TextButton(onClick = { vm.unhide(key) }) { Text(tr("Einblenden", "Unhide")) }
                     }
                 }
             }
 
             if (s.renamed.isNotEmpty()) {
-                item { Section("Umbenannte Apps") }
+                item { Section(tr("Umbenannte Apps", "Renamed apps")) }
                 s.renamed.forEach { (key, name) ->
                     item(key = "renamed_$key") {
                         Row(
@@ -682,66 +683,66 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
-                            TextButton(onClick = { appsByKey[key]?.let { vm.rename(it, null) } }) { Text("Zurücksetzen") }
+                            TextButton(onClick = { appsByKey[key]?.let { vm.rename(it, null) } }) { Text(tr("Zurücksetzen", "Reset")) }
                         }
                     }
                 }
             }
 
-            item { Section("Fehlerprotokoll") }
+            item { Section(tr("Fehlerprotokoll", "Crash log")) }
             val log = crashLog
             if (log == null) {
-                item { Hint("Keine Abstürze aufgezeichnet.") }
+                item { Hint(tr("Keine Abstürze aufgezeichnet.", "No crashes recorded.")) }
             } else {
                 item { Hint(log.lineSequence().take(2).joinToString("\n")) }
                 item {
-                    ClickRow("Protokoll teilen", "Zum Beispiel per E-Mail oder Chat senden") {
+                    ClickRow(tr("Protokoll teilen", "Share log"), tr("Zum Beispiel per E-Mail oder Chat senden", "Send e.g. by email or chat")) {
                         val send = Intent(Intent.ACTION_SEND)
                             .setType("text/plain")
-                            .putExtra(Intent.EXTRA_SUBJECT, "Kanso – Fehlerprotokoll")
+                            .putExtra(Intent.EXTRA_SUBJECT, tr("Kanso – Fehlerprotokoll", "Kanso – crash log"))
                             .putExtra(Intent.EXTRA_TEXT, log)
-                        SystemActions.start(context, Intent.createChooser(send, "Protokoll teilen"))
+                        SystemActions.start(context, Intent.createChooser(send, tr("Protokoll teilen", "Share log")))
                     }
                 }
                 item {
-                    ClickRow("Protokoll löschen", null) {
+                    ClickRow(tr("Protokoll löschen", "Clear log"), null) {
                         CrashLog.clear(context)
                         crashLog = null
                     }
                 }
             }
 
-            item { Section("Diagnose") }
+            item { Section(tr("Diagnose", "Diagnostics")) }
             item {
-                ClickRow("Diagnose teilen", "Technische Infos für die Fehlersuche (Profile, Berechtigungen)") {
+                ClickRow(tr("Diagnose teilen", "Share diagnostics"), tr("Technische Infos für die Fehlersuche (Profile, Berechtigungen)", "Technical info for troubleshooting (profiles, permissions)")) {
                     val send = Intent(Intent.ACTION_SEND)
                         .setType("text/plain")
-                        .putExtra(Intent.EXTRA_SUBJECT, "Kanso – Diagnose")
+                        .putExtra(Intent.EXTRA_SUBJECT, tr("Kanso – Diagnose", "Kanso – diagnostics"))
                         .putExtra(Intent.EXTRA_TEXT, vm.diagnostics())
-                    SystemActions.start(context, Intent.createChooser(send, "Diagnose teilen"))
+                    SystemActions.start(context, Intent.createChooser(send, tr("Diagnose teilen", "Share diagnostics")))
                 }
             }
 
-            item { Section("Sicherung") }
+            item { Section(tr("Sicherung", "Backup")) }
             item {
                 ClickRow(
-                    "Automatische Sicherung",
-                    s.backupFolder?.let { "Täglich nach „${AutoBackup.folderLabel(it)}“ · letzte: $lastBackupText" }
-                        ?: "Aus – Ordner wählen, dann täglich (7 Stände werden behalten)",
-                ) { if (pro) pickBackupFolder.launch(null) else paywallFor = "Automatische Sicherung" }
+                    tr("Automatische Sicherung", "Automatic backup"),
+                    s.backupFolder?.let { tr("Täglich nach „${AutoBackup.folderLabel(it)}“ · letzte: $lastBackupText", "Daily to “${AutoBackup.folderLabel(it)}” · last: $lastBackupText") }
+                        ?: tr("Aus – Ordner wählen, dann täglich (7 Stände werden behalten)", "Off – choose a folder, then daily (7 versions are kept)"),
+                ) { if (pro) pickBackupFolder.launch(null) else paywallFor = tr("Automatische Sicherung", "Automatic backup") }
             }
             if (s.backupFolder != null) {
                 item {
-                    ClickRow("Jetzt sichern", null) {
+                    ClickRow(tr("Jetzt sichern", "Back up now"), null) {
                         scope.launch {
                             val ok = vm.backupNow()
                             backupTick++
-                            Toast.makeText(context, if (ok) "Sicherung gespeichert" else "Sicherung fehlgeschlagen", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, if (ok) tr("Sicherung gespeichert", "Backup saved") else tr("Sicherung fehlgeschlagen", "Backup failed"), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
                 item {
-                    ClickRow("Automatische Sicherung ausschalten", null) {
+                    ClickRow(tr("Automatische Sicherung ausschalten", "Turn off automatic backup"), null) {
                         s.backupFolder?.let { folder ->
                             runCatching {
                                 context.contentResolver.releasePersistableUriPermission(
@@ -754,15 +755,15 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     }
                 }
             }
-            item { ClickRow("Einstellungen exportieren", "Als JSON-Datei speichern") { exportLauncher.launch("kanso-backup.json") } }
-            item { ClickRow("Einstellungen importieren", "Aus JSON-Datei wiederherstellen") { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) } }
+            item { ClickRow(tr("Einstellungen exportieren", "Export settings"), tr("Als JSON-Datei speichern", "Save as JSON file")) { exportLauncher.launch("kanso-backup.json") } }
+            item { ClickRow(tr("Einstellungen importieren", "Import settings"), tr("Aus JSON-Datei wiederherstellen", "Restore from JSON file")) { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) } }
         }
     }
 
     if (showDeclutter) DeclutterDialog(vm = vm, onDismiss = { showDeclutter = false })
     if (pickingRecapTime) {
         ChoiceDialog(
-            title = "Abendrückblick um",
+            title = tr("Abendrückblick um", "Evening recap at"),
             options = (36..47).map { half -> half * 30 to "%02d:%02d".format(half / 2, half % 2 * 30) },
             selected = s.eveningRecapMinute,
             onDismiss = { pickingRecapTime = false },
@@ -776,49 +777,49 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     when (dialog) {
         SettingsDialog.NONE -> Unit
         SettingsDialog.THEME -> ChoiceDialog(
-            "Design",
-            listOf(ThemeMode.SYSTEM to "Wie System", ThemeMode.LIGHT to "Hell", ThemeMode.DARK to "Dunkel"),
+            tr("Design", "Theme"),
+            listOf(ThemeMode.SYSTEM to tr("Wie System", "System default"), ThemeMode.LIGHT to tr("Hell", "Light"), ThemeMode.DARK to tr("Dunkel", "Dark")),
             s.themeMode,
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(themeMode = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.ACCENT -> ChoiceDialog(
-            "Akzentfarbe", ACCENT_COLORS, s.accent,
+            tr("Akzentfarbe", "Accent color"), ACCENT_COLORS, s.accent,
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(accent = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.ICON_PACK -> ChoiceDialog(
-            "Icon-Pack",
-            listOf<Pair<String?, String>>(null to "Standard") + iconPacks.map { it.first to it.second },
+            tr("Icon-Pack", "Icon pack"),
+            listOf<Pair<String?, String>>(null to tr("Standard", "Default")) + iconPacks.map { it.first to it.second },
             s.iconPack,
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(iconPack = v) }; dialog = SettingsDialog.NONE }
-        SettingsDialog.DOUBLE_TAP -> GestureDialog("Doppeltippen", s.doubleTap, { dialog = SettingsDialog.NONE }) { v ->
+        SettingsDialog.DOUBLE_TAP -> GestureDialog(tr("Doppeltippen", "Double tap"), s.doubleTap, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(doubleTap = v) }
         }
-        SettingsDialog.SWIPE_DOWN -> GestureDialog("Nach unten wischen", s.swipeDown, { dialog = SettingsDialog.NONE }) { v ->
+        SettingsDialog.SWIPE_DOWN -> GestureDialog(tr("Nach unten wischen", "Swipe down"), s.swipeDown, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(swipeDown = v) }
         }
-        SettingsDialog.SWIPE_UP -> GestureDialog("Nach oben wischen", s.swipeUp, { dialog = SettingsDialog.NONE }) { v ->
+        SettingsDialog.SWIPE_UP -> GestureDialog(tr("Nach oben wischen", "Swipe up"), s.swipeUp, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(swipeUp = v) }
         }
-        SettingsDialog.HOME_PRESS -> GestureDialog("Home-Taste auf dem Startbildschirm", s.homePress, { dialog = SettingsDialog.NONE }) { v ->
+        SettingsDialog.HOME_PRESS -> GestureDialog(tr("Home-Taste auf dem Startbildschirm", "Home button on the home screen"), s.homePress, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(homePress = v) }
         }
         SettingsDialog.ENGINE -> ChoiceDialog(
-            "Suchmaschine", SearchEngine.entries.map { it to it.label }, s.searchEngine,
+            tr("Suchmaschine", "Search engine"), SearchEngine.entries.map { it to it.label }, s.searchEngine,
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(searchEngine = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.FONT -> ChoiceDialog(
-            "Schriftart", HomeFont.entries.map { it to it.label }, s.font,
+            tr("Schriftart", "Font"), HomeFont.entries.map { it to it.label }, s.font,
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(font = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.WEIGHT -> ChoiceDialog(
-            "Schriftstärke", HomeWeight.entries.map { it to it.label }, s.fontWeight,
+            tr("Schriftstärke", "Font weight"), HomeWeight.entries.map { it to it.label }, s.fontWeight,
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(fontWeight = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.NEW_PAGE -> TextInputDialog(
-            title = "Neue Seite",
+            title = tr("Neue Seite", "New page"),
             initial = "",
-            hint = "z. B. Arbeit, Privat, Reisen",
+            hint = tr("z. B. Arbeit, Privat, Reisen", "e.g. Work, Personal, Travel"),
             onDismiss = { dialog = SettingsDialog.NONE },
             onConfirm = { name ->
                 vm.addPage(name)
@@ -826,12 +827,12 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             },
         )
         SettingsDialog.NEW_FOLDER -> TextInputDialog(
-            title = "Neuer Ordner",
+            title = tr("Neuer Ordner", "New folder"),
             initial = "",
-            hint = "z. B. Social, Arbeit, Tools",
+            hint = tr("z. B. Social, Arbeit, Tools", "e.g. Social, Work, Tools"),
             onDismiss = { dialog = SettingsDialog.NONE },
             onConfirm = { name ->
-                vm.createFolder(name.ifBlank { "Ordner" }, emptyList())
+                vm.createFolder(name.ifBlank { tr("Ordner", "Folder") }, emptyList())
                 dialog = SettingsDialog.NONE
             },
         )
@@ -839,8 +840,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
 
     categoryLimitFor?.let { category ->
         ChoiceDialog(
-            title = "Limit ${AppCategories.label(category)}",
-            options = listOf(0 to "Kein Limit") + listOf(15, 30, 45, 60, 90, 120, 180).map { it to "$it Minuten" },
+            title = tr("Limit ${AppCategories.label(category)}", "Limit ${AppCategories.label(category)}"),
+            options = listOf(0 to tr("Kein Limit", "No limit")) + listOf(15, 30, 45, 60, 90, 120, 180).map { it to tr("$it Minuten", "$it minutes") },
             selected = s.categoryLimits[category.toString()] ?: 0,
             onDismiss = { categoryLimitFor = null },
         ) { minutes ->
@@ -851,7 +852,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
     if (editGrayscale) {
         ScheduleDialog(
-            title = "Icons in Graustufen",
+            title = tr("Icons in Graustufen", "Grayscale icons"),
             existing = s.grayscaleSchedule ?: PageSchedule(setOf(1, 2, 3, 4, 5, 6, 7), 21 * 60, 7 * 60),
             onDismiss = { editGrayscale = false },
             onSave = { schedule ->
@@ -862,7 +863,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
     if (editFocusSchedule) {
         ScheduleDialog(
-            title = "Zeitplan: Fokus-Modus",
+            title = tr("Zeitplan: Fokus-Modus", "Schedule: focus mode"),
             existing = s.focusSchedule,
             onDismiss = { editFocusSchedule = false },
             onSave = { schedule ->
@@ -873,7 +874,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
     if (pickingFocusApp) {
         AppPickerDialog(
-            title = "Ablenkende App wählen",
+            title = tr("Ablenkende App wählen", "Choose distracting app"),
             apps = visibleApps.filter { it.key !in s.focusApps },
             onDismiss = { pickingFocusApp = false },
             onPick = { app ->
@@ -884,9 +885,9 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
     if (editingCity) {
         TextInputDialog(
-            title = "Ort fürs Wetter",
+            title = tr("Ort fürs Wetter", "Place for weather"),
             initial = s.weatherCity,
-            hint = "z. B. Zürich – leer = Standort",
+            hint = tr("z. B. Zürich – leer = Standort", "e.g. Zurich – empty = location"),
             onDismiss = { editingCity = false },
             onConfirm = { city ->
                 vm.update { it.copy(weatherCity = city.trim()) }
@@ -922,7 +923,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             val hasWifi = remember(permissionTick, resumeTick) { ContextMonitor.hasWifiPermission(context) }
             val bonded = remember(permissionTick, resumeTick) { ContextMonitor.bondedDevices(context) }
             ContextDialog(
-                title = "Kontext: ${page.name}",
+                title = tr("Kontext: ${page.name}", "Context: ${page.name}"),
                 existing = page.context,
                 current = contextState,
                 bondedDevices = bonded,
@@ -943,7 +944,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     schedulePageId?.let { id ->
         s.pages.firstOrNull { it.id == id }?.let { page ->
             ScheduleDialog(
-                title = "Zeitplan: ${page.name}",
+                title = tr("Zeitplan: ${page.name}", "Schedule: ${page.name}"),
                 existing = page.schedule,
                 onDismiss = { schedulePageId = null },
                 onSave = { schedule ->
@@ -956,7 +957,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     renamePageId?.let { id ->
         s.pages.firstOrNull { it.id == id }?.let { page ->
             TextInputDialog(
-                title = "Seite umbenennen",
+                title = tr("Seite umbenennen", "Rename page"),
                 initial = page.name,
                 onDismiss = { renamePageId = null },
                 onConfirm = { name ->
@@ -971,15 +972,15 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             val target = s.pages.first { it.id != id }.name
             AlertDialog(
                 onDismissRequest = { deletePageId = null },
-                title = { Text("Seite „${page.name}“ löschen?") },
-                text = { Text("Ihre Favoriten werden auf die Seite „$target“ verschoben.") },
+                title = { Text(tr("Seite „${page.name}“ löschen?", "Delete page “${page.name}”?")) },
+                text = { Text(tr("Ihre Favoriten werden auf die Seite „$target“ verschoben.", "Its favorites will be moved to page “$target”.")) },
                 confirmButton = {
                     TextButton(onClick = {
                         vm.removePage(id)
                         deletePageId = null
-                    }) { Text("Löschen") }
+                    }) { Text(tr("Löschen", "Delete")) }
                 },
-                dismissButton = { TextButton(onClick = { deletePageId = null }) { Text("Abbrechen") } },
+                dismissButton = { TextButton(onClick = { deletePageId = null }) { Text(tr("Abbrechen", "Cancel")) } },
             )
         }
     }
@@ -987,7 +988,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         val fav = s.favorites.firstOrNull { it.id == favId }
         if (fav != null) {
             ChoiceDialog(
-                title = "Auf Seite verschieben",
+                title = tr("Auf Seite verschieben", "Move to page"),
                 options = s.pages.map { it.id to it.name },
                 selected = fav.page,
                 onDismiss = { movingFavoriteId = null },

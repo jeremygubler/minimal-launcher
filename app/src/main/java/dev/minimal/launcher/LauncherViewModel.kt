@@ -1,5 +1,6 @@
 package dev.minimal.launcher
 
+import dev.minimal.launcher.util.tr
 import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -298,7 +299,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun setCurrentPage(id: String) = store.update { if (it.currentPage == id) it else it.copy(currentPage = id) }
 
     fun addPage(name: String) = store.update { s ->
-        val page = FavoritePage(UUID.randomUUID().toString(), name.ifBlank { "Seite ${s.pages.size + 1}" })
+        val page = FavoritePage(UUID.randomUUID().toString(), name.ifBlank { tr("Seite ${s.pages.size + 1}", "Page ${s.pages.size + 1}") })
         s.copy(pages = s.pages + page, currentPage = page.id)
     }
 

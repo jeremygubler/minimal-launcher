@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -37,7 +38,7 @@ import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.util.IntentionReminder
 import kotlinx.coroutines.delay
 
-private val QUICK_INTENTIONS = listOf("Nachricht beantworten", "Etwas nachschauen", "Etwas teilen", IntentionStats.BOREDOM)
+private val QUICK_INTENTIONS: List<String> get() = listOf(tr("Nachricht beantworten", "Reply to a message"), tr("Etwas nachschauen", "Look something up"), tr("Etwas teilen", "Share something"), IntentionStats.BOREDOM)
 private val TIMERS = listOf(0, 5, 10, 20)
 
 /**
@@ -72,7 +73,7 @@ fun IntentionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Wozu öffnest du ${app.label}?") },
+        title = { Text(tr("Wozu öffnest du ${app.label}?", "Why are you opening ${app.label}?")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -81,11 +82,11 @@ fun IntentionDialog(
                     Text(
                         today?.let { (opens, ms) ->
                             when (opens) {
-                                0 -> "Heute noch nicht geöffnet"
-                                1 -> "Heute schon einmal geöffnet · ${ScreenTime.format(ms)}"
-                                else -> "Heute schon $opens× geöffnet · ${ScreenTime.format(ms)}"
+                                0 -> tr("Heute noch nicht geöffnet", "Not opened yet today")
+                                1 -> tr("Heute schon einmal geöffnet · ${ScreenTime.format(ms)}", "Opened once today · ${ScreenTime.format(ms)}")
+                                else -> tr("Heute schon $opens× geöffnet · ${ScreenTime.format(ms)}", "Opened $opens× today · ${ScreenTime.format(ms)}")
                             }
-                        } ?: "Kurz innehalten, dann bewusst öffnen.",
+                        } ?: tr("Kurz innehalten, dann bewusst öffnen.", "Pause for a moment, then open mindfully."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -106,17 +107,17 @@ fun IntentionDialog(
                     value = custom,
                     onValueChange = { custom = it },
                     singleLine = true,
-                    placeholder = { Text("Oder in eigenen Worten…") },
+                    placeholder = { Text(tr("Oder in eigenen Worten…", "Or in your own words…")) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (chosen.equals(IntentionStats.BOREDOM, ignoreCase = true)) {
+                if (IntentionStats.isBoredom(chosen)) {
                     Text(
-                        "Langeweile ist okay. Vielleicht erst ein paar ruhige Atemzüge – oder kurz aus dem Fenster schauen?",
+                        tr("Langeweile ist okay. Vielleicht erst ein paar ruhige Atemzüge – oder kurz aus dem Fenster schauen?", "Boredom is okay. Maybe take a few calm breaths first – or look out of the window?"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
-                Text("Erinnern nach", style = MaterialTheme.typography.labelLarge)
+                Text(tr("Erinnern nach", "Remind me after"), style = MaterialTheme.typography.labelLarge)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TIMERS.forEach { m ->
                         FilterChip(
@@ -129,7 +130,7 @@ fun IntentionDialog(
                                     requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
                                 }
                             },
-                            label = { Text(if (m == 0) "Nicht" else "$m min") },
+                            label = { Text(if (m == 0) tr("Nicht", "No") else "$m min") },
                         )
                     }
                 }
@@ -144,13 +145,13 @@ fun IntentionDialog(
                     onOpen()
                     onDismiss()
                 },
-            ) { Text(if (remaining > 0) "Öffnen ($remaining)" else "Öffnen") }
+            ) { Text(if (remaining > 0) tr("Öffnen ($remaining)", "Open ($remaining)") else tr("Öffnen", "Open")) }
         },
         dismissButton = {
             TextButton(onClick = {
                 vm.logIntention(app, null)
                 onDismiss()
-            }) { Text("Lieber nicht") }
+            }) { Text(tr("Lieber nicht", "Not now")) }
         },
     )
 }

@@ -1,5 +1,6 @@
 package dev.minimal.launcher.data
 
+import dev.minimal.launcher.util.tr
 import kotlin.math.abs
 
 /** Zahlen für den Abendrückblick. null = ohne Nutzungszugriff unbekannt. */
@@ -19,29 +20,29 @@ object EveningRecap {
     private const val MIN = 60_000L
 
     fun compose(i: RecapInput): Pair<String, String> {
-        val title = i.todayMs?.let { "Dein Tag · ${ScreenTime.format(it)} Bildschirmzeit" } ?: "Dein Tag"
+        val title = i.todayMs?.let { tr("Dein Tag · ${ScreenTime.format(it)} Bildschirmzeit", "Your day · ${ScreenTime.format(it)} screen time") } ?: tr("Dein Tag", "Your day")
         val lines = mutableListOf<String>()
         val today = i.todayMs
         if (today != null && i.goalMs > 0) {
             lines += if (today <= i.goalMs) {
-                "Im Ziel von ${ScreenTime.format(i.goalMs)}" + if (i.streak > 1) " – ${i.streak} Tage in Folge" else ""
+                tr("Im Ziel von ${ScreenTime.format(i.goalMs)}", "Within your goal of ${ScreenTime.format(i.goalMs)}") + if (i.streak > 1) tr(" – ${i.streak} Tage in Folge", " – ${i.streak} days in a row") else ""
             } else {
-                "${ScreenTime.format(today - i.goalMs)} über deinem Ziel"
+                tr("${ScreenTime.format(today - i.goalMs)} über deinem Ziel", "${ScreenTime.format(today - i.goalMs)} over your goal")
             }
         }
         val avg = i.weekAverageMs
         if (today != null && avg != null && avg > 0) {
             val diff = today - avg
             if (abs(diff) >= 5 * MIN) {
-                lines += ScreenTime.format(abs(diff)) + if (diff < 0) " weniger als dein Schnitt" else " mehr als dein Schnitt"
+                lines += ScreenTime.format(abs(diff)) + if (diff < 0) tr(" weniger als dein Schnitt", " less than your average") else tr(" mehr als dein Schnitt", " more than your average")
             }
         }
-        i.topApp?.takeIf { it.second >= MIN }?.let { (label, ms) -> lines += "Am meisten: $label (${ScreenTime.format(ms)})" }
+        i.topApp?.takeIf { it.second >= MIN }?.let { (label, ms) -> lines += tr("Am meisten: $label (${ScreenTime.format(ms)})", "Most used: $label (${ScreenTime.format(ms)})") }
         if (i.opened + i.skipped > 0) {
-            lines += "${i.opened}× bewusst geöffnet" + if (i.skipped > 0) " · ${i.skipped}× verzichtet" else ""
+            lines += tr("${i.opened}× bewusst geöffnet", "${i.opened}× opened mindfully") + if (i.skipped > 0) tr(" · ${i.skipped}× verzichtet", " · ${i.skipped}× skipped") else ""
         }
-        if (i.tasksDone > 0) lines += if (i.tasksDone == 1) "1 Aufgabe erledigt" else "${i.tasksDone} Aufgaben erledigt"
-        lines += if (lines.isEmpty()) "Ein ruhiger Tag. Gute Nacht." else "Gute Nacht."
+        if (i.tasksDone > 0) lines += if (i.tasksDone == 1) tr("1 Aufgabe erledigt", "1 task done") else tr("${i.tasksDone} Aufgaben erledigt", "${i.tasksDone} tasks done")
+        lines += if (lines.isEmpty()) tr("Ein ruhiger Tag. Gute Nacht.", "A quiet day. Good night.") else tr("Gute Nacht.", "Good night.")
         return title to lines.joinToString("\n")
     }
 

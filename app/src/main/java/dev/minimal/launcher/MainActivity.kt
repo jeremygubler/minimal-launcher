@@ -1,5 +1,6 @@
 package dev.minimal.launcher
 
+import dev.minimal.launcher.util.tr
 import android.app.KeyguardManager
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
@@ -53,14 +54,14 @@ class MainActivity : ComponentActivity() {
     private fun unlockThen(title: String, onSuccess: () -> Unit) {
         val keyguard = getSystemService(KeyguardManager::class.java)
         if (keyguard == null || !keyguard.isDeviceSecure) {
-            Toast.makeText(this, "Keine Displaysperre eingerichtet – App-Sperre ist wirkungslos", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("Keine Displaysperre eingerichtet – App-Sperre ist wirkungslos", "No screen lock set up – app lock has no effect"), Toast.LENGTH_SHORT).show()
             onSuccess()
             return
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val prompt = BiometricPrompt.Builder(this)
                 .setTitle(title)
-                .setSubtitle("Entsperren zum Öffnen")
+                .setSubtitle(tr("Entsperren zum Öffnen", "Unlock to open"))
                 .setAllowedAuthenticators(
                     BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
                 )
@@ -70,7 +71,7 @@ class MainActivity : ComponentActivity() {
             })
         } else {
             @Suppress("DEPRECATION")
-            val intent = keyguard.createConfirmDeviceCredentialIntent(title, "Entsperren zum Öffnen") ?: run {
+            val intent = keyguard.createConfirmDeviceCredentialIntent(title, tr("Entsperren zum Öffnen", "Unlock to open")) ?: run {
                 onSuccess()
                 return
             }

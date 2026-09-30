@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,11 +60,11 @@ fun DeclutterDialog(vm: LauncherViewModel, onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Aufräumen") },
+        title = { Text(tr("Aufräumen", "Declutter")) },
         text = {
             Column {
                 Text(
-                    "Apps, die du länger nicht geöffnet hast. Was du nicht brauchst, lässt du los.",
+                    tr("Apps, die du länger nicht geöffnet hast. Was du nicht brauchst, lässt du los.", "Apps you haven't opened in a while. Let go of what you don't need."),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Row(
@@ -71,17 +72,17 @@ fun DeclutterDialog(vm: LauncherViewModel, onDismiss: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     PERIODS.forEach { d ->
-                        FilterChip(selected = days == d, onClick = { days = d }, label = { Text("$d Tage") })
+                        FilterChip(selected = days == d, onClick = { days = d }, label = { Text(tr("$d Tage", "$d days")) })
                     }
                 }
                 if (!hasAccess) {
                     Text(
-                        "Ohne Nutzungszugriff zählen nur Starts über den Launcher – Apps, die du z. B. über " +
-                            "Benachrichtigungen öffnest, erscheinen dann fälschlich hier.",
+                        tr("Ohne Nutzungszugriff zählen nur Starts über den Launcher – Apps, die du z. B. über ", "Without usage access only launches from the launcher count – apps you open e.g. via ") +
+                            tr("Benachrichtigungen öffnest, erscheinen dann fälschlich hier.", "notifications will wrongly show up here."),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    TextButton(onClick = { SystemActions.openUsageAccess(context) }) { Text("Nutzungszugriff erlauben") }
+                    TextButton(onClick = { SystemActions.openUsageAccess(context) }) { Text(tr("Nutzungszugriff erlauben", "Allow usage access")) }
                 }
                 Spacer(Modifier.size(8.dp))
                 val list = unused
@@ -90,7 +91,7 @@ fun DeclutterDialog(vm: LauncherViewModel, onDismiss: () -> Unit) {
                         CircularProgressIndicator()
                     }
                     list.isEmpty() -> Text(
-                        "Alles aufgeräumt – keine ungenutzten Apps in diesem Zeitraum.",
+                        tr("Alles aufgeräumt – keine ungenutzten Apps in diesem Zeitraum.", "All tidy – no unused apps in this period."),
                         modifier = Modifier.padding(vertical = 16.dp),
                     )
                     else -> {
@@ -115,12 +116,12 @@ fun DeclutterDialog(vm: LauncherViewModel, onDismiss: () -> Unit) {
                 }
                 if (settings.declutterKeep.isNotEmpty()) {
                     TextButton(onClick = { vm.resetKeptApps() }) {
-                        Text("Behaltene wieder vorschlagen (${settings.declutterKeep.size})")
+                        Text(tr("Behaltene wieder vorschlagen (${settings.declutterKeep.size})", "Suggest kept apps again (${settings.declutterKeep.size})"))
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Fertig") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Fertig", "Done")) } },
     )
 }
 
@@ -146,19 +147,19 @@ private fun UnusedRow(
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onKeep) { Text("Behalten") }
-            TextButton(onClick = onHide) { Text("Ausblenden") }
-            if (item.removable) TextButton(onClick = onUninstall) { Text("Deinstallieren") }
+            TextButton(onClick = onKeep) { Text(tr("Behalten", "Keep")) }
+            TextButton(onClick = onHide) { Text(tr("Ausblenden", "Hide")) }
+            if (item.removable) TextButton(onClick = onUninstall) { Text(tr("Deinstallieren", "Uninstall")) }
         }
     }
 }
 
 private fun lastUsedText(lastUsed: Long?, hasAccess: Boolean): String {
-    if (lastUsed == null) return if (hasAccess) "Im letzten Jahr nicht geöffnet" else "Noch nie über den Launcher geöffnet"
+    if (lastUsed == null) return if (hasAccess) tr("Im letzten Jahr nicht geöffnet", "Not opened in the last year") else tr("Noch nie über den Launcher geöffnet", "Never opened from the launcher")
     val days = ((System.currentTimeMillis() - lastUsed) / Declutter.DAY_MS).toInt()
     return when {
-        days >= 365 -> "Zuletzt vor über einem Jahr"
-        days >= 60 -> "Zuletzt vor ${days / 30} Monaten"
-        else -> "Zuletzt vor $days Tagen"
+        days >= 365 -> tr("Zuletzt vor über einem Jahr", "Last used over a year ago")
+        days >= 60 -> tr("Zuletzt vor ${days / 30} Monaten", "Last used ${days / 30} months ago")
+        else -> tr("Zuletzt vor $days Tagen", "Last used $days days ago")
     }
 }

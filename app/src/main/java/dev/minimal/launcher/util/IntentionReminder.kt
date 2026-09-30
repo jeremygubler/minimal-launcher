@@ -1,5 +1,6 @@
 package dev.minimal.launcher.util
 
+import dev.minimal.launcher.util.tr
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -52,7 +53,7 @@ object IntentionReminder {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL, "Absichts-Erinnerungen", NotificationManager.IMPORTANCE_DEFAULT)
+                NotificationChannel(CHANNEL, tr("Absichts-Erinnerungen", "Intention reminders"), NotificationManager.IMPORTANCE_DEFAULT)
             )
         }
         val home = PendingIntent.getActivity(
@@ -62,8 +63,8 @@ object IntentionReminder {
         )
         val notification = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("$minutes min $appLabel sind um")
-            .setContentText("Du wolltest: $intention")
+            .setContentTitle(tr("$minutes min $appLabel sind um", "$minutes min of $appLabel are up"))
+            .setContentText(tr("Du wolltest: $intention", "You wanted to: $intention"))
             .setContentIntent(home)
             .setAutoCancel(true)
             .build()

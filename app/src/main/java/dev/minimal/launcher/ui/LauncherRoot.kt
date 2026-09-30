@@ -1,5 +1,6 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetProviderInfo
 import androidx.activity.compose.BackHandler
@@ -192,10 +193,10 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 val usedCategory = usage.filterKeys { it in categoryPackages }.values.sum()
                 limitReached = when {
                     limit != null && used >= limit * 60_000L -> app to
-                        "Tageslimit erreicht: heute schon ${ScreenTime.format(used)} von $limit min. Trotzdem öffnen?"
+                        tr("Tageslimit erreicht: heute schon ${ScreenTime.format(used)} von $limit min. Trotzdem öffnen?", "Daily limit reached: ${ScreenTime.format(used)} of $limit min used today. Open anyway?")
                     categoryLimit != null && usedCategory >= categoryLimit * 60_000L -> app to
-                        "Limit für „${AppCategories.label(app.category)}“ erreicht: heute zusammen " +
-                        "${ScreenTime.format(usedCategory)} von $categoryLimit min. Trotzdem öffnen?"
+                        tr("Limit für „${AppCategories.label(app.category)}“ erreicht: heute zusammen ", "Limit for “${AppCategories.label(app.category)}” reached: together ") +
+                        tr("${ScreenTime.format(usedCategory)} von $categoryLimit min. Trotzdem öffnen?", "${ScreenTime.format(usedCategory)} of $categoryLimit min today. Open anyway?")
                     else -> null
                 }
                 if (limitReached == null) openApp(app)
@@ -376,12 +377,12 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         )
     }
 
-    if (taskPaywall) PaywallDialog(feature = "Aufgabenliste", onDismiss = { taskPaywall = false })
+    if (taskPaywall) PaywallDialog(feature = tr("Aufgabenliste", "Task list"), onDismiss = { taskPaywall = false })
     if (addingTask) {
         TextInputDialog(
-            title = "Neue Aufgabe",
+            title = tr("Neue Aufgabe", "New task"),
             initial = "",
-            hint = "z. B. morgen Zahnarzt anrufen",
+            hint = tr("z. B. morgen Zahnarzt anrufen", "e.g. call dentist tomorrow"),
             onDismiss = { addingTask = false },
             onConfirm = { text ->
                 Tasks.parseText(text, LocalDate.now())?.let { (title, due) -> vm.addTask(title, due) }
@@ -407,9 +408,9 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
 
     if (editingNote) {
         TextInputDialog(
-            title = "Notiz",
+            title = tr("Notiz", "Note"),
             initial = settings.note,
-            hint = "z. B. Milch kaufen",
+            hint = tr("z. B. Milch kaufen", "e.g. buy milk"),
             onDismiss = { editingNote = false },
             onConfirm = {
                 vm.setNote(it)

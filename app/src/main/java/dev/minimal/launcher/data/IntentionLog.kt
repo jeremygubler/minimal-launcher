@@ -1,6 +1,7 @@
 package dev.minimal.launcher.data
 
 import android.content.Context
+import dev.minimal.launcher.util.tr
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,7 +24,11 @@ data class IntentionSummary(
 }
 
 object IntentionStats {
-    const val BOREDOM = "Langeweile"
+    /** Schnellauswahl „Langeweile“ in der aktuellen Sprache. */
+    val BOREDOM: String get() = tr("Langeweile", "Boredom")
+
+    fun isBoredom(text: String): Boolean =
+        text.trim().equals("Langeweile", ignoreCase = true) || text.trim().equals("Boredom", ignoreCase = true)
 
     fun summarize(entries: List<IntentionEntry>, from: Long, to: Long = Long.MAX_VALUE): IntentionSummary {
         val inRange = entries.filter { it.time in from..to }
@@ -43,7 +48,7 @@ object IntentionStats {
         val byApp = inRange.groupBy { it.pkg }
             .map { (pkg, list) -> Triple(pkg, list.count { it.intention != null }, list.count { it.intention == null }) }
             .sortedWith(compareByDescending<Triple<String, Int, Int>> { it.second }.thenByDescending { it.third }.thenBy { it.first })
-        val bored = opened.filter { it.intention!!.trim().equals(BOREDOM, ignoreCase = true) }
+        val bored = opened.filter { isBoredom(it.intention!!) }
         val boredomTopApp = bored.groupingBy { it.pkg }.eachCount().maxWithOrNull(compareBy({ it.value }, { it.key }))?.key
         return IntentionSummary(
             opened = opened.size,
