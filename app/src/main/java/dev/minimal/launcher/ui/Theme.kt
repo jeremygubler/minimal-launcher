@@ -15,6 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import dev.minimal.launcher.data.HomeFont
+import dev.minimal.launcher.data.HomeWeight
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ThemeMode
 
@@ -24,6 +28,11 @@ data class HomeColors(val text: Color, val secondary: Color, val shadow: Color, 
 val LocalHomeColors = staticCompositionLocalOf {
     HomeColors(Color.White, Color.White.copy(alpha = 0.7f), Color.Black.copy(alpha = 0.5f), Color.Black, true)
 }
+
+/** Schrift für Texte auf dem Startbildschirm. */
+data class HomeTypeface(val family: FontFamily, val weight: FontWeight)
+
+val LocalHomeTypeface = staticCompositionLocalOf { HomeTypeface(FontFamily.Default, FontWeight.Normal) }
 
 /** Apps, die der Fokus-Modus gerade bremst (werden ausgegraut). */
 val LocalBlockedApps = staticCompositionLocalOf<Set<String>> { emptySet() }
@@ -82,7 +91,23 @@ fun LauncherTheme(settings: LauncherSettings, content: @Composable () -> Unit) {
     }
 
     MaterialTheme(colorScheme = scheme) {
-        androidx.compose.runtime.CompositionLocalProvider(LocalHomeColors provides homeColors) {
+        val typeface = HomeTypeface(
+            family = when (settings.font) {
+                HomeFont.SYSTEM -> FontFamily.Default
+                HomeFont.SERIF -> FontFamily.Serif
+                HomeFont.MONO -> FontFamily.Monospace
+                HomeFont.CURSIVE -> FontFamily.Cursive
+            },
+            weight = when (settings.fontWeight) {
+                HomeWeight.LIGHT -> FontWeight.Light
+                HomeWeight.NORMAL -> FontWeight.Normal
+                HomeWeight.MEDIUM -> FontWeight.Medium
+            },
+        )
+        androidx.compose.runtime.CompositionLocalProvider(
+            LocalHomeColors provides homeColors,
+            LocalHomeTypeface provides typeface,
+        ) {
             content()
         }
     }

@@ -59,6 +59,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.CrashLog
 import dev.minimal.launcher.data.GestureAction
+import dev.minimal.launcher.data.HomeFont
+import dev.minimal.launcher.data.HomeWeight
 import dev.minimal.launcher.data.IconPack
 import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.data.ThemeMode
@@ -68,7 +70,7 @@ import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.util.SystemActions
 
-private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE }
+private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE, FONT, WEIGHT }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -227,6 +229,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     vm.update { it.copy(iconSize = v.toInt()) }
                 }
             }
+            item { ClickRow("Schriftart", s.font.label) { dialog = SettingsDialog.FONT } }
+            item { ClickRow("Schriftstärke", s.fontWeight.label) { dialog = SettingsDialog.WEIGHT } }
             item {
                 SliderRow("Schriftgröße", s.textScale, 0.7f..1.5f, "${(s.textScale * 100).toInt()} %") { v ->
                     vm.update { it.copy(textScale = v) }
@@ -506,6 +510,14 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         SettingsDialog.SWIPE_UP -> GestureDialog("Nach oben wischen", s.swipeUp, { dialog = SettingsDialog.NONE }) { v ->
             vm.update { it.copy(swipeUp = v) }
         }
+        SettingsDialog.FONT -> ChoiceDialog(
+            "Schriftart", HomeFont.entries.map { it to it.label }, s.font,
+            onDismiss = { dialog = SettingsDialog.NONE },
+        ) { v -> vm.update { it.copy(font = v) }; dialog = SettingsDialog.NONE }
+        SettingsDialog.WEIGHT -> ChoiceDialog(
+            "Schriftstärke", HomeWeight.entries.map { it to it.label }, s.fontWeight,
+            onDismiss = { dialog = SettingsDialog.NONE },
+        ) { v -> vm.update { it.copy(fontWeight = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.NEW_PAGE -> TextInputDialog(
             title = "Neue Seite",
             initial = "",

@@ -277,6 +277,14 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
         null
     }
 
+    fun startShortcutById(app: AppInfo, id: String) {
+        try {
+            launcherApps.startShortcut(app.packageName, id, null, null, app.user)
+        } catch (e: Exception) {
+            Toast.makeText(context, "Aktion nicht mehr verfügbar", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     fun startShortcut(shortcut: ShortcutInfo) {
         try {
             launcherApps.startShortcut(shortcut, null, null)

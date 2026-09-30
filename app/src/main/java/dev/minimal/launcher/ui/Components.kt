@@ -65,9 +65,12 @@ fun AppIcon(app: AppInfo, size: Dp, modifier: Modifier = Modifier) {
 @Composable
 fun homeTextStyle(size: TextUnit): TextStyle {
     val colors = LocalHomeColors.current
+    val typeface = LocalHomeTypeface.current
     return TextStyle(
         color = colors.text,
         fontSize = size,
+        fontFamily = typeface.family,
+        fontWeight = typeface.weight,
         shadow = Shadow(colors.shadow, blurRadius = 8f),
     )
 }

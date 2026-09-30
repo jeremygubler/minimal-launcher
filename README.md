@@ -18,7 +18,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
 - Ordner direkt aus dem App-Menü anlegen („Neuen Ordner mit dieser App“)
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
-- **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal)
+- **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal), nach links einen App-Shortcut (z. B. „Neue Nachricht“)
 
 **Alle Apps**
 - Buchstabenleiste am Rand mit „Wellen“-Effekt und haptischem Feedback – ziehen springt direkt zum Buchstaben
@@ -48,6 +48,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 **Anpassung**
 - Hell/Dunkel/System, Akzentfarbe inkl. Material You
 - **Designsymbole** (Themed Icons): einfarbige Icons in den Systemfarben, wie beim Pixel Launcher (Android 13+)
+- Schriftart (System, Serif, Monospace, Handschrift) und Schriftstärke für den Startbildschirm
 - Icon-Packs (ADW/Nova-Format), Icons an/aus, Icon- und Schriftgröße
 - Hintergrund abdunkeln und weichzeichnen (Android 12+)
 - Gesten: Doppeltippen, nach oben/unten wischen – frei belegbar (Sperren, Benachrichtigungen, Schnelleinstellungen, Suche, Alle Apps, Gemini/Assistant)

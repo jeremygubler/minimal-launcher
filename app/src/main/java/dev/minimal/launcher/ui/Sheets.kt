@@ -71,6 +71,7 @@ fun AppActionsSheet(
     var pickingSwipe by remember { mutableStateOf(false) }
     var pickingFolder by remember { mutableStateOf(false) }
     var creatingFolder by remember { mutableStateOf(false) }
+    var pickingLeft by remember { mutableStateOf(false) }
     val isFavorite = settings.isFavorite(app.key)
     val favorite = settings.pageFavorites().firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
     val folders = settings.pageFavorites().filter { it.isFolder }
@@ -118,6 +119,9 @@ fun AppActionsSheet(
             if (favorite != null) {
                 val swipeLabel = favorite.swipeApp?.let { appsByKey[it]?.label } ?: "keine"
                 SheetAction("Wisch-Aktion (nach rechts): $swipeLabel") { pickingSwipe = true }
+                if (shortcuts.isNotEmpty()) {
+                    SheetAction("Wisch-Aktion (nach links): ${favorite.swipeLeftLabel ?: "keine"}") { pickingLeft = true }
+                }
             }
             if (favorite != null && settings.pages.size > 1) {
                 SheetAction("Auf andere Seite verschieben") { movingToPage = true }
@@ -173,6 +177,19 @@ fun AppActionsSheet(
                 onDismiss()
             },
         )
+    }
+    if (pickingLeft) {
+        ChoiceDialog(
+            title = "Beim Wischen nach links",
+            options = listOf("" to "Keine Aktion") + shortcuts.map { it.id to (it.shortLabel ?: it.longLabel ?: it.id).toString() },
+            selected = favorite?.swipeLeftShortcut ?: "",
+            onDismiss = { pickingLeft = false },
+        ) { id ->
+            val label = shortcuts.firstOrNull { it.id == id }?.let { (it.shortLabel ?: it.longLabel)?.toString() }
+            vm.setSwipeLeftShortcut(app.key, id.ifEmpty { null }, label)
+            pickingLeft = false
+            onDismiss()
+        }
     }
     if (creatingFolder) {
         TextInputDialog(

@@ -162,6 +162,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 screenTimeTotal = if (settings.showScreenTime && screenTime.isNotEmpty()) screenTime.values.sum() else null,
                 onScreenTimeClick = { showScreenTimeDialog = true },
                 onNoteClick = { editingNote = true },
+                onStartShortcut = { app, id -> vm.startShortcutById(app, id) },
                 perform = perform,
             )
         }

@@ -5,6 +5,8 @@ import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.MAIN_PAGE
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.GestureAction
+import dev.minimal.launcher.data.HomeFont
+import dev.minimal.launcher.data.HomeWeight
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ThemeMode
 import org.json.JSONObject
@@ -22,6 +24,8 @@ class LauncherSettingsTest {
         iconPack = "com.example.icons",
         themedIcons = true,
         textScale = 1.1f,
+        font = HomeFont.SERIF,
+        fontWeight = HomeWeight.LIGHT,
         wallpaperDim = 0.35f,
         alphabetLeft = true,
         searchContacts = false,
@@ -35,7 +39,7 @@ class LauncherSettingsTest {
         hidden = setOf("a/b#0", "c/d#10"),
         renamed = mapOf("a/b#0" to "Mail"),
         favorites = listOf(
-            Favorite("1", listOf("x/y#0"), swipeApp = "z/w#0"),
+            Favorite("1", listOf("x/y#0"), swipeApp = "z/w#0", swipeLeftShortcut = "compose", swipeLeftLabel = "Neue Nachricht"),
             Favorite("2", listOf("p/q#0", "r/s#0"), name = "Social", page = "work"),
             Favorite("3", emptyList(), name = "Leer"),
         ),

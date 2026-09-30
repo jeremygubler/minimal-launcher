@@ -5,6 +5,10 @@ import org.json.JSONObject
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+enum class HomeFont(val label: String) { SYSTEM("System"), SERIF("Serif"), MONO("Monospace"), CURSIVE("Handschrift") }
+
+enum class HomeWeight(val label: String) { LIGHT("Leicht"), NORMAL("Normal"), MEDIUM("Kräftig") }
+
 enum class GestureAction(val label: String) {
     NONE("Keine Aktion"),
     NOTIFICATIONS("Benachrichtigungen öffnen"),
@@ -24,6 +28,9 @@ data class Favorite(
     val swipeApp: String? = null,
     /** Seite, auf der der Favorit liegt. */
     val page: String = MAIN_PAGE,
+    /** App-Shortcut (ID), der beim Wischen nach links ausgeführt wird, samt Anzeigename. */
+    val swipeLeftShortcut: String? = null,
+    val swipeLeftLabel: String? = null,
 ) {
     val isFolder: Boolean get() = apps.size > 1 || name != null
 }
@@ -42,6 +49,8 @@ data class LauncherSettings(
     val iconPack: String? = null,
     val themedIcons: Boolean = false,
     val textScale: Float = 1f,
+    val font: HomeFont = HomeFont.SYSTEM,
+    val fontWeight: HomeWeight = HomeWeight.NORMAL,
     val wallpaperDim: Float = 0.2f,
     val blur: Boolean = true,
     val showClock: Boolean = true,
@@ -96,6 +105,8 @@ data class LauncherSettings(
         put("iconPack", iconPack ?: JSONObject.NULL)
         put("themedIcons", themedIcons)
         put("textScale", textScale.toDouble())
+        put("font", font.name)
+        put("fontWeight", fontWeight.name)
         put("wallpaperDim", wallpaperDim.toDouble())
         put("blur", blur)
         put("showClock", showClock)
@@ -124,6 +135,8 @@ data class LauncherSettings(
                     put("name", f.name ?: JSONObject.NULL)
                     put("swipeApp", f.swipeApp ?: JSONObject.NULL)
                     put("page", f.page)
+                    f.swipeLeftShortcut?.let { put("swipeLeftShortcut", it) }
+                    f.swipeLeftLabel?.let { put("swipeLeftLabel", it) }
                 })
             }
         })
@@ -162,6 +175,8 @@ data class LauncherSettings(
                 iconPack = str("iconPack"),
                 themedIcons = o.optBoolean("themedIcons", d.themedIcons),
                 textScale = o.optDouble("textScale", d.textScale.toDouble()).toFloat(),
+                font = enumOr(str("font"), d.font),
+                fontWeight = enumOr(str("fontWeight"), d.fontWeight),
                 wallpaperDim = o.optDouble("wallpaperDim", d.wallpaperDim.toDouble()).toFloat(),
                 blur = o.optBoolean("blur", d.blur),
                 showClock = o.optBoolean("showClock", d.showClock),
@@ -193,6 +208,8 @@ data class LauncherSettings(
                             name = if (f.isNull("name")) null else f.optString("name"),
                             swipeApp = if (f.isNull("swipeApp")) null else f.optString("swipeApp"),
                             page = f.optString("page", MAIN_PAGE).ifEmpty { MAIN_PAGE },
+                            swipeLeftShortcut = f.optString("swipeLeftShortcut").ifEmpty { null },
+                            swipeLeftLabel = f.optString("swipeLeftLabel").ifEmpty { null },
                         )
                     }
                 } ?: emptyList(),

@@ -125,6 +125,7 @@ fun HomeContent(
     screenTimeTotal: Long?,
     onScreenTimeClick: () -> Unit,
     onNoteClick: () -> Unit,
+    onStartShortcut: (AppInfo, String) -> Unit,
     perform: (GestureAction) -> Unit,
 ) {
     val currentPageChange by rememberUpdatedState(onPageChange)
@@ -222,6 +223,7 @@ fun HomeContent(
                     onLongPress = onLongPress,
                     onFolderLongPress = onFolderLongPress,
                     onReorder = onReorderFavorites,
+                    onStartShortcut = onStartShortcut,
                 )
             }
             Spacer(Modifier.height(40.dp))
@@ -510,6 +512,7 @@ private fun FavoritesList(
     onLongPress: (AppInfo) -> Unit,
     onFolderLongPress: (Favorite) -> Unit,
     onReorder: (List<String>) -> Unit,
+    onStartShortcut: (AppInfo, String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf<String?>(null) }
     val fontSize = (26 * settings.textScale).sp
@@ -631,6 +634,8 @@ private fun FavoritesList(
                             FavoriteEntry(
                                 app = app,
                                 swipeApp = fav.swipeApp?.let { appsByKey[it] },
+                                leftShortcutLabel = fav.swipeLeftShortcut?.let { fav.swipeLeftLabel ?: "Aktion" },
+                                onLeftSwipe = { fav.swipeLeftShortcut?.let { onStartShortcut(app, it) } },
                                 notifications = notifications[app.notificationKey].orEmpty(),
                                 settings = settings,
                                 fontSize = fontSize,
@@ -649,11 +654,13 @@ private fun FavoritesList(
 private fun FavoriteEntry(
     app: AppInfo,
     swipeApp: AppInfo?,
+    leftShortcutLabel: String?,
     notifications: List<NotificationPreview>,
     settings: LauncherSettings,
     fontSize: TextUnit,
     reorder: Modifier,
     onLaunch: (AppInfo) -> Unit,
+    onLeftSwipe: () -> Unit,
 ) {
     val threshold = with(LocalDensity.current) { 96.dp.toPx() }
     var dragX by remember { mutableFloatStateOf(0f) }
@@ -665,6 +672,9 @@ private fun FavoriteEntry(
     )
     val currentSwipe by rememberUpdatedState(swipeApp)
     val currentLaunch by rememberUpdatedState(onLaunch)
+    val currentLeftSwipe by rememberUpdatedState(onLeftSwipe)
+    val canRight = swipeApp != null
+    val canLeft = leftShortcutLabel != null
 
     Column {
         Box(reorder) {
@@ -680,6 +690,16 @@ private fun FavoriteEntry(
                     Text(swipeApp.label, style = homeTextStyle(13.sp), maxLines = 1)
                 }
             }
+            if (leftShortcutLabel != null && shownX < -1f) {
+                Row(
+                    Modifier
+                        .align(Alignment.CenterEnd)
+                        .alpha(min(1f, -shownX / threshold)),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("⚡ $leftShortcutLabel", style = homeTextStyle(13.sp), maxLines = 1)
+                }
+            }
             AppRow(
                 app = app,
                 showIcon = settings.showIcons,
@@ -690,12 +710,13 @@ private fun FavoriteEntry(
                 onLongClick = null,
                 modifier = Modifier
                     .offset { IntOffset(shownX.roundToInt(), 0) }
-                    .pointerInput(swipeApp?.key) {
-                        if (swipeApp == null) return@pointerInput
+                    .pointerInput(canRight, canLeft) {
+                        if (!canRight && !canLeft) return@pointerInput
                         detectHorizontalDragGestures(
                             onDragStart = { dragging = true },
                             onDragEnd = {
                                 if (dragX >= threshold) currentSwipe?.let(currentLaunch)
+                                if (dragX <= -threshold) currentLeftSwipe()
                                 dragging = false
                                 dragX = 0f
                             },
@@ -705,7 +726,10 @@ private fun FavoriteEntry(
                             },
                         ) { change, dx ->
                             change.consume()
-                            dragX = (dragX + dx).coerceIn(0f, threshold * 1.6f)
+                            dragX = (dragX + dx).coerceIn(
+                                if (canLeft) -threshold * 1.6f else 0f,
+                                if (canRight) threshold * 1.6f else 0f,
+                            )
                         }
                     },
             )

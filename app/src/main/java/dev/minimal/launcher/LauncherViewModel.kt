@@ -129,6 +129,17 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun shortcutIcon(shortcut: ShortcutInfo) = app.apps.shortcutIcon(shortcut)
     fun startShortcut(shortcut: ShortcutInfo) = app.apps.startShortcut(shortcut)
+    fun startShortcutById(appInfo: AppInfo, id: String) = app.apps.startShortcutById(appInfo, id)
+
+    fun setSwipeLeftShortcut(appKey: String, id: String?, label: String?) = store.update { s ->
+        s.copy(favorites = s.favorites.map {
+            if (it.page == s.activePage && !it.isFolder && it.apps.firstOrNull() == appKey) {
+                it.copy(swipeLeftShortcut = id, swipeLeftLabel = label)
+            } else {
+                it
+            }
+        })
+    }
 
     fun update(block: (LauncherSettings) -> LauncherSettings) = store.update(block)
 
