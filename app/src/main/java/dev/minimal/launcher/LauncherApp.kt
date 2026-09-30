@@ -8,6 +8,7 @@ import dev.minimal.launcher.pro.Pro
 import dev.minimal.launcher.data.CrashLog
 import dev.minimal.launcher.data.IconLoader
 import dev.minimal.launcher.data.SettingsStore
+import dev.minimal.launcher.data.FocusSessionLog
 import dev.minimal.launcher.data.IntentionLog
 import dev.minimal.launcher.data.UsageStore
 
@@ -22,6 +23,8 @@ class LauncherApp : Application() {
         private set
     lateinit var intentions: IntentionLog
         private set
+    lateinit var focusSessions: FocusSessionLog
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -32,6 +35,7 @@ class LauncherApp : Application() {
         icons = IconLoader(this)
         usage = UsageStore(this)
         intentions = IntentionLog(this)
+        focusSessions = FocusSessionLog(this)
         apps = AppRepository(this, icons)
     }
 }

@@ -24,6 +24,7 @@ import dev.minimal.launcher.ui.HomeCallbacks
 import dev.minimal.launcher.ui.LauncherRoot
 import dev.minimal.launcher.ui.LauncherTheme
 import dev.minimal.launcher.util.EveningRecapScheduler
+import dev.minimal.launcher.util.FocusSessionTimer
 import dev.minimal.launcher.util.IntentionReminder
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.data.AutoBackup
@@ -134,6 +135,7 @@ class MainActivity : ComponentActivity() {
         // Fingerabdruck- und Berechtigungsdialoge pausieren die Activity nur, sie stoppen sie nicht.)
         IntentionReminder.cancel()
         EveningRecapScheduler.sync(this)
+        FocusSessionTimer.sync(this)
         vm.checkSchedule()
         DeviceCompat.rebindNotificationListener(this)
         // Tägliche Sicherung (nur wenn ein Ordner gewählt ist).

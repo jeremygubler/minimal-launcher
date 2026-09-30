@@ -82,6 +82,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
@@ -379,8 +380,9 @@ private fun ClockBlock(
             )
         }
         if (LocalFocusActive.current) {
+            val sessionLeft = FocusSessions.remainingMinutes(settings, now)
             Text(
-                tr("Fokus aktiv", "Focus on"),
+                if (sessionLeft > 0) tr("Fokus · noch $sessionLeft min", "Focus · $sessionLeft min left") else tr("Fokus aktiv", "Focus on"),
                 style = homeTextStyle(15.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium),
                 modifier = Modifier.padding(top = 4.dp),
             )

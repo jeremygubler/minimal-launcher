@@ -77,6 +77,8 @@ class LauncherSettingsTest {
         intentionAlways = true,
         eveningRecap = true,
         eveningRecapMinute = 22 * 60 + 30,
+        focusSessionStart = 1_000L,
+        focusSessionEnd = 2_000L,
         showScreenTime = true,
         showWeather = true,
         showTasks = false,

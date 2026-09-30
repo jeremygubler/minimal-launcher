@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import dev.minimal.launcher.MainActivity
 import dev.minimal.launcher.R
 import dev.minimal.launcher.data.EveningRecap
+import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.IntentionStats
 import dev.minimal.launcher.data.RecapInput
 import dev.minimal.launcher.data.ScreenTime
@@ -60,6 +61,7 @@ object EveningRecapScheduler {
         val goalMs = s.dailyGoalMinutes * 60_000L
         val top = today.maxByOrNull { it.value }?.let { (pkg, ms) -> label(app, pkg) to ms }
         val intentions = IntentionStats.summarize(app.launcherApp.intentions.entries(), startOfToday)
+        val sessions = FocusSessions.summarize(app.launcherApp.focusSessions.entries(), startOfToday)
 
         val (title, text) = EveningRecap.compose(
             RecapInput(
@@ -71,6 +73,8 @@ object EveningRecapScheduler {
                 opened = intentions.opened,
                 skipped = intentions.skipped,
                 tasksDone = s.tasks.count { (it.doneAt ?: 0L) >= startOfToday },
+                focusSessions = sessions.completed,
+                focusMs = sessions.focusedMs,
             )
         )
 

@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppCategories
 import dev.minimal.launcher.data.AppInfo
+import dev.minimal.launcher.data.FocusSummary
 import dev.minimal.launcher.data.IntentionSummary
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ScreenTime
@@ -62,6 +63,7 @@ fun ScreenTimeReport(
 ) {
     val days by produceState<List<Pair<LocalDate, Map<String, Long>>>?>(null) { value = vm.screenTimeWeek() }
     val intentions by produceState<IntentionSummary?>(null) { value = vm.intentionWeek() }
+    val sessions by produceState<FocusSummary?>(null) { value = vm.focusWeek() }
     var tab by remember { mutableIntStateOf(0) }
     val pro = isPro()
     var paywall by remember { mutableStateOf(false) }
@@ -94,6 +96,7 @@ fun ScreenTimeReport(
                     }
                     else -> {
                         WeekView(d, settings.dailyGoalMinutes * 60_000L, appsByPackage)
+                        sessions?.takeIf { !it.isEmpty }?.let { FocusSessionsSection(it) }
                         intentions?.takeIf { !it.isEmpty }?.let { IntentionsSection(it, appsByPackage) }
                     }
                 }
@@ -298,6 +301,26 @@ private fun IntentionsSection(summary: IntentionSummary, appsByPackage: Map<Stri
                 icon = appsByPackage[pkg],
             )
         }
+    }
+}
+
+@Composable
+private fun FocusSessionsSection(summary: FocusSummary) {
+    Spacer(Modifier.height(16.dp))
+    SectionTitle(tr("Fokus-Sitzungen", "Focus sessions"))
+    Text(
+        tr(
+            (if (summary.completed == 1) "1 Sitzung" else "${summary.completed} Sitzungen") + " · ${ScreenTime.format(summary.focusedMs)} fokussiert",
+            (if (summary.completed == 1) "1 session" else "${summary.completed} sessions") + " · ${ScreenTime.format(summary.focusedMs)} focused",
+        ),
+        style = MaterialTheme.typography.bodyLarge,
+    )
+    if (summary.stopped > 0) {
+        Text(
+            tr("${summary.stopped}× vorzeitig beendet", "${summary.stopped}× ended early"),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

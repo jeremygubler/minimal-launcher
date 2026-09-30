@@ -35,6 +35,7 @@ import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.Focus
+import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.TaskItem
 import dev.minimal.launcher.data.Tasks
 import java.time.LocalDate
@@ -165,6 +166,13 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     var focusPauseFor by remember { mutableStateOf<AppInfo?>(null) }
     var intentionFor by remember { mutableStateOf<AppInfo?>(null) }
     var addingFavorites by remember { mutableStateOf(false) }
+    var startingSession by remember { mutableStateOf(false) }
+    var sessionPaywall by remember { mutableStateOf(false) }
+    var sessionBlockedFor by remember { mutableStateOf<AppInfo?>(null) }
+    // Restzeit der Fokus-Sitzung (aktualisiert sich mit der Minuten-Uhr und beim Beenden).
+    val sessionMinutes = remember(now, settings.focusSessionEnd) {
+        FocusSessions.remainingMinutes(settings, System.currentTimeMillis())
+    }
     // Absichtsfrage (Pro): im Fokus-Modus oder – falls gewünscht – immer bei ablenkenden Apps.
     val intentionKeys = if (settings.intentionPrompt && pro && (focusActive || settings.intentionAlways)) {
         settings.focusApps
@@ -206,6 +214,8 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
     val launch: (AppInfo) -> Unit = { app ->
         when (app.key) {
+            // Während einer Fokus-Sitzung sind ablenkende Apps wirklich gesperrt.
+            in (if (sessionMinutes > 0) settings.focusApps else emptySet()) -> sessionBlockedFor = app
             in intentionKeys -> intentionFor = app
             in blockedKeys -> focusPauseFor = app
             else -> openChecked(app)
@@ -346,6 +356,26 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         )
     }
 
+    if (startingSession) {
+        FocusSessionDialog(
+            focusAppCount = settings.focusApps.size,
+            onStart = { minutes ->
+                vm.startFocusSession(minutes)
+                startingSession = false
+            },
+            onDismiss = { startingSession = false },
+        )
+    }
+    if (sessionPaywall) PaywallDialog(feature = tr("Fokus-Sitzung", "Focus session"), onDismiss = { sessionPaywall = false })
+    sessionBlockedFor?.let { app ->
+        FocusSessionBlockedDialog(
+            app = app,
+            remainingMinutes = sessionMinutes,
+            onStop = { vm.stopFocusSession() },
+            onDismiss = { sessionBlockedFor = null },
+        )
+    }
+
     if (addingFavorites) {
         MultiAppPickerDialog(
             title = tr("Apps für „${settings.pages.firstOrNull { it.id == settings.activePage }?.name.orEmpty()}“", "Apps for “${settings.pages.firstOrNull { it.id == settings.activePage }?.name.orEmpty()}”"),
@@ -470,6 +500,15 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 editingNote = true
             },
             focusOn = settings.focusManual,
+            sessionMinutes = sessionMinutes.takeIf { it > 0 },
+            onFocusSession = {
+                showHomeMenu = false
+                when {
+                    sessionMinutes > 0 -> vm.stopFocusSession()
+                    pro -> startingSession = true
+                    else -> sessionPaywall = true
+                }
+            },
             onToggleFocus = {
                 showHomeMenu = false
                 vm.setFocusManual(!settings.focusManual)

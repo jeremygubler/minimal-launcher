@@ -11,6 +11,9 @@ import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.minimal.launcher.data.Declutter
+import dev.minimal.launcher.data.FocusSessions
+import dev.minimal.launcher.data.FocusSummary
+import dev.minimal.launcher.util.FocusSessionTimer
 import dev.minimal.launcher.data.IntentionEntry
 import dev.minimal.launcher.data.IntentionStats
 import dev.minimal.launcher.data.IntentionSummary
@@ -466,6 +469,16 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     /** Absichtsfrage protokollieren; [intention] = null heisst „Lieber nicht“. */
     fun logIntention(appInfo: AppInfo, intention: String?) = viewModelScope.launch(Dispatchers.IO) {
         app.intentions.add(IntentionEntry(System.currentTimeMillis(), appInfo.packageName, intention))
+    }
+
+    fun startFocusSession(minutes: Int) = FocusSessionTimer.start(getApplication(), minutes)
+    fun stopFocusSession() = FocusSessionTimer.stop(getApplication())
+
+    /** Fokus-Sitzungen der letzten 7 Tage. */
+    suspend fun focusWeek(): FocusSummary = withContext(Dispatchers.IO) {
+        val zone = java.time.ZoneId.systemDefault()
+        val from = java.time.LocalDate.now(zone).minusDays(6).atStartOfDay(zone).toInstant().toEpochMilli()
+        FocusSessions.summarize(app.focusSessions.entries(), from)
     }
 
     /** Absichten der letzten 7 Tage (wie der Wochenbericht). */

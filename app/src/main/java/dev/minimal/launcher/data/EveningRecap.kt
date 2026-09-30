@@ -13,6 +13,8 @@ data class RecapInput(
     val opened: Int,
     val skipped: Int,
     val tasksDone: Int,
+    val focusSessions: Int = 0,
+    val focusMs: Long = 0L,
 )
 
 /** Text des Abendrückblicks – ruhig, ohne Wertung (rein, daher testbar). */
@@ -40,6 +42,12 @@ object EveningRecap {
         i.topApp?.takeIf { it.second >= MIN }?.let { (label, ms) -> lines += tr("Am meisten: $label (${ScreenTime.format(ms)})", "Most used: $label (${ScreenTime.format(ms)})") }
         if (i.opened + i.skipped > 0) {
             lines += tr("${i.opened}× bewusst geöffnet", "${i.opened}× opened mindfully") + if (i.skipped > 0) tr(" · ${i.skipped}× verzichtet", " · ${i.skipped}× skipped") else ""
+        }
+        if (i.focusSessions > 0) {
+            lines += tr(
+                (if (i.focusSessions == 1) "1 Fokus-Sitzung" else "${i.focusSessions} Fokus-Sitzungen") + " (${ScreenTime.format(i.focusMs)})",
+                (if (i.focusSessions == 1) "1 focus session" else "${i.focusSessions} focus sessions") + " (${ScreenTime.format(i.focusMs)})",
+            )
         }
         if (i.tasksDone > 0) lines += if (i.tasksDone == 1) tr("1 Aufgabe erledigt", "1 task done") else tr("${i.tasksDone} Aufgaben erledigt", "${i.tasksDone} tasks done")
         lines += if (lines.isEmpty()) tr("Ein ruhiger Tag. Gute Nacht.", "A quiet day. Good night.") else tr("Gute Nacht.", "Good night.")

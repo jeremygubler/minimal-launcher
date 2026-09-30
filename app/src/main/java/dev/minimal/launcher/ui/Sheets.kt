@@ -343,6 +343,9 @@ fun HomeMenuSheet(
     onAddTask: () -> Unit,
     focusOn: Boolean,
     onToggleFocus: () -> Unit,
+    /** Restminuten der laufenden Fokus-Sitzung, null = keine. */
+    sessionMinutes: Int?,
+    onFocusSession: () -> Unit,
     onDismiss: () -> Unit,
     onAddWidget: () -> Unit,
     onEditWidgets: () -> Unit,
@@ -356,6 +359,14 @@ fun HomeMenuSheet(
                 .padding(bottom = 16.dp)
                 .navigationBarsPadding()
         ) {
+            SheetAction(
+                if (sessionMinutes != null) {
+                    tr("Fokus-Sitzung beenden (noch $sessionMinutes min)", "End focus session ($sessionMinutes min left)")
+                } else {
+                    tr("Fokus-Sitzung starten …", "Start focus session …")
+                },
+                onFocusSession,
+            )
             SheetAction(if (focusOn) tr("Fokus-Modus ausschalten", "Turn off focus mode") else tr("Fokus-Modus einschalten", "Turn on focus mode"), onToggleFocus)
             SheetAction(tr("Aufgabe hinzufügen", "Add task"), onAddTask)
             SheetAction(if (hasNote) tr("Notiz bearbeiten", "Edit note") else tr("Notiz hinzufügen", "Add note"), onEditNote)

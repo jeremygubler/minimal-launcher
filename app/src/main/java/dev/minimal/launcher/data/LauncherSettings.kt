@@ -145,6 +145,9 @@ data class LauncherSettings(
     /** Abendrückblick als Benachrichtigung, täglich um [eveningRecapMinute] (Minute des Tages). */
     val eveningRecap: Boolean = false,
     val eveningRecapMinute: Int = 21 * 60,
+    /** Laufende Fokus-Sitzung (Epoch-Millis, 0 = keine). */
+    val focusSessionStart: Long = 0L,
+    val focusSessionEnd: Long = 0L,
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -253,6 +256,8 @@ data class LauncherSettings(
         put("intentionAlways", intentionAlways)
         put("eveningRecap", eveningRecap)
         put("eveningRecapMinute", eveningRecapMinute)
+        put("focusSessionStart", focusSessionStart)
+        put("focusSessionEnd", focusSessionEnd)
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -369,6 +374,9 @@ data class LauncherSettings(
                 intentionAlways = o.optBoolean("intentionAlways", d.intentionAlways),
                 eveningRecap = o.optBoolean("eveningRecap", d.eveningRecap),
                 eveningRecapMinute = o.optInt("eveningRecapMinute", d.eveningRecapMinute).coerceIn(0, 24 * 60 - 1),
+                // Eine laufende Sitzung gehört zum Gerät – beim Import nicht übernehmen.
+                focusSessionStart = if (keepWidgets == null) o.optLong("focusSessionStart", 0L) else 0L,
+                focusSessionEnd = if (keepWidgets == null) o.optLong("focusSessionEnd", 0L) else 0L,
                 showScreenTime = o.optBoolean("showScreenTime", d.showScreenTime),
                 showWeather = o.optBoolean("showWeather", d.showWeather),
                 weatherCity = o.optString("weatherCity", ""),

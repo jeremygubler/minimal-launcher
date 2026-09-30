@@ -45,6 +45,7 @@ fun PaywallDialog(feature: String?, onDismiss: () -> Unit) {
                 if (feature != null) Text(tr("„$feature“ gehört zu Pro.", "“$feature” is part of Pro."), style = MaterialTheme.typography.bodyLarge)
                 Text(
                     tr("Einmal kaufen, für immer nutzen – kein Abo:\n", "Buy once, use forever – no subscription:\n") +
+                        tr("• Fokus-Sitzungen mit echter App-Sperre\n", "• Focus sessions with real app blocking\n") +
                         tr("• Kontextbasierte Seiten (Auto, Kopfhörer, WLAN, Laden)\n", "• Context-based pages (car, headphones, Wi-Fi, charging)\n") +
                         tr("• Pop-up-Widgets auf Favoriten\n", "• Pop-up widgets on favorites\n") +
                         tr("• Absichtsfrage mit Timer-Erinnerung\n", "• Intention prompt with timer reminder\n") +
