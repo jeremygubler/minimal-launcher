@@ -71,7 +71,7 @@
 
 ## 5. Vor dem ersten Upload prüfen
 
-- [ ] Name/Paketname gesetzt, Icon passt zum Namen, kein Bezug zu „Niagara“
+- [x] Name/Paketname gesetzt, Icon passt zum Namen (Ensō, `docs/store/icon-512.png` für den Store), kein Bezug zu „Niagara“
 - [ ] Kontakt-E-Mail in Datenschutzerklärung und Store-Eintrag
 - [ ] Screenshots (mind. 2) und Feature-Grafik 1024×500
 - [ ] Kauf in der internen Testspur getestet, „Wiederherstellen“ getestet
