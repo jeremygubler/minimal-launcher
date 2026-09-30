@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.ui.HomeCallbacks
 import dev.minimal.launcher.ui.LauncherRoot
 import dev.minimal.launcher.ui.LauncherTheme
+import dev.minimal.launcher.util.DeviceCompat
 
 class MainActivity : ComponentActivity() {
     private val vm: LauncherViewModel by viewModels()
@@ -69,6 +70,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         vm.checkSchedule()
+        DeviceCompat.rebindNotificationListener(this)
         try {
             widgetHost.startListening()
         } catch (_: Exception) {

@@ -82,6 +82,15 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 2. Unter „Einrichtung“ den Launcher als Standard festlegen.
 3. Optional: **Benachrichtigungszugriff** erlauben (Punkte & Vorschau) und die **Bedienungshilfe** aktivieren (Sperren per Doppeltipp). Die Bedienungshilfe liest keine Bildschirminhalte.
 
+## Andere Hersteller
+
+Der Launcher nutzt nur Standard-Schnittstellen und läuft ab Android 8 auf allen Geräten.
+Xiaomi, Oppo, OnePlus, Vivo, Huawei, Samsung & Co. beenden Hintergrunddienste teils aggressiv –
+dann verschwinden Benachrichtigungspunkte und Mediensteuerung. Auf diesen Geräten zeigt
+*Einstellungen → Einrichtung* direkt die Knöpfe „Von Akku-Optimierung ausnehmen“ und
+„Autostart erlauben“. Einige Funktionen hängen von der Android-Version ab: Material You (12+),
+Weichzeichnen (12+, nicht auf allen Geräten), Designsymbole (13+), vertrauliches Profil (15+).
+
 ## Bauen
 
 Voraussetzung: JDK 17 und Android SDK (oder einfach Android Studio öffnen).

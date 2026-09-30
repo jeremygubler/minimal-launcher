@@ -19,6 +19,7 @@ import android.os.UserManager
 import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import dev.minimal.launcher.util.DeviceCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -167,6 +168,9 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
                 android.content.pm.PackageManager.PERMISSION_GRANTED
             appendLine("ACCESS_HIDDEN_PROFILES: ${if (granted) "erteilt" else "fehlt"}")
         }
+        appendLine("Hersteller mit aggressivem Energiesparen: ${DeviceCompat.aggressiveVendor ?: "nein"}")
+        appendLine("Akku-Optimierung ausgenommen: ${DeviceCompat.isIgnoringBatteryOptimizations(context)}")
+        appendLine("Benachrichtigungszugriff: ${NotificationStore.hasAccess(context)}, Dienst verbunden: ${NotificationStore.service != null}")
         appendLine("Kurzbefehle erlaubt: ${runCatching { launcherApps.hasShortcutHostPermission() }.getOrDefault(false)}")
         appendLine("Profile (UserManager): ${runCatching { userManager.userProfiles.size }.getOrElse { "Fehler: ${it.message}" }}")
         val profiles = runCatching { profiles() }.getOrElse {

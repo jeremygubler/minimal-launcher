@@ -65,6 +65,7 @@ import dev.minimal.launcher.data.ThemeMode
 import dev.minimal.launcher.launcherApp
 import dev.minimal.launcher.service.LauncherAccessibilityService
 import dev.minimal.launcher.util.CalendarEvents
+import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.util.SystemActions
 
 private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE }
@@ -93,6 +94,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     val hasNotificationAccess = remember(resumeTick) { NotificationStore.hasAccess(context) }
     val accessibilityOn = remember(resumeTick) { LauncherAccessibilityService.isRunning }
     val usageAccess = remember(resumeTick) { ScreenTime.hasAccess(context) }
+    val batteryUnrestricted = remember(resumeTick) { DeviceCompat.isIgnoringBatteryOptimizations(context) }
+    val listenerDisconnected = remember(resumeTick) { DeviceCompat.isListenerDisconnected(context) }
     var crashLog by remember(resumeTick) { mutableStateOf(CrashLog.read(context)) }
     var calendarAllowed by remember(resumeTick) { mutableStateOf(CalendarEvents.hasPermission(context)) }
     val requestCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -153,6 +156,33 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item {
                 StatusRow("Bedienungshilfe (Sperren per Doppeltipp)", accessibilityOn, "Aktivieren") {
                     SystemActions.openAccessibility(context)
+                }
+            }
+            if (listenerDisconnected) {
+                item {
+                    Hint(
+                        "Der Benachrichtigungsdienst wurde vom System beendet – Punkte und Mediensteuerung " +
+                            "fehlen deshalb. Der Launcher versucht, ihn neu zu verbinden. Hilft das nicht, " +
+                            "den Launcher unten von der Akku-Optimierung ausnehmen."
+                    )
+                }
+            }
+            DeviceCompat.aggressiveVendor?.let { vendor ->
+                item {
+                    StatusRow("Von Akku-Optimierung ausgenommen", batteryUnrestricted, "Ausnehmen") {
+                        DeviceCompat.requestIgnoreBatteryOptimizations(context)
+                    }
+                }
+                item {
+                    ClickRow("Autostart / Hintergrundaktivität erlauben ($vendor)", "Öffnet die Seite des Herstellers") {
+                        DeviceCompat.openAutostart(context)
+                    }
+                }
+                item {
+                    Hint(
+                        "$vendor beendet Hintergrunddienste oft aggressiv. Damit Benachrichtigungspunkte und " +
+                            "Mediensteuerung zuverlässig bleiben: Akku-Optimierung ausnehmen und Autostart erlauben."
+                    )
                 }
             }
             if (!hasNotificationAccess || !accessibilityOn) {

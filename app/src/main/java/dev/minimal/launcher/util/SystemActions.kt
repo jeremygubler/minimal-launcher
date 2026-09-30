@@ -115,5 +115,7 @@ object SystemActions {
         false
     } catch (e: SecurityException) {
         false
+    } catch (e: IllegalArgumentException) {
+        false
     }
 }
