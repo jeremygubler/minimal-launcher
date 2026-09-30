@@ -7,6 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.AutoBackup
+import android.net.Uri
+import android.text.format.DateUtils
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import dev.minimal.launcher.data.ContextMonitor
 import dev.minimal.launcher.data.SearchEngine
 import dev.minimal.launcher.data.Weather
@@ -105,6 +110,26 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
     var resumeTick by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { resumeTick++ }
+    val scope = rememberCoroutineScope()
+    var backupTick by remember { mutableIntStateOf(0) }
+    val lastBackupText = remember(backupTick, resumeTick) {
+        val last = AutoBackup.lastRun(context)
+        if (last == 0L) "noch keine" else DateUtils.getRelativeTimeSpanString(last).toString()
+    }
+    val pickBackupFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(
+                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
+        vm.update { it.copy(backupFolder = uri.toString()) }
+        scope.launch {
+            val ok = vm.backupNow()
+            backupTick++
+            Toast.makeText(context, if (ok) "Erste Sicherung gespeichert" else "Ordner nicht beschreibbar", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val iconPacks = remember(resumeTick) { IconPack.installed(context) }
     val isDefault = remember(resumeTick) { SystemActions.isDefaultLauncher(context) }
@@ -587,6 +612,37 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
 
             item { Section("Sicherung") }
+            item {
+                ClickRow(
+                    "Automatische Sicherung",
+                    s.backupFolder?.let { "Täglich nach „${AutoBackup.folderLabel(it)}“ · letzte: $lastBackupText" }
+                        ?: "Aus – Ordner wählen, dann täglich (7 Stände werden behalten)",
+                ) { pickBackupFolder.launch(null) }
+            }
+            if (s.backupFolder != null) {
+                item {
+                    ClickRow("Jetzt sichern", null) {
+                        scope.launch {
+                            val ok = vm.backupNow()
+                            backupTick++
+                            Toast.makeText(context, if (ok) "Sicherung gespeichert" else "Sicherung fehlgeschlagen", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                item {
+                    ClickRow("Automatische Sicherung ausschalten", null) {
+                        s.backupFolder?.let { folder ->
+                            runCatching {
+                                context.contentResolver.releasePersistableUriPermission(
+                                    Uri.parse(folder),
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                                )
+                            }
+                        }
+                        vm.update { it.copy(backupFolder = null) }
+                    }
+                }
+            }
             item { ClickRow("Einstellungen exportieren", "Als JSON-Datei speichern") { exportLauncher.launch("minimal-launcher-backup.json") } }
             item { ClickRow("Einstellungen importieren", "Aus JSON-Datei wiederherstellen") { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) } }
         }

@@ -17,6 +17,7 @@ import dev.minimal.launcher.data.PageContext
 import dev.minimal.launcher.data.ContextMonitor
 import dev.minimal.launcher.data.PageScheduler
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.AutoBackup
 import dev.minimal.launcher.data.Weather
 import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.data.LauncherSettings
@@ -91,6 +92,9 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             store.state.map { it.iconPack to it.themedIcons }.distinctUntilChanged().collect { (pack, themed) ->
                 withContext(Dispatchers.IO) { app.icons.configure(pack, themed) }
             }
+        }
+        viewModelScope.launch {
+            store.state.map { it.customIcons }.distinctUntilChanged().collect { app.icons.setCustomIcons(it) }
         }
         viewModelScope.launch {
             if (store.value.firstRunDone) return@launch
@@ -319,6 +323,21 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun setAppLimit(key: String, minutes: Int?) = store.update { s ->
         s.copy(appLimits = if (minutes == null || minutes <= 0) s.appLimits - key else s.appLimits + (key to minutes))
+    }
+
+    fun setCustomIcon(key: String, spec: String?) {
+        val old = store.value.customIcons[key]
+        store.update { s -> s.copy(customIcons = if (spec == null) s.customIcons - key else s.customIcons + (key to spec)) }
+        if (old != spec) app.icons.deleteCustomFile(old)
+    }
+
+    suspend fun importIconImage(uri: android.net.Uri): String? = app.icons.importImage(uri)
+    suspend fun packIconNames(pkg: String): List<String> = app.icons.packIconNames(pkg)
+    suspend fun packPreview(pkg: String, name: String) = app.icons.packPreview(pkg, name)
+
+    suspend fun backupNow(): Boolean = withContext(Dispatchers.IO) {
+        val folder = store.value.backupFolder ?: return@withContext false
+        AutoBackup.runNow(getApplication(), folder, store.exportJson())
     }
 
     fun toggleLockedApp(key: String) = store.update { s ->

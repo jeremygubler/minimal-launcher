@@ -28,6 +28,50 @@ class IconPack private constructor(
         }
     }
 
+    @SuppressLint("DiscouragedApi")
+    fun drawableByName(name: String): Drawable? {
+        val id = res.getIdentifier(name, "drawable", packageName)
+        if (id == 0) return null
+        return try {
+            res.getDrawable(id, null)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    @Volatile
+    private var names: List<String>? = null
+
+    /** Alle Icon-Namen des Packs (aus drawable.xml, sonst aus appfilter.xml). */
+    @SuppressLint("DiscouragedApi")
+    fun iconNames(): List<String> {
+        names?.let { return it }
+        val fromCatalog = try {
+            val xmlId = res.getIdentifier("drawable", "xml", packageName)
+            val parser: XmlPullParser = if (xmlId != 0) {
+                res.getXml(xmlId)
+            } else {
+                XmlPullParserFactory.newInstance().newPullParser().apply {
+                    setInput(res.assets.open("drawable.xml"), "utf-8")
+                }
+            }
+            buildList {
+                var event = parser.eventType
+                while (event != XmlPullParser.END_DOCUMENT) {
+                    if (event == XmlPullParser.START_TAG && parser.name == "item") {
+                        parser.getAttributeValue(null, "drawable")?.let(::add)
+                    }
+                    event = parser.next()
+                }
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+        val result = fromCatalog.ifEmpty { byComponent.values.toList() }.distinct().sorted()
+        names = result
+        return result
+    }
+
     companion object {
         private val ACTIONS = listOf(
             "org.adw.launcher.THEMES",

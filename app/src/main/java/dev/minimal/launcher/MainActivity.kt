@@ -23,6 +23,10 @@ import dev.minimal.launcher.ui.HomeCallbacks
 import dev.minimal.launcher.ui.LauncherRoot
 import dev.minimal.launcher.ui.LauncherTheme
 import dev.minimal.launcher.util.DeviceCompat
+import dev.minimal.launcher.data.AutoBackup
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val vm: LauncherViewModel by viewModels()
@@ -120,6 +124,8 @@ class MainActivity : ComponentActivity() {
         super.onStart()
         vm.checkSchedule()
         DeviceCompat.rebindNotificationListener(this)
+        // Tägliche Sicherung (nur wenn ein Ordner gewählt ist).
+        lifecycleScope.launch(Dispatchers.IO) { AutoBackup.maybeRun(this@MainActivity, launcherApp.settings) }
         try {
             widgetHost.startListening()
         } catch (_: Exception) {

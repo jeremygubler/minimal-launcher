@@ -101,6 +101,10 @@ data class LauncherSettings(
     /** Zeitplan, in dem Icons in Graustufen erscheinen. */
     val grayscaleSchedule: PageSchedule? = null,
     val onboardingDone: Boolean = false,
+    /** Eigene Icons: App-Schlüssel → "pack:<paket>/<name>" oder "file:<datei>". */
+    val customIcons: Map<String, String> = emptyMap(),
+    /** Ordner (Tree-URI) für die automatische Sicherung. */
+    val backupFolder: String? = null,
     val hidden: Set<String> = emptySet(),
     val renamed: Map<String, String> = emptyMap(),
     val favorites: List<Favorite> = emptyList(),
@@ -169,6 +173,8 @@ data class LauncherSettings(
         put("appLimits", JSONObject(appLimits as Map<*, *>))
         grayscaleSchedule?.let { put("grayscaleSchedule", scheduleToJson(it)) }
         put("onboardingDone", onboardingDone)
+        put("customIcons", JSONObject(customIcons as Map<*, *>))
+        backupFolder?.let { put("backupFolder", it) }
         put("hidden", JSONArray(hidden.toList()))
         put("renamed", JSONObject(renamed as Map<*, *>))
         put("favorites", JSONArray().apply {
@@ -259,6 +265,10 @@ data class LauncherSettings(
                 grayscaleSchedule = o.optJSONObject("grayscaleSchedule")?.let(::scheduleFromJson),
                 // Wer den Launcher schon nutzt, bekommt den Assistenten nicht nachträglich.
                 onboardingDone = o.optBoolean("onboardingDone", o.optBoolean("firstRunDone", false)),
+                customIcons = o.optJSONObject("customIcons")?.let { c ->
+                    c.keys().asSequence().associateWith { c.getString(it) }
+                } ?: emptyMap(),
+                backupFolder = o.optString("backupFolder").ifEmpty { null },
                 hidden = o.optJSONArray("hidden")?.strings()?.toSet() ?: emptySet(),
                 renamed = o.optJSONObject("renamed")?.let { r ->
                     r.keys().asSequence().associateWith { r.getString(it) }

@@ -74,6 +74,7 @@ fun AppActionsSheet(
     var creatingFolder by remember { mutableStateOf(false) }
     var pickingLeft by remember { mutableStateOf(false) }
     var pickingLimit by remember { mutableStateOf(false) }
+    var pickingIcon by remember { mutableStateOf(false) }
     val isFavorite = settings.isFavorite(app.key)
     val favorite = settings.pageFavorites().firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
     val folders = settings.pageFavorites().filter { it.isFolder }
@@ -147,6 +148,7 @@ fun AppActionsSheet(
                 vm.toggleLockedApp(app.key)
                 onDismiss()
             }
+            SheetAction("Icon ändern") { pickingIcon = true }
             SheetAction("Umbenennen") { renaming = true }
             SheetAction("Ausblenden") {
                 vm.hide(app)
@@ -188,6 +190,12 @@ fun AppActionsSheet(
                 onDismiss()
             },
         )
+    }
+    if (pickingIcon) {
+        IconPickerDialog(app = app, vm = vm, settings = settings, onDismiss = {
+            pickingIcon = false
+            onDismiss()
+        })
     }
     if (pickingLimit) {
         ChoiceDialog(

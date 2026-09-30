@@ -9,7 +9,9 @@ import android.graphics.Path
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
+import java.util.UUID
 import androidx.annotation.RequiresApi
 import android.util.LruCache
 import androidx.compose.ui.graphics.ImageBitmap
@@ -54,6 +56,63 @@ class IconLoader(private val context: Context) {
     @Volatile
     private var themed = false
 
+    /** Eigene Icons: App-Schlüssel → Quelle. */
+    @Volatile
+    private var custom: Map<String, String> = emptyMap()
+    private val extraPacks = HashMap<String, IconPack?>()
+    private val customDir = File(context.filesDir, "custom_icons").apply { mkdirs() }
+    private val previews = LruCache<String, ImageBitmap>(300)
+
+    fun setCustomIcons(map: Map<String, String>) {
+        val changed = (custom.keys + map.keys).filter { custom[it] != map[it] }
+        custom = map
+        if (changed.isEmpty()) return
+        memory.snapshot().keys.filter { k -> changed.any { k.startsWith("$it|") } }.forEach { memory.remove(it) }
+        _version.update { it + 1 }
+    }
+
+    private fun packFor(pkg: String): IconPack? =
+        if (pkg == iconPackName && iconPack != null) iconPack
+        else synchronized(extraPacks) { extraPacks.getOrPut(pkg) { IconPack.load(context, pkg) } }
+
+    private fun customDrawable(spec: String): Drawable? = when {
+        spec.startsWith("file:") -> BitmapFactory.decodeFile(File(customDir, spec.removePrefix("file:")).path)
+            ?.let { BitmapDrawable(context.resources, it) }
+        spec.startsWith("pack:") -> {
+            val rest = spec.removePrefix("pack:")
+            packFor(rest.substringBefore('/'))?.drawableByName(rest.substringAfter('/'))
+        }
+        else -> null
+    }
+
+    /** Vorschau eines Icons aus einem Pack (für die Auswahl). */
+    suspend fun packPreview(pkg: String, name: String): ImageBitmap? = withContext(Dispatchers.IO) {
+        val key = "$pkg/$name"
+        previews.get(key) ?: packFor(pkg)?.drawableByName(name)
+            ?.toBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)?.asImageBitmap()?.also { previews.put(key, it) }
+    }
+
+    suspend fun packIconNames(pkg: String): List<String> = withContext(Dispatchers.IO) { packFor(pkg)?.iconNames().orEmpty() }
+
+    /** Bild aus der Galerie quadratisch zuschneiden, speichern und als Quelle zurückgeben. */
+    suspend fun importImage(uri: Uri): String? = withContext(Dispatchers.IO) {
+        try {
+            val source = context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) } ?: return@withContext null
+            val side = minOf(source.width, source.height)
+            val square = Bitmap.createBitmap(source, (source.width - side) / 2, (source.height - side) / 2, side, side)
+            val scaled = Bitmap.createScaledBitmap(square, 256, 256, true)
+            val name = UUID.randomUUID().toString() + ".png"
+            File(customDir, name).outputStream().use { scaled.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            "file:$name"
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun deleteCustomFile(spec: String?) {
+        if (spec?.startsWith("file:") == true) File(customDir, spec.removePrefix("file:")).delete()
+    }
+
     /** Icon-Pack und Designsymbole (einfarbige Icons in Systemfarben, Android 13+) setzen. */
     fun configure(packageName: String?, themedIcons: Boolean) {
         if (initialized && iconPackName == packageName && themed == themedIcons) return
@@ -93,8 +152,10 @@ class IconLoader(private val context: Context) {
         val memKey = "${app.key}|$style"
         memory.get(memKey)?.let { return@withContext it }
 
+        // Eigene Icons nicht im Datei-Cache ablegen – sie werden direkt aus der Quelle gerendert.
+        val useDisk = app.key !in custom
         val file = fileFor(app, style)
-        val fromDisk = if (file.exists()) {
+        val fromDisk = if (useDisk && file.exists()) {
             try {
                 BitmapFactory.decodeFile(file.path)
             } catch (e: Exception) {
@@ -106,7 +167,7 @@ class IconLoader(private val context: Context) {
 
         val bitmap = fromDisk ?: render(app, dark).also { bmp ->
             // Erst speichern, wenn das Icon-Pack geladen ist – sonst landen falsche Icons im Cache.
-            if (initialized) try {
+            if (initialized && useDisk) try {
                 file.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
             } catch (_: Exception) {
             }
@@ -115,6 +176,10 @@ class IconLoader(private val context: Context) {
     }
 
     private fun render(app: AppInfo, dark: Boolean): Bitmap {
+        custom[app.key]?.let(::customDrawable)?.let { d ->
+            val badged = if (app.isWork || app.isPrivate) context.packageManager.getUserBadgedIcon(d, app.user) else d
+            return badged.toBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        }
         iconPack?.drawableFor(app.component)?.let { packIcon ->
             val d = if (app.isWork) context.packageManager.getUserBadgedIcon(packIcon, app.user) else packIcon
             return d.toBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
