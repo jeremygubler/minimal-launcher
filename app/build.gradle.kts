@@ -28,11 +28,13 @@ android {
         }
         // Upload-Schlüssel für Google Play – kommt ausschließlich aus Umgebungsvariablen (GitHub Secrets).
         create("upload") {
-            val path = System.getenv("UPLOAD_KEYSTORE_PATH")
+            // Nicht gesetzte GitHub Secrets kommen als leerer Text an – dann Testschlüssel verwenden.
+            fun env(name: String) = System.getenv(name)?.takeIf { it.isNotBlank() }
+            val path = env("UPLOAD_KEYSTORE_PATH")
             storeFile = path?.let { file(it) } ?: rootProject.file("keystore/launcher.keystore")
-            storePassword = System.getenv("UPLOAD_STORE_PASSWORD") ?: "android"
-            keyAlias = System.getenv("UPLOAD_KEY_ALIAS") ?: "launcher"
-            keyPassword = System.getenv("UPLOAD_KEY_PASSWORD") ?: "android"
+            storePassword = if (path != null) env("UPLOAD_STORE_PASSWORD") else "android"
+            keyAlias = if (path != null) env("UPLOAD_KEY_ALIAS") else "launcher"
+            keyPassword = if (path != null) env("UPLOAD_KEY_PASSWORD") else "android"
         }
     }
 
