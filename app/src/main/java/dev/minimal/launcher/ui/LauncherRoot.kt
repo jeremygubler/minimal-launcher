@@ -164,6 +164,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
 
     var focusPauseFor by remember { mutableStateOf<AppInfo?>(null) }
     var intentionFor by remember { mutableStateOf<AppInfo?>(null) }
+    var addingFavorites by remember { mutableStateOf(false) }
     // Absichtsfrage (Pro): im Fokus-Modus oder – falls gewünscht – immer bei ablenkenden Apps.
     val intentionKeys = if (settings.intentionPrompt && pro && (focusActive || settings.intentionAlways)) {
         settings.focusApps
@@ -271,6 +272,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                     }
                 },
                 onRemoveFavorite = vm::removeFavorite,
+                onAddFavorites = { addingFavorites = true },
                 perform = perform,
             )
         }
@@ -341,6 +343,18 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             seconds = settings.focusPauseSeconds,
             onOpen = { openChecked(app) },
             onDismiss = { focusPauseFor = null },
+        )
+    }
+
+    if (addingFavorites) {
+        MultiAppPickerDialog(
+            title = tr("Apps für „${settings.pages.firstOrNull { it.id == settings.activePage }?.name.orEmpty()}“", "Apps for “${settings.pages.firstOrNull { it.id == settings.activePage }?.name.orEmpty()}”"),
+            apps = apps,
+            onDismiss = { addingFavorites = false },
+            onConfirm = {
+                vm.addFavorites(it)
+                addingFavorites = false
+            },
         )
     }
 

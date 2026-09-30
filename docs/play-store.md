@@ -49,6 +49,32 @@
 
 **Kategorie:** Personalisierung · **Einstufung:** ohne Altersbeschränkung
 
+### English listing (en-US)
+
+**App name**
+> Kanso – Minimal Launcher
+
+**Short description**
+> A calm, minimal launcher: favorites, letter bar, focus mode, screen time.
+
+**Full description**
+> A calm, fast home screen for Android – no ads, no tracking, everything stays on your device.
+> Kanso (簡素) is a Japanese design principle: simplicity by leaving out the unnecessary.
+>
+> • Favorites with folders, swipe actions and multiple pages
+> • Letter bar with wave effect – any app in one motion
+> • Search with calculator, unit conversion, timer, alarm, contacts and app actions
+> • Notification dots, previews and media controls
+> • Clock with events, alarm, battery and optional weather
+> • Focus mode with a mindful pause, daily limits, grayscale in the evening
+> • Declutter: find apps you haven't opened in months
+> • App lock with fingerprint, private space, work profile
+> • Icon packs, themed icons, fonts, Material You
+>
+> **Pro (one-time purchase, no subscription):** context-based pages (car, headphones, Wi-Fi), pop-up widgets,
+> intention prompt, evening recap, custom icons, automatic backup, weekly report with daily goal and category
+> limits, task list.
+
 ## 3. Datensicherheit (Formular „Data safety“)
 
 - Erhebt die App Nutzerdaten? → **Nein** (Daten verlassen das Gerät nicht; Ausnahme Wetter, siehe unten)

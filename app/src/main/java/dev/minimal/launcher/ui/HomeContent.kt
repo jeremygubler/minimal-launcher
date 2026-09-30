@@ -139,6 +139,7 @@ fun HomeContent(
     onStartShortcut: (AppInfo, String) -> Unit,
     onRemoveFavorite: (String) -> Unit,
     perform: (GestureAction) -> Unit,
+    onAddFavorites: () -> Unit,
 ) {
     val currentPageChange by rememberUpdatedState(onPageChange)
     val currentSettings by rememberUpdatedState(settings)
@@ -239,6 +240,7 @@ fun HomeContent(
                     onStartShortcut = onStartShortcut,
                     onRemoveFavorite = onRemoveFavorite,
                     widgetHost = widgetHost,
+                    onAddFavorites = onAddFavorites,
                 )
             }
             Spacer(Modifier.height(40.dp))
@@ -602,6 +604,7 @@ private fun FavoritesList(
     onStartShortcut: (AppInfo, String) -> Unit,
     onRemoveFavorite: (String) -> Unit,
     widgetHost: AppWidgetHost,
+    onAddFavorites: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf<String?>(null) }
     /** Offenes Pop-up-Widget: App + Widget-ID. */
@@ -691,6 +694,15 @@ private fun FavoritesList(
                 tr("Halte eine App gedrückt, um sie zu den Favoriten hinzuzufügen. ", "Long-press an app to add it to your favorites. ") +
                     tr("Ziehe an der Buchstabenleiste, um alle Apps zu sehen.", "Drag along the letter bar to see all apps."),
                 style = homeTextStyle(15.sp).copy(color = LocalHomeColors.current.secondary),
+            )
+            Text(
+                "+ " + tr("Apps hinzufügen", "Add apps"),
+                style = homeTextStyle(18.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium),
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onAddFavorites)
+                    .padding(vertical = 6.dp),
             )
         }
         shown.forEach { fav ->

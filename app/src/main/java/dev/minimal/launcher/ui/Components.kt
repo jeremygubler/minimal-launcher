@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -203,6 +204,63 @@ fun AppPickerDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) } },
+    )
+}
+
+/** Mehrere Apps auf einmal wählen (z. B. für eine leere Favoriten-Seite). */
+@Composable
+fun MultiAppPickerDialog(
+    title: String,
+    apps: List<AppInfo>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<AppInfo>) -> Unit,
+) {
+    var query by remember { mutableStateOf("") }
+    var selected by remember { mutableStateOf(emptyList<String>()) }
+    val shown = remember(query, apps) { if (query.isBlank()) apps else AppSearch.search(apps, query) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    placeholder = { Text(tr("Suchen…", "Search…")) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                    items(shown, key = { it.key }) { app ->
+                        val checked = app.key in selected
+                        val toggle = { selected = if (checked) selected - app.key else selected + app.key }
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable(onClick = toggle)
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(checked = checked, onCheckedChange = { toggle() })
+                            AppIcon(app, 32.dp)
+                            Spacer(Modifier.width(12.dp))
+                            Text(app.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = selected.isNotEmpty(),
+                onClick = {
+                    // Reihenfolge der Auswahl bleibt erhalten.
+                    val byKey = apps.associateBy { it.key }
+                    onConfirm(selected.mapNotNull { byKey[it] })
+                },
+            ) { Text(tr("Hinzufügen", "Add") + if (selected.isNotEmpty()) " (${selected.size})" else "") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("Abbrechen", "Cancel")) } },
     )
 }
 

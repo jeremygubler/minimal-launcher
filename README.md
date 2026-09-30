@@ -55,6 +55,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Favorit hinzufügen/entfernen, Wisch-Aktion festlegen, zu Ordner hinzufügen
 - Umbenennen, Ausblenden, App-Info, Deinstallieren
 - **Aufräumen**: schlägt Apps vor, die seit 30/90/180 Tagen nicht geöffnet wurden – ausblenden, deinstallieren oder bewusst behalten
+- **Deutsch & Englisch**: die Oberfläche folgt der Systemsprache (Deutsch für de-*, sonst Englisch); Suche versteht auch englische Eingaben („timer 5 minutes“, „todo buy milk tomorrow“)
 
 **Anpassung**
 - Hell/Dunkel/System, Akzentfarbe inkl. Material You

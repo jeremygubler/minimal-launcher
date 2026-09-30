@@ -194,6 +194,15 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /** Mehrere Apps als Favoriten auf die aktuelle Seite (bereits vorhandene werden übersprungen). */
+    fun addFavorites(apps: List<AppInfo>) = store.update { s ->
+        val existing = s.pageFavorites().mapNotNull { f -> f.apps.firstOrNull()?.takeIf { !f.isFolder } }.toSet()
+        val added = apps.filter { it.key !in existing }.map {
+            Favorite(UUID.randomUUID().toString(), listOf(it.key), page = s.activePage)
+        }
+        s.copy(favorites = s.favorites + added)
+    }
+
     fun setSwipeApp(appKey: String, swipeKey: String?) = store.update { s ->
         s.copy(favorites = s.favorites.map {
             if (it.page == s.activePage && !it.isFolder && it.apps.firstOrNull() == appKey) {
