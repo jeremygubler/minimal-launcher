@@ -39,6 +39,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
@@ -60,9 +62,19 @@ fun AppIcon(app: AppInfo, size: Dp, modifier: Modifier = Modifier) {
     val dark = LocalHomeColors.current.dark
     val bitmap by produceState<ImageBitmap?>(null, app.key, version, dark) { value = loader.load(app, dark) }
     Box(modifier.size(size)) {
-        bitmap?.let { Image(it, contentDescription = null, modifier = Modifier.fillMaxSize()) }
+        val gray = LocalGrayscale.current
+        bitmap?.let {
+            Image(
+                it,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                colorFilter = if (gray) GrayscaleFilter else null,
+            )
+        }
     }
 }
+
+private val GrayscaleFilter = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 @Composable
 fun homeTextStyle(size: TextUnit): TextStyle {
@@ -249,7 +261,13 @@ fun <T> ChoiceDialog(
 
 /** Kurze Denkpause, bevor eine ablenkende App im Fokus-Modus geöffnet wird. */
 @Composable
-fun FocusPauseDialog(app: AppInfo, seconds: Int, onOpen: () -> Unit, onDismiss: () -> Unit) {
+fun FocusPauseDialog(
+    app: AppInfo,
+    seconds: Int,
+    onOpen: () -> Unit,
+    onDismiss: () -> Unit,
+    message: String = "Der Fokus-Modus ist aktiv. Brauchst du ${app.label} gerade wirklich?",
+) {
     var remaining by remember { mutableIntStateOf(seconds) }
     LaunchedEffect(Unit) {
         while (remaining > 0) {
@@ -267,7 +285,7 @@ fun FocusPauseDialog(app: AppInfo, seconds: Int, onOpen: () -> Unit, onDismiss: 
                     Spacer(Modifier.width(12.dp))
                     Text(app.label, style = MaterialTheme.typography.titleMedium)
                 }
-                Text("Der Fokus-Modus ist aktiv. Brauchst du ${app.label} gerade wirklich?")
+                Text(message)
             }
         },
         confirmButton = {

@@ -90,6 +90,11 @@ data class LauncherSettings(
     val searchEngine: SearchEngine = SearchEngine.SYSTEM,
     /** Apps, die nur nach Fingerabdruck/PIN geöffnet werden. */
     val lockedApps: Set<String> = emptySet(),
+    /** Tageslimit pro App in Minuten. */
+    val appLimits: Map<String, Int> = emptyMap(),
+    /** Zeitplan, in dem Icons in Graustufen erscheinen. */
+    val grayscaleSchedule: PageSchedule? = null,
+    val onboardingDone: Boolean = false,
     val hidden: Set<String> = emptySet(),
     val renamed: Map<String, String> = emptyMap(),
     val favorites: List<Favorite> = emptyList(),
@@ -155,6 +160,9 @@ data class LauncherSettings(
         put("homePress", homePress.name)
         put("searchEngine", searchEngine.name)
         put("lockedApps", JSONArray(lockedApps.toList()))
+        put("appLimits", JSONObject(appLimits as Map<*, *>))
+        grayscaleSchedule?.let { put("grayscaleSchedule", scheduleToJson(it)) }
+        put("onboardingDone", onboardingDone)
         put("hidden", JSONArray(hidden.toList()))
         put("renamed", JSONObject(renamed as Map<*, *>))
         put("favorites", JSONArray().apply {
@@ -233,6 +241,12 @@ data class LauncherSettings(
                 homePress = enumOr(str("homePress"), d.homePress),
                 searchEngine = enumOr(str("searchEngine"), d.searchEngine),
                 lockedApps = o.optJSONArray("lockedApps")?.strings()?.toSet() ?: emptySet(),
+                appLimits = o.optJSONObject("appLimits")?.let { l ->
+                    l.keys().asSequence().associateWith { l.optInt(it) }.filterValues { it > 0 }
+                } ?: emptyMap(),
+                grayscaleSchedule = o.optJSONObject("grayscaleSchedule")?.let(::scheduleFromJson),
+                // Wer den Launcher schon nutzt, bekommt den Assistenten nicht nachträglich.
+                onboardingDone = o.optBoolean("onboardingDone", o.optBoolean("firstRunDone", false)),
                 hidden = o.optJSONArray("hidden")?.strings()?.toSet() ?: emptySet(),
                 renamed = o.optJSONObject("renamed")?.let { r ->
                     r.keys().asSequence().associateWith { r.getString(it) }

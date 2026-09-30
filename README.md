@@ -63,6 +63,10 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Wenn aktiv: ausgegraut, keine Benachrichtigungen/Punkte, einstellbare Denkpause (0–30 s) vor dem Öffnen
 - Manuell (lange auf den Startbildschirm drücken) oder per Zeitplan
 
+**Digitales Wohlbefinden**
+- Tageslimit pro App (z. B. 30 min): danach Denkpause mit „Trotzdem öffnen“
+- Icons nach Zeitplan in Graustufen (z. B. abends)
+
 **App-Sperre**
 - Ausgewählte Apps öffnen sich aus dem Launcher nur nach Fingerabdruck/PIN (inkl. ihrer Shortcuts); keine Benachrichtigungsvorschau
 
@@ -85,6 +89,8 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 | Home-Taste auf dem Startbildschirm | einstellbar (z. B. Suche öffnen) |
 
 ## Einrichtung
+
+Beim ersten Start führt ein kurzer Assistent durch die folgenden Schritte (erneut aufrufbar unter *Einstellungen → Einrichtung*).
 
 1. APK installieren und **Launcher-Einstellungen** öffnen (erscheint als eigene App).
 2. Unter „Einrichtung“ den Launcher als Standard festlegen.

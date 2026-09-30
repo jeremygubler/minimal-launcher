@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
+import android.widget.Toast
 import android.os.UserManager
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -72,6 +73,7 @@ fun AppActionsSheet(
     var pickingFolder by remember { mutableStateOf(false) }
     var creatingFolder by remember { mutableStateOf(false) }
     var pickingLeft by remember { mutableStateOf(false) }
+    var pickingLimit by remember { mutableStateOf(false) }
     val isFavorite = settings.isFavorite(app.key)
     val favorite = settings.pageFavorites().firstOrNull { !it.isFolder && it.apps.firstOrNull() == app.key }
     val folders = settings.pageFavorites().filter { it.isFolder }
@@ -136,6 +138,9 @@ fun AppActionsSheet(
                 vm.toggleFocusApp(app.key)
                 onDismiss()
             }
+            SheetAction("Tageslimit: " + (settings.appLimits[app.key]?.let { "$it min" } ?: "keins")) {
+                pickingLimit = true
+            }
             SheetAction(
                 if (app.key in settings.lockedApps) "App-Sperre aufheben" else "Mit Fingerabdruck/PIN sperren"
             ) {
@@ -183,6 +188,22 @@ fun AppActionsSheet(
                 onDismiss()
             },
         )
+    }
+    if (pickingLimit) {
+        ChoiceDialog(
+            title = "Tageslimit für ${app.label}",
+            options = listOf(0 to "Kein Limit") + listOf(15, 30, 45, 60, 90, 120, 180).map { it to "$it Minuten" },
+            selected = settings.appLimits[app.key] ?: 0,
+            onDismiss = { pickingLimit = false },
+        ) { minutes ->
+            vm.setAppLimit(app.key, minutes)
+            pickingLimit = false
+            if (minutes > 0 && !ScreenTime.hasAccess(context)) {
+                Toast.makeText(context, "Für Tageslimits bitte „Nutzungszugriff“ erlauben", Toast.LENGTH_LONG).show()
+                SystemActions.openUsageAccess(context)
+            }
+            onDismiss()
+        }
     }
     if (pickingLeft) {
         ChoiceDialog(

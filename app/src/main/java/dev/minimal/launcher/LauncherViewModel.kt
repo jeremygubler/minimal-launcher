@@ -305,6 +305,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     // --- Fokus-Modus ------------------------------------------------------
 
+    fun setAppLimit(key: String, minutes: Int?) = store.update { s ->
+        s.copy(appLimits = if (minutes == null || minutes <= 0) s.appLimits - key else s.appLimits + (key to minutes))
+    }
+
     fun toggleLockedApp(key: String) = store.update { s ->
         s.copy(lockedApps = if (key in s.lockedApps) s.lockedApps - key else s.lockedApps + key)
     }

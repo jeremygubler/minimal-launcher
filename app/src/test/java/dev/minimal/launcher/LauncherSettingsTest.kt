@@ -42,6 +42,9 @@ class LauncherSettingsTest {
         homePress = GestureAction.SEARCH,
         searchEngine = SearchEngine.DUCKDUCKGO,
         lockedApps = setOf("bank/x#0"),
+        appLimits = mapOf("insta/x#0" to 30),
+        grayscaleSchedule = PageSchedule(setOf(1, 2, 3, 4, 5, 6, 7), 21 * 60, 7 * 60),
+        onboardingDone = true,
         hidden = setOf("a/b#0", "c/d#10"),
         renamed = mapOf("a/b#0" to "Mail"),
         favorites = listOf(
@@ -107,6 +110,12 @@ class LauncherSettingsTest {
         assertTrue(work.pageFavorites().all { it.page == "work" })
         assertFalse(work.isFavorite("x/y#0"))
         assertTrue(sample.copy(currentPage = MAIN_PAGE).isFavorite("x/y#0"))
+    }
+
+    @Test
+    fun existingUsersSkipOnboarding() {
+        assertTrue(LauncherSettings.fromJson(JSONObject("""{"firstRunDone":true}""")).onboardingDone)
+        assertFalse(LauncherSettings.fromJson(JSONObject("{}")).onboardingDone)
     }
 
     @Test

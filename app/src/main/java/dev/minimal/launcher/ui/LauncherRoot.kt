@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,10 +34,12 @@ import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.Focus
+import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.util.SystemActions
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import kotlin.math.max
 
@@ -148,8 +151,22 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val openApp: (AppInfo) -> Unit = { app ->
         if (app.key in settings.lockedApps) callbacks.authenticate(app.label) { vm.launch(app) } else vm.launch(app)
     }
+    // Tageslimit prüfen (braucht die heutige Bildschirmzeit, daher kurz im Hintergrund).
+    val scope = rememberCoroutineScope()
+    var limitReached by remember { mutableStateOf<Pair<AppInfo, Long>?>(null) }
+    val openChecked: (AppInfo) -> Unit = { app ->
+        val limit = settings.appLimits[app.key]
+        if (limit == null) {
+            openApp(app)
+        } else {
+            scope.launch {
+                val used = vm.screenTimeToday()[app.packageName] ?: 0L
+                if (used >= limit * 60_000L) limitReached = app to used else openApp(app)
+            }
+        }
+    }
     val launch: (AppInfo) -> Unit = { app ->
-        if (app.key in blockedKeys) focusPauseFor = app else openApp(app)
+        if (app.key in blockedKeys) focusPauseFor = app else openChecked(app)
     }
     val longPress: (AppInfo) -> Unit = { actionsFor = it }
     val perform: (GestureAction) -> Unit = { action ->
@@ -164,7 +181,12 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
     }
 
-    CompositionLocalProvider(LocalBlockedApps provides blockedKeys, LocalFocusActive provides focusActive) {
+    val grayscale = settings.grayscaleSchedule?.matches(now) == true
+    CompositionLocalProvider(
+        LocalBlockedApps provides blockedKeys,
+        LocalFocusActive provides focusActive,
+        LocalGrayscale provides grayscale,
+    ) {
     homeGesture?.let { gesture ->
         LaunchedEffect(gesture) {
             perform(gesture)
@@ -272,9 +294,24 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         FocusPauseDialog(
             app = app,
             seconds = settings.focusPauseSeconds,
-            onOpen = { openApp(app) },
+            onOpen = { openChecked(app) },
             onDismiss = { focusPauseFor = null },
         )
+    }
+
+    limitReached?.let { (app, used) ->
+        FocusPauseDialog(
+            app = app,
+            seconds = settings.focusPauseSeconds,
+            onOpen = { openApp(app) },
+            onDismiss = { limitReached = null },
+            message = "Tageslimit erreicht: heute schon ${ScreenTime.format(used)} " +
+                "von ${settings.appLimits[app.key] ?: 0} min. Trotzdem öffnen?",
+        )
+    }
+
+    if (!settings.onboardingDone) {
+        OnboardingDialog(onDone = { vm.update { it.copy(onboardingDone = true) } })
     }
 
     if (showScreenTimeDialog) {

@@ -37,6 +37,9 @@ val LocalHomeTypeface = staticCompositionLocalOf { HomeTypeface(FontFamily.Defau
 /** Apps, die der Fokus-Modus gerade bremst (werden ausgegraut). */
 val LocalBlockedApps = staticCompositionLocalOf<Set<String>> { emptySet() }
 
+/** Icons gerade in Graustufen (Zeitplan)? */
+val LocalGrayscale = staticCompositionLocalOf { false }
+
 /** Ist der Fokus-Modus gerade aktiv? */
 val LocalFocusActive = staticCompositionLocalOf { false }
 

@@ -87,6 +87,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var renamePageId by remember { mutableStateOf<String?>(null) }
     var schedulePageId by remember { mutableStateOf<String?>(null) }
     var editFocusSchedule by remember { mutableStateOf(false) }
+    var editGrayscale by remember { mutableStateOf(false) }
     var pickingFocusApp by remember { mutableStateOf(false) }
     var deletePageId by remember { mutableStateOf<String?>(null) }
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
@@ -156,6 +157,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             ),
         ) {
             item { Section("Einrichtung") }
+            item { ClickRow("Einrichtungsassistent erneut zeigen", null) { vm.update { it.copy(onboardingDone = false) } } }
             item {
                 StatusRow("Standard-Launcher", isDefault, "Festlegen") { SystemActions.openHomeSettings(context) }
             }
@@ -447,6 +449,30 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item { ClickRow("Ablenkende App hinzufügen", if (s.focusApps.isEmpty()) "Noch keine ausgewählt" else "${s.focusApps.size} ausgewählt") { pickingFocusApp = true } }
 
+            item {
+                ClickRow(
+                    "Icons in Graustufen",
+                    s.grayscaleSchedule?.describe() ?: "Aus – z. B. abends, damit bunte Apps weniger locken",
+                ) { editGrayscale = true }
+            }
+            item { Section("Tageslimits") }
+            if (s.appLimits.isEmpty()) {
+                item { Hint("Keine. App lange drücken → „Tageslimit“. Benötigt „Nutzungszugriff“.") }
+            }
+            s.appLimits.forEach { (key, minutes) ->
+                item(key = "limit_$key") {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(start = 24.dp, end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("${appsByKey[key]?.label ?: key} · $minutes min", modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        TextButton(onClick = { vm.setAppLimit(key, null) }) { Text("✕") }
+                    }
+                }
+            }
+
             item { Section("App-Sperre") }
             item {
                 Hint(
@@ -614,6 +640,17 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         )
     }
 
+    if (editGrayscale) {
+        ScheduleDialog(
+            title = "Icons in Graustufen",
+            existing = s.grayscaleSchedule ?: PageSchedule(setOf(1, 2, 3, 4, 5, 6, 7), 21 * 60, 7 * 60),
+            onDismiss = { editGrayscale = false },
+            onSave = { schedule ->
+                vm.update { it.copy(grayscaleSchedule = schedule) }
+                editGrayscale = false
+            },
+        )
+    }
     if (editFocusSchedule) {
         ScheduleDialog(
             title = "Zeitplan: Fokus-Modus",
