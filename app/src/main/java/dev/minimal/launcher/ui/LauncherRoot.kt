@@ -35,6 +35,7 @@ import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.Focus
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.AppCategories
 import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.util.SystemActions
@@ -153,15 +154,27 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
     // Tageslimit prüfen (braucht die heutige Bildschirmzeit, daher kurz im Hintergrund).
     val scope = rememberCoroutineScope()
-    var limitReached by remember { mutableStateOf<Pair<AppInfo, Long>?>(null) }
+    var limitReached by remember { mutableStateOf<Pair<AppInfo, String>?>(null) }
     val openChecked: (AppInfo) -> Unit = { app ->
         val limit = settings.appLimits[app.key]
-        if (limit == null) {
+        val categoryLimit = settings.categoryLimits[app.category.toString()]
+        if (limit == null && categoryLimit == null) {
             openApp(app)
         } else {
             scope.launch {
-                val used = vm.screenTimeToday()[app.packageName] ?: 0L
-                if (used >= limit * 60_000L) limitReached = app to used else openApp(app)
+                val usage = vm.screenTimeToday()
+                val used = usage[app.packageName] ?: 0L
+                val categoryPackages = allApps.filter { it.category == app.category }.map { it.packageName }.toSet()
+                val usedCategory = usage.filterKeys { it in categoryPackages }.values.sum()
+                limitReached = when {
+                    limit != null && used >= limit * 60_000L -> app to
+                        "Tageslimit erreicht: heute schon ${ScreenTime.format(used)} von $limit min. Trotzdem öffnen?"
+                    categoryLimit != null && usedCategory >= categoryLimit * 60_000L -> app to
+                        "Limit für „${AppCategories.label(app.category)}“ erreicht: heute zusammen " +
+                        "${ScreenTime.format(usedCategory)} von $categoryLimit min. Trotzdem öffnen?"
+                    else -> null
+                }
+                if (limitReached == null) openApp(app)
             }
         }
     }
@@ -299,14 +312,13 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         )
     }
 
-    limitReached?.let { (app, used) ->
+    limitReached?.let { (app, message) ->
         FocusPauseDialog(
             app = app,
             seconds = settings.focusPauseSeconds,
             onOpen = { openApp(app) },
             onDismiss = { limitReached = null },
-            message = "Tageslimit erreicht: heute schon ${ScreenTime.format(used)} " +
-                "von ${settings.appLimits[app.key] ?: 0} min. Trotzdem öffnen?",
+            message = message,
         )
     }
 
@@ -315,8 +327,9 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
 
     if (showScreenTimeDialog) {
-        ScreenTimeDialog(
-            usage = screenTime,
+        ScreenTimeReport(
+            vm = vm,
+            settings = settings,
             appsByPackage = remember(allApps) { allApps.filter { !it.isWork }.associateBy { it.packageName } },
             onDismiss = { showScreenTimeDialog = false },
         )

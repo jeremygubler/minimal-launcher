@@ -45,6 +45,8 @@ class LauncherSettingsTest {
         searchEngine = SearchEngine.DUCKDUCKGO,
         lockedApps = setOf("bank/x#0"),
         appLimits = mapOf("insta/x#0" to 30),
+        categoryLimits = mapOf("4" to 60),
+        dailyGoalMinutes = 180,
         grayscaleSchedule = PageSchedule(setOf(1, 2, 3, 4, 5, 6, 7), 21 * 60, 7 * 60),
         onboardingDone = true,
         customIcons = mapOf("x/y#0" to "pack:com.icons/whatsapp", "a/b#0" to "file:abc.png"),

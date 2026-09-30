@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import dev.minimal.launcher.data.FavoritePage
 import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.AppCategories
 import dev.minimal.launcher.data.AutoBackup
 import android.net.Uri
 import android.text.format.DateUtils
@@ -105,6 +106,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
     var editFocusSchedule by remember { mutableStateOf(false) }
     var editGrayscale by remember { mutableStateOf(false) }
+    var categoryLimitFor by remember { mutableStateOf<Int?>(null) }
     var pickingFocusApp by remember { mutableStateOf(false) }
     var deletePageId by remember { mutableStateOf<String?>(null) }
     var movingFavoriteId by remember { mutableStateOf<String?>(null) }
@@ -497,6 +499,23 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 ) { editGrayscale = true }
             }
             item { Section("Tageslimits") }
+            item {
+                SliderRow(
+                    "Tagesziel Bildschirmzeit",
+                    s.dailyGoalMinutes.toFloat(),
+                    0f..480f,
+                    if (s.dailyGoalMinutes == 0) "aus" else ScreenTime.format(s.dailyGoalMinutes * 60_000L),
+                ) { v -> vm.update { it.copy(dailyGoalMinutes = ((v / 15).roundToInt() * 15)) } }
+            }
+            item { Hint("Das Ziel erscheint im Wochenbericht (Bildschirmzeit unter der Uhr antippen) samt Serie.") }
+            AppCategories.all.forEach { (category, label) ->
+                item(key = "cat_$category") {
+                    ClickRow(
+                        "Limit $label",
+                        s.categoryLimits[category.toString()]?.let { "$it min pro Tag (alle $label-Apps zusammen)" } ?: "Kein Limit",
+                    ) { categoryLimitFor = category }
+                }
+            }
             if (s.appLimits.isEmpty()) {
                 item { Hint("Keine. App lange drücken → „Tageslimit“. Benötigt „Nutzungszugriff“.") }
             }
@@ -712,6 +731,18 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         )
     }
 
+    categoryLimitFor?.let { category ->
+        ChoiceDialog(
+            title = "Limit ${AppCategories.label(category)}",
+            options = listOf(0 to "Kein Limit") + listOf(15, 30, 45, 60, 90, 120, 180).map { it to "$it Minuten" },
+            selected = s.categoryLimits[category.toString()] ?: 0,
+            onDismiss = { categoryLimitFor = null },
+        ) { minutes ->
+            vm.setCategoryLimit(category, minutes)
+            categoryLimitFor = null
+            if (minutes > 0 && !ScreenTime.hasAccess(context)) SystemActions.openUsageAccess(context)
+        }
+    }
     if (editGrayscale) {
         ScheduleDialog(
             title = "Icons in Graustufen",

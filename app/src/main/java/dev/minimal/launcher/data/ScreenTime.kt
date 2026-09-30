@@ -22,35 +22,49 @@ object ScreenTime {
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    /** Vordergrundzeit pro Paket seit Mitternacht in Millisekunden (ohne den Launcher selbst). */
-    fun today(context: Context, now: Long = System.currentTimeMillis()): Map<String, Long> {
-        if (!hasAccess(context)) return emptyMap()
-        val usm = context.getSystemService(UsageStatsManager::class.java) ?: return emptyMap()
-        val start = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    /** Vordergrund-Sitzungen im Zeitraum (ohne den Launcher selbst). */
+    fun sessions(context: Context, from: Long, to: Long): List<UsageSession> {
+        if (!hasAccess(context)) return emptyList()
+        val usm = context.getSystemService(UsageStatsManager::class.java) ?: return emptyList()
         val events = try {
-            usm.queryEvents(start, now)
+            usm.queryEvents(from, to)
         } catch (e: Exception) {
-            return emptyMap()
+            return emptyList()
         }
         val event = UsageEvents.Event()
         // Offene Aktivitäten (Paket + Klasse) → Startzeit.
         val open = HashMap<String, Long>()
-        val totals = HashMap<String, Long>()
-        fun add(pkg: String, ms: Long) {
-            if (ms > 0) totals[pkg] = (totals[pkg] ?: 0L) + ms
-        }
+        val result = ArrayList<UsageSession>()
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
             val pkg = event.packageName ?: continue
+            if (pkg == context.packageName) continue
             val key = pkg + "/" + event.className
             when (event.eventType) {
                 RESUMED -> open[key] = event.timeStamp
-                PAUSED, STOPPED -> open.remove(key)?.let { add(pkg, event.timeStamp - it) }
+                PAUSED, STOPPED -> open.remove(key)?.let { result += UsageSession(pkg, it, event.timeStamp) }
             }
         }
-        open.forEach { (key, since) -> add(key.substringBefore('/'), now - since) }
-        totals.remove(context.packageName)
-        return totals
+        open.forEach { (key, since) -> result += UsageSession(key.substringBefore('/'), since, to) }
+        return result
+    }
+
+    /** Vordergrundzeit pro Paket seit Mitternacht in Millisekunden. */
+    fun today(context: Context, now: Long = System.currentTimeMillis()): Map<String, Long> {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        return ScreenTimeMath.perDay(sessions(context, start, now), zone, listOf(today))[today].orEmpty()
+    }
+
+    /** Nutzung pro Tag für die letzten [days] Tage (ältester zuerst, heute zuletzt). */
+    fun lastDays(context: Context, days: Int = 7, now: Long = System.currentTimeMillis()): List<Pair<LocalDate, Map<String, Long>>> {
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val dates = (days - 1 downTo 0).map { today.minusDays(it.toLong()) }
+        val start = dates.first().atStartOfDay(zone).toInstant().toEpochMilli()
+        val perDay = ScreenTimeMath.perDay(sessions(context, start, now), zone, dates)
+        return dates.map { it to perDay[it].orEmpty() }
     }
 
     fun format(ms: Long): String {

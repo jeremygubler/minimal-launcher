@@ -218,6 +218,7 @@ class AppRepository(private val context: Context, private val icons: IconLoader)
             isWork = user != Process.myUserHandle() && !isPrivate(user),
             isPrivate = isPrivate(user),
             installTime = info.firstInstallTime,
+            category = info.applicationInfo?.category ?: -1,
             info = info,
         )
     }

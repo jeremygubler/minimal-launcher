@@ -360,6 +360,14 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     fun setNote(text: String) = store.update { it.copy(note = text.trim()) }
 
+    suspend fun screenTimeWeek(): List<Pair<java.time.LocalDate, Map<String, Long>>> =
+        withContext(Dispatchers.IO) { ScreenTime.lastDays(getApplication(), 7) }
+
+    fun setCategoryLimit(category: Int, minutes: Int?) = store.update { s ->
+        val key = category.toString()
+        s.copy(categoryLimits = if (minutes == null || minutes <= 0) s.categoryLimits - key else s.categoryLimits + (key to minutes))
+    }
+
     suspend fun screenTimeToday(): Map<String, Long> =
         withContext(Dispatchers.IO) { ScreenTime.today(getApplication()) }
 

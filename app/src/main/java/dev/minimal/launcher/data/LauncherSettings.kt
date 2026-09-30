@@ -98,6 +98,10 @@ data class LauncherSettings(
     val lockedApps: Set<String> = emptySet(),
     /** Tageslimit pro App in Minuten. */
     val appLimits: Map<String, Int> = emptyMap(),
+    /** Tageslimit pro App-Kategorie (Kategorie-Nummer als Text) in Minuten. */
+    val categoryLimits: Map<String, Int> = emptyMap(),
+    /** Tagesziel für die gesamte Bildschirmzeit in Minuten (0 = aus). */
+    val dailyGoalMinutes: Int = 0,
     /** Zeitplan, in dem Icons in Graustufen erscheinen. */
     val grayscaleSchedule: PageSchedule? = null,
     val onboardingDone: Boolean = false,
@@ -171,6 +175,8 @@ data class LauncherSettings(
         put("searchEngine", searchEngine.name)
         put("lockedApps", JSONArray(lockedApps.toList()))
         put("appLimits", JSONObject(appLimits as Map<*, *>))
+        put("categoryLimits", JSONObject(categoryLimits as Map<*, *>))
+        put("dailyGoalMinutes", dailyGoalMinutes)
         grayscaleSchedule?.let { put("grayscaleSchedule", scheduleToJson(it)) }
         put("onboardingDone", onboardingDone)
         put("customIcons", JSONObject(customIcons as Map<*, *>))
@@ -262,6 +268,10 @@ data class LauncherSettings(
                 appLimits = o.optJSONObject("appLimits")?.let { l ->
                     l.keys().asSequence().associateWith { l.optInt(it) }.filterValues { it > 0 }
                 } ?: emptyMap(),
+                categoryLimits = o.optJSONObject("categoryLimits")?.let { l ->
+                    l.keys().asSequence().associateWith { l.optInt(it) }.filterValues { it > 0 }
+                } ?: emptyMap(),
+                dailyGoalMinutes = o.optInt("dailyGoalMinutes", 0).coerceIn(0, 24 * 60),
                 grayscaleSchedule = o.optJSONObject("grayscaleSchedule")?.let(::scheduleFromJson),
                 // Wer den Launcher schon nutzt, bekommt den Assistenten nicht nachträglich.
                 onboardingDone = o.optBoolean("onboardingDone", o.optBoolean("firstRunDone", false)),

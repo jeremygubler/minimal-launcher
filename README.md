@@ -66,7 +66,8 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Manuell (lange auf den Startbildschirm drücken) oder per Zeitplan
 
 **Digitales Wohlbefinden**
-- Tageslimit pro App (z. B. 30 min): danach Denkpause mit „Trotzdem öffnen“
+- Tageslimit pro App (z. B. 30 min) und pro Kategorie (z. B. Social zusammen 1 h): danach Denkpause mit „Trotzdem öffnen“
+- **Wochenbericht**: Balkendiagramm der letzten 7 Tage, Durchschnitt, Top-Apps, Tagesziel mit Serie, Nutzung nach Kategorie
 - Icons nach Zeitplan in Graustufen (z. B. abends)
 
 **App-Sperre**

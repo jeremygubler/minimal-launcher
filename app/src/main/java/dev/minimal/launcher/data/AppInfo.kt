@@ -16,6 +16,8 @@ data class AppInfo(
     val isPrivate: Boolean = false,
     /** Zeitpunkt der Erstinstallation (für die „Neu“-Markierung). */
     val installTime: Long = 0L,
+    /** App-Kategorie laut Android (ApplicationInfo.CATEGORY_*), -1 = unbekannt. */
+    val category: Int = -1,
     val info: LauncherActivityInfo,
 ) {
     val notificationKey: String get() = notificationKey(packageName, user)
