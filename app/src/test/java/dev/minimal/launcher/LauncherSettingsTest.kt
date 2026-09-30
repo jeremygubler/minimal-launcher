@@ -28,6 +28,8 @@ class LauncherSettingsTest {
         fontWeight = HomeWeight.LIGHT,
         wallpaperDim = 0.35f,
         alphabetLeft = true,
+        eventCount = 3,
+        markNewApps = false,
         searchContacts = false,
         searchShortcuts = false,
         showSuggestions = false,
@@ -42,6 +44,7 @@ class LauncherSettingsTest {
             Favorite("1", listOf("x/y#0"), swipeApp = "z/w#0", swipeLeftShortcut = "compose", swipeLeftLabel = "Neue Nachricht"),
             Favorite("2", listOf("p/q#0", "r/s#0"), name = "Social", page = "work"),
             Favorite("3", emptyList(), name = "Leer"),
+            Favorite("4", emptyList(), name = "Anna", contactUri = "content://com.android.contacts/contacts/lookup/abc/1"),
         ),
         pages = listOf(
             FavoritePage(MAIN_PAGE, "Start"),
@@ -105,6 +108,8 @@ class LauncherSettingsTest {
     @Test
     fun emptyNamedFolderStaysAFolder() {
         assertTrue(Favorite("f", emptyList(), name = "Leer").isFolder)
+        assertFalse(Favorite("c", emptyList(), name = "Anna", contactUri = "content://x").isFolder)
+        assertTrue(Favorite("c", emptyList(), name = "Anna", contactUri = "content://x").isContact)
         assertFalse(Favorite("a", listOf("x")).isFolder)
         val start = sample.copy(currentPage = MAIN_PAGE)
         assertTrue(start.isFavorite("x/y#0"))

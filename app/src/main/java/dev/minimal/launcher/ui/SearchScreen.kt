@@ -1,6 +1,8 @@
 package dev.minimal.launcher.ui
 
 import android.Manifest
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -78,6 +80,7 @@ fun SearchScreen(
     onLongPress: (AppInfo) -> Unit,
     onContactsDenied: () -> Unit,
     onSetNote: (String) -> Unit,
+    onPinContact: (String, String) -> Unit,
     usage: Map<String, Double>,
     loadShortcuts: suspend () -> List<ShortcutInfo>,
     shortcutIcon: (ShortcutInfo) -> Drawable?,
@@ -263,7 +266,15 @@ fun SearchScreen(
             if (contacts.isNotEmpty()) {
                 item(key = "contacts_header") { SectionLabel("Kontakte") }
                 items(contacts, key = { "contact_${it.id}" }) { contact ->
-                    ContactRow(contact, (22 * settings.textScale).sp) { ContactSearch.open(context, contact) }
+                    ContactRow(
+                        contact,
+                        (22 * settings.textScale).sp,
+                        onClick = { ContactSearch.open(context, contact) },
+                        onLongClick = {
+                            onPinContact(contact.uri.toString(), contact.name)
+                            Toast.makeText(context, "${contact.name} zu Favoriten hinzugefügt", Toast.LENGTH_SHORT).show()
+                        },
+                    )
                 }
             }
             if (settings.searchContacts && !contactsAllowed && query.trim().length >= 2) {
@@ -298,11 +309,12 @@ private fun ActionLine(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ContactRow(contact: ContactResult, fontSize: TextUnit, onClick: () -> Unit) {
+@OptIn(ExperimentalFoundationApi::class)
+private fun ContactRow(contact: ContactResult, fontSize: TextUnit, onClick: () -> Unit, onLongClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

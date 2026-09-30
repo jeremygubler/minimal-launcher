@@ -43,10 +43,12 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.launcherApp
 import dev.minimal.launcher.util.AppSearch
@@ -87,6 +89,7 @@ fun AppRow(
     onLongClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     textColor: Color? = null,
+    isNew: Boolean = false,
 ) {
     val dimmed = app.key in LocalBlockedApps.current
     Row(
@@ -110,6 +113,13 @@ fun AppRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false),
         )
+        if (isNew) {
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "Neu",
+                style = homeTextStyle(12.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold),
+            )
+        }
         if (hasNotification) {
             Spacer(Modifier.width(10.dp))
             NotificationDot()

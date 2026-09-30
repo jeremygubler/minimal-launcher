@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
+import androidx.compose.material3.AlertDialog
 import android.os.BatteryManager
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -128,6 +130,7 @@ fun HomeContent(
     weather: WeatherInfo?,
     onNoteClick: () -> Unit,
     onStartShortcut: (AppInfo, String) -> Unit,
+    onRemoveFavorite: (String) -> Unit,
     perform: (GestureAction) -> Unit,
 ) {
     val currentPageChange by rememberUpdatedState(onPageChange)
@@ -226,6 +229,7 @@ fun HomeContent(
                     onFolderLongPress = onFolderLongPress,
                     onReorder = onReorderFavorites,
                     onStartShortcut = onStartShortcut,
+                    onRemoveFavorite = onRemoveFavorite,
                 )
             }
             Spacer(Modifier.height(40.dp))
@@ -330,10 +334,14 @@ private fun ClockBlock(
             )
         }
         if (settings.showBattery) BatteryLine()
-        val event by produceState<CalendarEvent?>(null, now, settings.showEvents) {
-            value = if (settings.showEvents) withContext(Dispatchers.IO) { CalendarEvents.next(context, now) } else null
+        val events by produceState(emptyList<CalendarEvent>(), now, settings.showEvents, settings.eventCount) {
+            value = if (settings.showEvents) {
+                withContext(Dispatchers.IO) { CalendarEvents.upcoming(context, now, settings.eventCount) }
+            } else {
+                emptyList()
+            }
         }
-        event?.let { e ->
+        events.forEach { e ->
             val whenText = when {
                 e.allDay -> "Heute"
                 e.begin <= now -> "Jetzt"
@@ -533,6 +541,7 @@ private fun FavoritesList(
     onFolderLongPress: (Favorite) -> Unit,
     onReorder: (List<String>) -> Unit,
     onStartShortcut: (AppInfo, String) -> Unit,
+    onRemoveFavorite: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf<String?>(null) }
     val fontSize = (26 * settings.textScale).sp
@@ -545,6 +554,7 @@ private fun FavoritesList(
     var dragOffset by remember { mutableFloatStateOf(0f) }
     var dragDistance by remember { mutableFloatStateOf(0f) }
     val heights = remember { mutableStateMapOf<String, Int>() }
+    var removingContact by remember { mutableStateOf<Favorite?>(null) }
     LaunchedEffect(favorites) { if (draggingId == null) order = favorites.map { it.id } }
 
     val currentFavorites by rememberUpdatedState(favorites)
@@ -582,7 +592,9 @@ private fun FavoritesList(
         dragOffset = 0f
         if (dragDistance < touchSlop) {
             val fav = currentFavorites.firstOrNull { it.id == id } ?: return
-            if (fav.isFolder) {
+            if (fav.isContact) {
+                removingContact = fav
+            } else if (fav.isFolder) {
                 currentFolderLongPress(fav)
             } else {
                 fav.apps.firstOrNull()?.let { currentAppsByKey[it] }?.let(currentLongPress)
@@ -636,7 +648,9 @@ private fun FavoritesList(
                             }
                         }
                 ) {
-                    if (fav.isFolder) {
+                    if (fav.isContact) {
+                        ContactFavoriteEntry(fav, settings, fontSize, reorderModifier(fav.id))
+                    } else if (fav.isFolder) {
                         FolderEntry(
                             folder = fav,
                             apps = favApps,
@@ -667,6 +681,54 @@ private fun FavoritesList(
                 }
             }
         }
+    }
+
+    removingContact?.let { fav ->
+        AlertDialog(
+            onDismissRequest = { removingContact = null },
+            title = { Text(fav.name ?: "Kontakt") },
+            text = { Text("Aus den Favoriten entfernen?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    onRemoveFavorite(fav.id)
+                    removingContact = null
+                }) { Text("Entfernen") }
+            },
+            dismissButton = { TextButton(onClick = { removingContact = null }) { Text("Abbrechen") } },
+        )
+    }
+}
+
+@Composable
+private fun ContactFavoriteEntry(fav: Favorite, settings: LauncherSettings, fontSize: TextUnit, reorder: Modifier) {
+    val context = LocalContext.current
+    val name = fav.name ?: "Kontakt"
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(reorder)
+            .clickable {
+                fav.contactUri?.let {
+                    SystemActions.start(context, Intent(Intent.ACTION_VIEW, Uri.parse(it)))
+                }
+            }
+            .heightIn(min = 48.dp)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (settings.showIcons) {
+            Box(
+                Modifier
+                    .size(settings.iconSize.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(name.take(1).uppercase(), style = homeTextStyle(fontSize * 0.6f).copy(fontWeight = FontWeight.Bold))
+            }
+            Spacer(Modifier.width(16.dp))
+        }
+        Text(name, style = homeTextStyle(fontSize), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

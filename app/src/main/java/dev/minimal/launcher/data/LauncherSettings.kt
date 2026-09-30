@@ -31,8 +31,11 @@ data class Favorite(
     /** App-Shortcut (ID), der beim Wischen nach links ausgeführt wird, samt Anzeigename. */
     val swipeLeftShortcut: String? = null,
     val swipeLeftLabel: String? = null,
+    /** Kontakt-Favorit: Lookup-URI des Kontakts (Name steht in [name]). */
+    val contactUri: String? = null,
 ) {
-    val isFolder: Boolean get() = apps.size > 1 || name != null
+    val isFolder: Boolean get() = contactUri == null && (apps.size > 1 || name != null)
+    val isContact: Boolean get() = contactUri != null
 }
 
 const val MAIN_PAGE = "main"
@@ -56,6 +59,10 @@ data class LauncherSettings(
     val showClock: Boolean = true,
     val showDate: Boolean = true,
     val showAlarm: Boolean = true,
+    /** Anzahl der angezeigten Termine (1–3). */
+    val eventCount: Int = 1,
+    /** Neu installierte Apps in der Liste markieren. */
+    val markNewApps: Boolean = true,
     val showEvents: Boolean = false,
     val showMedia: Boolean = true,
     val alphabetLeft: Boolean = false,
@@ -116,6 +123,8 @@ data class LauncherSettings(
         put("showClock", showClock)
         put("showDate", showDate)
         put("showAlarm", showAlarm)
+        put("eventCount", eventCount)
+        put("markNewApps", markNewApps)
         put("showEvents", showEvents)
         put("showMedia", showMedia)
         put("alphabetLeft", alphabetLeft)
@@ -141,6 +150,7 @@ data class LauncherSettings(
                     put("page", f.page)
                     f.swipeLeftShortcut?.let { put("swipeLeftShortcut", it) }
                     f.swipeLeftLabel?.let { put("swipeLeftLabel", it) }
+                    f.contactUri?.let { put("contactUri", it) }
                 })
             }
         })
@@ -188,6 +198,8 @@ data class LauncherSettings(
                 showClock = o.optBoolean("showClock", d.showClock),
                 showDate = o.optBoolean("showDate", d.showDate),
                 showAlarm = o.optBoolean("showAlarm", d.showAlarm),
+                eventCount = o.optInt("eventCount", d.eventCount).coerceIn(1, 3),
+                markNewApps = o.optBoolean("markNewApps", d.markNewApps),
                 showEvents = o.optBoolean("showEvents", d.showEvents),
                 showMedia = o.optBoolean("showMedia", d.showMedia),
                 alphabetLeft = o.optBoolean("alphabetLeft", d.alphabetLeft),
@@ -216,6 +228,7 @@ data class LauncherSettings(
                             page = f.optString("page", MAIN_PAGE).ifEmpty { MAIN_PAGE },
                             swipeLeftShortcut = f.optString("swipeLeftShortcut").ifEmpty { null },
                             swipeLeftLabel = f.optString("swipeLeftLabel").ifEmpty { null },
+                            contactUri = f.optString("contactUri").ifEmpty { null },
                         )
                     }
                 } ?: emptyList(),

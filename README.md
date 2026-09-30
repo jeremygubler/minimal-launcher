@@ -7,7 +7,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 
 **Startbildschirm**
 - Vertikale Favoritenliste, einhändig bedienbar (unten ausgerichtet)
-- Uhr, Datum, nächster Wecker und nächster Termin (antippen öffnet Uhr, Kalender bzw. den Termin)
+- Uhr, Datum, nächster Wecker und bis zu drei kommende Termine (antippen öffnet Uhr, Kalender bzw. den Termin)
 - **Wetter** (optional, standardmäßig aus): Open-Meteo ohne Konto, fester Ort oder gerundeter Standort
 - Akku-Hinweis beim Laden oder unter 20 %
 - **Bildschirmzeit** heute unter der Uhr (antippen: Top-Apps), Nutzung pro App im App-Menü – benötigt „Nutzungszugriff“, bleibt lokal
@@ -16,6 +16,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)
 - **Mehrere Favoriten-Seiten** (z. B. „Start“, „Arbeit“, „Privat“): links/rechts wischen oder Seitennamen antippen; verwalten unter *Einstellungen → Favoriten & Seiten*
 - **Automatischer Seitenwechsel nach Zeitplan** (z. B. „Arbeit“ Mo–Fr 08:00–17:00, auch über Mitternacht); gewechselt wird nur zu Beginn/Ende eines Zeitfensters
+- **Kontakte als Favoriten** (in der Suche einen Kontakt lange drücken)
 - Ordner als Favoriten (aufklappbar, mit Mini-Icon-Vorschau)
 - Ordner direkt aus dem App-Menü anlegen („Neuen Ordner mit dieser App“)
 - Favoriten per **Drag & Drop** sortieren (lange drücken und ziehen; lange drücken ohne Ziehen öffnet das Menü)
@@ -25,6 +26,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - Buchstabenleiste am Rand mit „Wellen“-Effekt und haptischem Feedback – ziehen springt direkt zum Buchstaben
 - Alphabetische Liste mit Abschnitts-Überschriften, Arbeitsprofil-Apps inklusive
 - Linkshänder-Modus (Leiste links)
+- Neu installierte Apps sind drei Tage lang mit „Neu“ markiert
 - **Vertrauliches Profil** (Android 15+, früher „Privater Bereich“): eigener Abschnitt am Ende der Liste (🔒 in der Buchstabenleiste), entsperren/sperren direkt im Launcher
 - Pausiertes Arbeitsprofil: Antippen einer Arbeits-App bietet an, das Profil fortzusetzen
 

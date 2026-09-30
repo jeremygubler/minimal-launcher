@@ -262,6 +262,14 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     }
                 }
             }
+            if (s.showEvents) {
+                item {
+                    SliderRow("Anzahl Termine", s.eventCount.toFloat(), 1f..3f, "${s.eventCount}") { v ->
+                        vm.update { it.copy(eventCount = v.roundToInt().coerceIn(1, 3)) }
+                    }
+                }
+            }
+            item { SwitchRow("Neue Apps in der Liste markieren", s.markNewApps) { v -> vm.update { it.copy(markNewApps = v) } } }
             item {
                 SwitchRow("Mediensteuerung (Musik, Podcasts)", s.showMedia) { v -> vm.update { it.copy(showMedia = v) } }
             }
@@ -375,7 +383,9 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
                 pageFavs.forEachIndexed { index, fav ->
                     item(key = "fav_${fav.id}") {
-                        val label = if (fav.isFolder) {
+                        val label = if (fav.isContact) {
+                            "👤 " + (fav.name ?: "Kontakt")
+                        } else if (fav.isFolder) {
                             "📁 " + (fav.name ?: "Ordner") + " (${fav.apps.size})"
                         } else {
                             fav.apps.firstOrNull()?.let { appsByKey[it]?.label } ?: "Nicht installiert"

@@ -72,6 +72,8 @@ fun AppDrawer(
             listOfNotNull(rows.indexOf(DrawerItem.PrivateHeader).takeIf { it >= 0 }?.let { PRIVATE_LETTER to it })
     }
     val state = rememberLazyListState()
+    // Apps, die in den letzten drei Tagen installiert wurden, als „Neu“ markieren.
+    val newSince = remember { System.currentTimeMillis() - 3L * 24 * 60 * 60 * 1000 }
 
     LaunchedEffect(targetLetter, headerIndex) {
         val idx = targetLetter?.let { headerIndex[it] } ?: return@LaunchedEffect
@@ -121,6 +123,7 @@ fun AppDrawer(
                     onClick = { onLaunch(item.app) },
                     onLongClick = { onLongPress(item.app) },
                     modifier = Modifier.padding(side),
+                    isNew = settings.markNewApps && item.app.installTime > newSince,
                 )
             }
         }

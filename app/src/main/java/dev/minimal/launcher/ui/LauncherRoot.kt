@@ -169,6 +169,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 weather = weather,
                 onNoteClick = { editingNote = true },
                 onStartShortcut = { app, id -> vm.startShortcutById(app, id) },
+                onRemoveFavorite = vm::removeFavorite,
                 perform = perform,
             )
         }
@@ -200,6 +201,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onLongPress = longPress,
                 onContactsDenied = { vm.update { it.copy(searchContacts = false) } },
                 onSetNote = { vm.setNote(it) },
+                onPinContact = { uri, name -> vm.addContactFavorite(uri, name) },
                 usage = usage,
                 loadShortcuts = vm::allShortcuts,
                 shortcutIcon = vm::shortcutIcon,

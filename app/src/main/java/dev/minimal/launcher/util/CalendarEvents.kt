@@ -16,8 +16,12 @@ object CalendarEvents {
         ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED
 
     /** Nächster (oder gerade laufender) Termin innerhalb der nächsten 24 Stunden. */
-    fun next(context: Context, now: Long = System.currentTimeMillis()): CalendarEvent? {
-        if (!hasPermission(context)) return null
+    fun next(context: Context, now: Long = System.currentTimeMillis()): CalendarEvent? =
+        upcoming(context, now, 1).firstOrNull()
+
+    /** Bis zu [limit] Termine: zuerst ganztägige von heute, dann laufende/kommende der nächsten 24 h. */
+    fun upcoming(context: Context, now: Long = System.currentTimeMillis(), limit: Int): List<CalendarEvent> {
+        if (!hasPermission(context)) return emptyList()
         val uri = CalendarContract.Instances.CONTENT_URI.buildUpon().also {
             ContentUris.appendId(it, now - DateUtils.DAY_IN_MILLIS)
             ContentUris.appendId(it, now + DateUtils.DAY_IN_MILLIS)
@@ -39,14 +43,20 @@ object CalendarEvents {
                         add(CalendarEvent(c.getLong(0), title, c.getLong(2), c.getLong(3), c.getInt(4) == 1))
                     }
                 }
-                // Termine mit Uhrzeit bevorzugen; ganztägige nur, wenn sie heute sind.
-                events.firstOrNull { !it.allDay && it.end > now && it.begin < now + DateUtils.DAY_IN_MILLIS }
-                    ?: events.firstOrNull { it.allDay && it.end > now && it.begin <= now }
-            }
+                select(events, now, limit)
+            } ?: emptyList()
         } catch (e: Exception) {
-            null
+            emptyList()
         }
     }
+
+    fun select(events: List<CalendarEvent>, now: Long, limit: Int): List<CalendarEvent> {
+        val allDayToday = events.filter { it.allDay && it.end > now && it.begin <= now }
+        val timed = events.filter { !it.allDay && it.end > now && it.begin < now + DAY_MS }.sortedBy { it.begin }
+        return (allDayToday + timed).take(limit)
+    }
+
+    private const val DAY_MS = 24L * 60 * 60 * 1000
 
     fun open(context: Context, event: CalendarEvent) {
         val intent = Intent(Intent.ACTION_VIEW, ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.id))

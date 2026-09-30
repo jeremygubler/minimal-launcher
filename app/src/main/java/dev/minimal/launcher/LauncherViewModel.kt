@@ -164,6 +164,15 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         })
     }
 
+    fun addContactFavorite(uri: String, name: String) = store.update { s ->
+        if (s.pageFavorites().any { it.contactUri == uri }) return@update s
+        s.copy(
+            favorites = s.favorites + Favorite(
+                UUID.randomUUID().toString(), emptyList(), name = name, contactUri = uri, page = s.activePage,
+            ),
+        )
+    }
+
     fun createFolder(name: String, appKeys: List<String>) = store.update { s ->
         s.copy(favorites = s.favorites + Favorite(UUID.randomUUID().toString(), appKeys, name = name, page = s.activePage))
     }
@@ -277,7 +286,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
             hidden = s.hidden + appInfo.key,
             favorites = s.favorites.mapNotNull { f ->
                 val apps = f.apps - appInfo.key
-                if (apps.isEmpty() && !f.isFolder) null else f.copy(apps = apps)
+                if (apps.isEmpty() && !f.isFolder && !f.isContact) null else f.copy(apps = apps)
             },
         )
     }
