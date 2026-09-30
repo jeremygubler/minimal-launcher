@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.ui.HomeCallbacks
 import dev.minimal.launcher.ui.LauncherRoot
 import dev.minimal.launcher.ui.LauncherTheme
+import dev.minimal.launcher.util.IntentionReminder
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.data.AutoBackup
 import dev.minimal.launcher.pro.Pro
@@ -125,6 +126,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        // Zurück auf dem Startbildschirm: die Absichts-Erinnerung ist erledigt. (onStart statt onResume –
+        // Fingerabdruck- und Berechtigungsdialoge pausieren die Activity nur, sie stoppen sie nicht.)
+        IntentionReminder.cancel()
         vm.checkSchedule()
         DeviceCompat.rebindNotificationListener(this)
         // Tägliche Sicherung (nur wenn ein Ordner gewählt ist).

@@ -504,6 +504,24 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     if (s.focusPauseSeconds == 0) "keine" else "${s.focusPauseSeconds} s",
                 ) { v -> vm.update { it.copy(focusPauseSeconds = v.roundToInt()) } }
             }
+            item {
+                SwitchRow("Absichtsfrage" + if (pro) "" else " (Pro)", s.intentionPrompt && pro) { v ->
+                    if (!pro) paywallFor = "Absichtsfrage" else vm.update { it.copy(intentionPrompt = v) }
+                }
+            }
+            item {
+                Hint(
+                    "Statt nur zu warten fragt Kanso: „Wozu öffnest du …?“ – mit Zähler, wie oft du die App heute " +
+                        "schon geöffnet hast, und optionalem Timer, der dich danach an deine Absicht erinnert."
+                )
+            }
+            if (s.intentionPrompt && pro) {
+                item {
+                    SwitchRow("Auch ausserhalb des Fokus-Modus fragen", s.intentionAlways) { v ->
+                        vm.update { it.copy(intentionAlways = v) }
+                    }
+                }
+            }
             s.focusApps.forEach { key ->
                 item(key = "focus_$key") {
                     Row(

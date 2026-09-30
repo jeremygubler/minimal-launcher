@@ -73,6 +73,8 @@ class LauncherSettingsTest {
         focusApps = setOf("x/y#0"),
         focusManual = true,
         focusPauseSeconds = 12,
+        intentionPrompt = true,
+        intentionAlways = true,
         showScreenTime = true,
         showWeather = true,
         showTasks = false,

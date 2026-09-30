@@ -125,6 +125,10 @@ data class LauncherSettings(
     val focusSchedule: PageSchedule? = null,
     /** Dauer der Denkpause im Fokus-Modus in Sekunden (0 = keine). */
     val focusPauseSeconds: Int = 5,
+    /** Vor ablenkenden Apps nach der Absicht fragen (statt nur einer Denkpause). */
+    val intentionPrompt: Boolean = false,
+    /** Absichtsfrage auch ausserhalb des Fokus-Modus stellen. */
+    val intentionAlways: Boolean = false,
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -229,6 +233,8 @@ data class LauncherSettings(
         put("focusManual", focusManual)
         focusSchedule?.let { put("focusSchedule", scheduleToJson(it)) }
         put("focusPauseSeconds", focusPauseSeconds)
+        put("intentionPrompt", intentionPrompt)
+        put("intentionAlways", intentionAlways)
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -341,6 +347,8 @@ data class LauncherSettings(
                 focusManual = o.optBoolean("focusManual", false),
                 focusSchedule = o.optJSONObject("focusSchedule")?.let(::scheduleFromJson),
                 focusPauseSeconds = o.optInt("focusPauseSeconds", d.focusPauseSeconds).coerceIn(0, 60),
+                intentionPrompt = o.optBoolean("intentionPrompt", d.intentionPrompt),
+                intentionAlways = o.optBoolean("intentionAlways", d.intentionAlways),
                 showScreenTime = o.optBoolean("showScreenTime", d.showScreenTime),
                 showWeather = o.optBoolean("showWeather", d.showWeather),
                 weatherCity = o.optString("weatherCity", ""),

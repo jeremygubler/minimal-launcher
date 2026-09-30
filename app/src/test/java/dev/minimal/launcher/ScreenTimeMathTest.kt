@@ -51,4 +51,18 @@ class ScreenTimeMathTest {
         assertEquals(0, ScreenTimeMath.streak(listOf(50, 150, 150), goal))
         assertEquals(0, ScreenTimeMath.streak(listOf(10, 10), 0))
     }
+
+    @Test
+    fun countsOpensMergingQuickSwitches() {
+        val sessions = listOf(
+            UsageSession("insta", at(mon, 10), at(mon, 10, 5)),
+            // 20 s später anderer Bildschirm derselben App → gleicher Besuch
+            UsageSession("insta", at(mon, 10, 5) + 20_000, at(mon, 10, 8)),
+            UsageSession("mail", at(mon, 11), at(mon, 11, 1)),
+            UsageSession("insta", at(mon, 12), at(mon, 12, 2)),
+        )
+        assertEquals(2, ScreenTimeMath.opens(sessions, "insta"))
+        assertEquals(1, ScreenTimeMath.opens(sessions, "mail"))
+        assertEquals(0, ScreenTimeMath.opens(sessions, "x"))
+    }
 }

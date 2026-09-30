@@ -153,6 +153,13 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     val homeColors = LocalHomeColors.current
 
     var focusPauseFor by remember { mutableStateOf<AppInfo?>(null) }
+    var intentionFor by remember { mutableStateOf<AppInfo?>(null) }
+    // Absichtsfrage (Pro): im Fokus-Modus oder – falls gewünscht – immer bei ablenkenden Apps.
+    val intentionKeys = if (settings.intentionPrompt && pro && (focusActive || settings.intentionAlways)) {
+        settings.focusApps
+    } else {
+        emptySet()
+    }
     // App-Sperre: gesperrte Apps (und ihre Shortcuts) nur nach Fingerabdruck/PIN öffnen.
     val lockedPackages = remember(allApps, settings.lockedApps) {
         allApps.filter { it.key in settings.lockedApps }.map { it.packageName }.toSet()
@@ -187,7 +194,11 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
     }
     val launch: (AppInfo) -> Unit = { app ->
-        if (app.key in blockedKeys) focusPauseFor = app else openChecked(app)
+        when (app.key) {
+            in intentionKeys -> intentionFor = app
+            in blockedKeys -> focusPauseFor = app
+            else -> openChecked(app)
+        }
     }
     val longPress: (AppInfo) -> Unit = { actionsFor = it }
     val perform: (GestureAction) -> Unit = { action ->
@@ -320,6 +331,16 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             seconds = settings.focusPauseSeconds,
             onOpen = { openChecked(app) },
             onDismiss = { focusPauseFor = null },
+        )
+    }
+
+    intentionFor?.let { app ->
+        IntentionDialog(
+            app = app,
+            vm = vm,
+            seconds = settings.focusPauseSeconds,
+            onOpen = { openChecked(app) },
+            onDismiss = { intentionFor = null },
         )
     }
 

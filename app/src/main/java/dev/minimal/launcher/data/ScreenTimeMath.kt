@@ -9,6 +9,20 @@ data class UsageSession(val pkg: String, val start: Long, val end: Long)
 
 /** Reine Rechenfunktionen für die Bildschirmzeit (ohne Android-Abhängigkeiten, daher testbar). */
 object ScreenTimeMath {
+    /**
+     * Wie oft wurde [pkg] geöffnet? Sitzungen mit weniger als [gapMs] Abstand zählen als eine
+     * (Wechsel zwischen Bildschirmen derselben App erzeugen mehrere Sitzungen).
+     */
+    fun opens(sessions: List<UsageSession>, pkg: String, gapMs: Long = 60_000): Int {
+        var count = 0
+        var lastEnd = Long.MIN_VALUE
+        for (s in sessions.filter { it.pkg == pkg }.sortedBy { it.start }) {
+            if (lastEnd == Long.MIN_VALUE || s.start - lastEnd >= gapMs) count++
+            lastEnd = maxOf(lastEnd, s.end)
+        }
+        return count
+    }
+
     /** Verteilt Sitzungen auf Kalendertage (Sitzungen über Mitternacht werden aufgeteilt). */
     fun perDay(sessions: List<UsageSession>, zone: ZoneId, days: List<LocalDate>): Map<LocalDate, Map<String, Long>> {
         val result = days.associateWith { HashMap<String, Long>() }

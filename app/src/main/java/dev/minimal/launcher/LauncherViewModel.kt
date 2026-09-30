@@ -439,6 +439,10 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     suspend fun screenTimeToday(): Map<String, Long> =
         withContext(Dispatchers.IO) { ScreenTime.today(getApplication()) }
 
+    /** Öffnungen und Nutzungsdauer einer App heute (null ohne Nutzungszugriff). */
+    suspend fun appToday(appInfo: AppInfo): Pair<Int, Long>? =
+        withContext(Dispatchers.IO) { ScreenTime.appToday(getApplication(), appInfo.packageName) }
+
     // --- Widgets -----------------------------------------------------------
 
     fun addWidget(id: Int) = store.update { it.copy(widgets = it.widgets + id) }

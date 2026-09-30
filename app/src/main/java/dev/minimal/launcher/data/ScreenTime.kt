@@ -57,6 +57,17 @@ object ScreenTime {
         return ScreenTimeMath.perDay(sessions(context, start, now), zone, listOf(today))[today].orEmpty()
     }
 
+    /** Heute: wie oft [pkg] geöffnet wurde und wie lange – null ohne Nutzungszugriff. */
+    fun appToday(context: Context, pkg: String, now: Long = System.currentTimeMillis()): Pair<Int, Long>? {
+        if (!hasAccess(context)) return null
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val start = today.atStartOfDay(zone).toInstant().toEpochMilli()
+        val sessions = sessions(context, start, now)
+        val ms = ScreenTimeMath.perDay(sessions, zone, listOf(today))[today]?.get(pkg) ?: 0L
+        return ScreenTimeMath.opens(sessions, pkg) to ms
+    }
+
     /** Nutzung pro Tag für die letzten [days] Tage (ältester zuerst, heute zuletzt). */
     fun lastDays(context: Context, days: Int = 7, now: Long = System.currentTimeMillis()): List<Pair<LocalDate, Map<String, Long>>> {
         val zone = ZoneId.systemDefault()

@@ -44,7 +44,7 @@
 > • App-Sperre per Fingerabdruck, vertrauliches Profil, Arbeitsprofil
 > • Icon-Packs, Designsymbole, Schriftarten, Material You
 >
-> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Pop-up-Widgets, eigene Icons, automatische
+> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Pop-up-Widgets, Absichtsfrage, eigene Icons, automatische
 > Sicherung, Wochenbericht mit Tagesziel und Kategorie-Limits, Aufgabenliste.
 
 **Kategorie:** Personalisierung · **Einstufung:** ohne Altersbeschränkung
@@ -67,6 +67,7 @@
 | **Benachrichtigungszugriff** | Benachrichtigungspunkte, Vorschau, Mediensteuerung auf dem Startbildschirm. |
 | **Pakete sehen** | Über `<queries>` (kein QUERY_ALL_PACKAGES) – Launcher-Kernfunktion. |
 | **REQUEST_DELETE_PACKAGES** | „Deinstallieren“ im App-Menü des Launchers. |
+| **POST_NOTIFICATIONS** | Nur für die optionale Timer-Erinnerung der Absichtsfrage („10 min sind um“). Wird erst angefragt, wenn man einen Timer wählt. |
 | Akku-Optimierung | In der Play-Version entfernt (nur Link zur Einstellungsliste). |
 
 ## 5. Vor dem ersten Upload prüfen
