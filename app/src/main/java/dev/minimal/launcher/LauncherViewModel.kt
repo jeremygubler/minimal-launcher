@@ -17,6 +17,8 @@ import dev.minimal.launcher.data.PageContext
 import dev.minimal.launcher.data.ContextMonitor
 import dev.minimal.launcher.data.PageScheduler
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.TaskItem
+import dev.minimal.launcher.data.Tasks
 import dev.minimal.launcher.data.AutoBackup
 import dev.minimal.launcher.data.Weather
 import dev.minimal.launcher.data.WeatherInfo
@@ -77,6 +79,11 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     val homePressed: SharedFlow<Boolean> = _homePressed
 
     init {
+        // Gestern erledigte Aufgaben aufräumen.
+        store.update { s ->
+            val purged = Tasks.purge(s.tasks, java.time.LocalDate.now())
+            if (purged.size == s.tasks.size) s else s.copy(tasks = purged)
+        }
         // Kontextänderungen (Kopfhörer, Laden, Bluetooth, WLAN) sofort auswerten.
         viewModelScope.launch {
             ContextMonitor.state.collect { checkSchedule() }
@@ -357,6 +364,24 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         if (!s.showWeather) return null
         return Weather.load(getApplication(), s.weatherCity, force)
     }
+
+    // --- Aufgaben -----------------------------------------------------------
+
+    fun addTask(title: String, due: java.time.LocalDate?) = store.update { s ->
+        s.copy(tasks = Tasks.purge(s.tasks, java.time.LocalDate.now()) + TaskItem(UUID.randomUUID().toString(), title.trim(), due))
+    }
+
+    fun toggleTask(id: String) = store.update { s ->
+        s.copy(tasks = s.tasks.map { if (it.id == id) it.copy(doneAt = if (it.isDone) null else System.currentTimeMillis()) else it })
+    }
+
+    fun updateTask(id: String, title: String, due: java.time.LocalDate?) = store.update { s ->
+        s.copy(tasks = s.tasks.map { if (it.id == id) it.copy(title = title.trim(), due = due) else it })
+    }
+
+    fun deleteTask(id: String) = store.update { s -> s.copy(tasks = s.tasks.filterNot { it.id == id }) }
+
+    fun clearDoneTasks() = store.update { s -> s.copy(tasks = s.tasks.filterNot { it.isDone }) }
 
     fun setNote(text: String) = store.update { it.copy(note = text.trim()) }
 

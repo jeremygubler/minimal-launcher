@@ -310,6 +310,7 @@ fun HomeMenuSheet(
     hasWidgets: Boolean,
     hasNote: Boolean,
     onEditNote: () -> Unit,
+    onAddTask: () -> Unit,
     focusOn: Boolean,
     onToggleFocus: () -> Unit,
     onDismiss: () -> Unit,
@@ -326,6 +327,7 @@ fun HomeMenuSheet(
                 .navigationBarsPadding()
         ) {
             SheetAction(if (focusOn) "Fokus-Modus ausschalten" else "Fokus-Modus einschalten", onToggleFocus)
+            SheetAction("Aufgabe hinzufügen", onAddTask)
             SheetAction(if (hasNote) "Notiz bearbeiten" else "Notiz hinzufügen", onEditNote)
             SheetAction("Widget hinzufügen", onAddWidget)
             if (hasWidgets) SheetAction("Widgets bearbeiten", onEditWidgets)
@@ -471,3 +473,38 @@ private fun appLabel(pm: PackageManager, packageName: String): String = try {
     packageName
 }
 
+
+/** Aufgabe bearbeiten: Titel, Fälligkeit (ohne/heute/morgen) oder löschen. */
+@Composable
+fun TaskEditDialog(
+    task: dev.minimal.launcher.data.TaskItem,
+    onDismiss: () -> Unit,
+    onSave: (String, java.time.LocalDate?) -> Unit,
+    onDelete: () -> Unit,
+) {
+    val today = java.time.LocalDate.now()
+    var title by remember { mutableStateOf(task.title) }
+    var due by remember { mutableStateOf(task.due) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Aufgabe") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth())
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    listOf<Pair<String, java.time.LocalDate?>>("Ohne Datum" to null, "Heute" to today, "Morgen" to today.plusDays(1))
+                        .forEach { (label, date) ->
+                            TextButton(onClick = { due = date }) {
+                                Text(
+                                    label,
+                                    color = if (due == date) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = title.isNotBlank(), onClick = { onSave(title, due) }) { Text("Speichern") } },
+        dismissButton = { TextButton(onClick = onDelete) { Text("Löschen") } },
+    )
+}

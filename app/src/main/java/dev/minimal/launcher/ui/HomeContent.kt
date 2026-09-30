@@ -91,6 +91,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.produceState
 import dev.minimal.launcher.data.NowPlaying
 import dev.minimal.launcher.data.ScreenTime
+import dev.minimal.launcher.data.TaskItem
+import dev.minimal.launcher.data.Tasks
+import androidx.compose.ui.text.style.TextDecoration
+import java.time.LocalDate
 import dev.minimal.launcher.data.WeatherInfo
 import dev.minimal.launcher.util.CalendarEvent
 import dev.minimal.launcher.util.CalendarEvents
@@ -129,6 +133,8 @@ fun HomeContent(
     onScreenTimeClick: () -> Unit,
     weather: WeatherInfo?,
     onNoteClick: () -> Unit,
+    onToggleTask: (String) -> Unit,
+    onTaskLongPress: (TaskItem) -> Unit,
     onStartShortcut: (AppInfo, String) -> Unit,
     onRemoveFavorite: (String) -> Unit,
     perform: (GestureAction) -> Unit,
@@ -192,6 +198,7 @@ fun HomeContent(
             Spacer(Modifier.height(32.dp))
             ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather)
             if (settings.note.isNotBlank()) NoteLine(settings.note, onNoteClick)
+            if (settings.showTasks) TasksBlock(settings.tasks, onToggleTask, onTaskLongPress)
             if (settings.showMedia) MediaBlock()
             if (settings.widgets.isNotEmpty()) {
                 WidgetsArea(
@@ -233,6 +240,56 @@ fun HomeContent(
                 )
             }
             Spacer(Modifier.height(40.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun TasksBlock(tasks: List<TaskItem>, onToggle: (String) -> Unit, onLongPress: (TaskItem) -> Unit) {
+    val today = LocalDate.now()
+    val visible = remember(tasks, today) { Tasks.visible(tasks, today) }
+    if (visible.isEmpty()) return
+    val colors = LocalHomeColors.current
+    val shown = visible.take(6)
+    Column(Modifier.padding(top = 16.dp)) {
+        shown.forEach { task ->
+            Row(
+                Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .combinedClickable(onClick = { onToggle(task.id) }, onLongClick = { onLongPress(task) })
+                    .padding(vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (task.isDone) "✓" else "○",
+                    style = homeTextStyle(16.sp).copy(
+                        color = if (task.isDone) MaterialTheme.colorScheme.primary else colors.secondary,
+                    ),
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    task.title,
+                    style = homeTextStyle(16.sp).copy(
+                        color = if (task.isDone) colors.secondary else colors.text,
+                        textDecoration = if (task.isDone) TextDecoration.LineThrough else null,
+                    ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                val due = task.due
+                if (!task.isDone && due != null && due.isBefore(today)) {
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (due == today.minusDays(1)) "seit gestern" else "überfällig",
+                        style = homeTextStyle(12.sp).copy(color = colors.secondary),
+                    )
+                }
+            }
+        }
+        if (visible.size > shown.size) {
+            Text("+${visible.size - shown.size} weitere", style = homeTextStyle(13.sp).copy(color = colors.secondary))
         }
     }
 }

@@ -34,6 +34,9 @@ import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.Focus
+import dev.minimal.launcher.data.TaskItem
+import dev.minimal.launcher.data.Tasks
+import java.time.LocalDate
 import dev.minimal.launcher.data.ScreenTime
 import dev.minimal.launcher.data.AppCategories
 import dev.minimal.launcher.data.WeatherInfo
@@ -80,6 +83,8 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
     var showScreenTimeDialog by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf(false) }
+    var editingTask by remember { mutableStateOf<TaskItem?>(null) }
+    var addingTask by remember { mutableStateOf(false) }
     val focusActive = Focus.isActive(settings, now)
     val blockedKeys = if (focusActive) settings.focusApps else emptySet()
 
@@ -232,6 +237,8 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onScreenTimeClick = { showScreenTimeDialog = true },
                 weather = weather,
                 onNoteClick = { editingNote = true },
+                onToggleTask = vm::toggleTask,
+                onTaskLongPress = { editingTask = it },
                 onStartShortcut = { app, id ->
                     if (app.key in settings.lockedApps) {
                         callbacks.authenticate(app.label) { vm.startShortcutById(app, id) }
@@ -271,6 +278,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onLongPress = longPress,
                 onContactsDenied = { vm.update { it.copy(searchContacts = false) } },
                 onSetNote = { vm.setNote(it) },
+                onAddTask = { title, due -> vm.addTask(title, due) },
                 onPinContact = { uri, name -> vm.addContactFavorite(uri, name) },
                 usage = usage,
                 loadShortcuts = vm::allShortcuts,
@@ -335,6 +343,34 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         )
     }
 
+    if (addingTask) {
+        TextInputDialog(
+            title = "Neue Aufgabe",
+            initial = "",
+            hint = "z. B. morgen Zahnarzt anrufen",
+            onDismiss = { addingTask = false },
+            onConfirm = { text ->
+                Tasks.parseText(text, LocalDate.now())?.let { (title, due) -> vm.addTask(title, due) }
+                addingTask = false
+            },
+        )
+    }
+
+    editingTask?.let { task ->
+        TaskEditDialog(
+            task = task,
+            onDismiss = { editingTask = null },
+            onSave = { title, due ->
+                vm.updateTask(task.id, title, due)
+                editingTask = null
+            },
+            onDelete = {
+                vm.deleteTask(task.id)
+                editingTask = null
+            },
+        )
+    }
+
     if (editingNote) {
         TextInputDialog(
             title = "Notiz",
@@ -375,6 +411,10 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         HomeMenuSheet(
             hasWidgets = settings.widgets.isNotEmpty(),
             hasNote = settings.note.isNotBlank(),
+            onAddTask = {
+                showHomeMenu = false
+                addingTask = true
+            },
             onEditNote = {
                 showHomeMenu = false
                 editingNote = true

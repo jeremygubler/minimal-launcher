@@ -11,6 +11,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - **Wetter** (optional, standardmäßig aus): Open-Meteo ohne Konto, fester Ort oder gerundeter Standort
 - Akku-Hinweis beim Laden oder unter 20 %
 - **Bildschirmzeit** heute unter der Uhr (antippen: Top-Apps), Nutzung pro App im App-Menü – benötigt „Nutzungszugriff“, bleibt lokal
+- **Aufgabenliste** unter der Uhr: in der Suche `todo Milch kaufen` oder `todo morgen Zahnarzt` (auch im Home-Menü); antippen = erledigt, lange drücken = bearbeiten/löschen; erledigte verschwinden am nächsten Tag
 - **Schnellnotiz** auf dem Startbildschirm (Home-Menü oder in der Suche `notiz …`)
 - Mediensteuerung, wenn Musik oder Podcasts laufen (Titel, Zurück/Pause/Weiter)
 - Widgets direkt auf dem Startbildschirm (hinzufügen, sortieren, entfernen)

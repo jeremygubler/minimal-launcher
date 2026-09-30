@@ -311,6 +311,10 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                     }
                 }
             }
+            item { SwitchRow("Aufgaben unter der Uhr anzeigen", s.showTasks) { v -> vm.update { it.copy(showTasks = v) } } }
+            if (s.tasks.any { it.isDone }) {
+                item { ClickRow("Erledigte Aufgaben jetzt entfernen", null) { vm.clearDoneTasks() } }
+            }
             item { SwitchRow("Neue Apps in der Liste markieren", s.markNewApps) { v -> vm.update { it.copy(markNewApps = v) } } }
             item {
                 SwitchRow("Mediensteuerung (Musik, Podcasts)", s.showMedia) { v -> vm.update { it.copy(showMedia = v) } }

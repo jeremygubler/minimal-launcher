@@ -128,6 +128,9 @@ data class LauncherSettings(
     val weatherCity: String = "",
     /** Schnellnotiz auf dem Startbildschirm. */
     val note: String = "",
+    /** Eingebaute Aufgabenliste. */
+    val tasks: List<TaskItem> = emptyList(),
+    val showTasks: Boolean = true,
     val widgets: List<Int> = emptyList(),
     val firstRunDone: Boolean = false,
 ) {
@@ -224,6 +227,17 @@ data class LauncherSettings(
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
         put("note", note)
+        put("showTasks", showTasks)
+        put("tasks", JSONArray().apply {
+            tasks.forEach { t ->
+                put(JSONObject().apply {
+                    put("id", t.id)
+                    put("title", t.title)
+                    t.due?.let { put("due", it.toString()) }
+                    t.doneAt?.let { put("doneAt", it) }
+                })
+            }
+        })
         put("widgets", JSONArray(widgets))
         put("firstRunDone", firstRunDone)
     }
@@ -322,6 +336,18 @@ data class LauncherSettings(
                 showWeather = o.optBoolean("showWeather", d.showWeather),
                 weatherCity = o.optString("weatherCity", ""),
                 note = o.optString("note", ""),
+                showTasks = o.optBoolean("showTasks", d.showTasks),
+                tasks = o.optJSONArray("tasks")?.let { arr ->
+                    (0 until arr.length()).mapNotNull { i ->
+                        val t = arr.optJSONObject(i) ?: return@mapNotNull null
+                        TaskItem(
+                            id = t.optString("id").ifEmpty { return@mapNotNull null },
+                            title = t.optString("title"),
+                            due = t.optString("due").ifEmpty { null }?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() },
+                            doneAt = if (t.has("doneAt")) t.optLong("doneAt") else null,
+                        )
+                    }
+                } ?: emptyList(),
                 widgets = keepWidgets ?: o.optJSONArray("widgets")?.let { arr ->
                     (0 until arr.length()).map { arr.getInt(it) }
                 } ?: emptyList(),

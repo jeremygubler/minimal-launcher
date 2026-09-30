@@ -69,6 +69,7 @@ import dev.minimal.launcher.util.AppSearch
 import dev.minimal.launcher.util.Calculator
 import dev.minimal.launcher.util.QuickAction
 import dev.minimal.launcher.util.QuickActions
+import dev.minimal.launcher.data.Tasks
 import dev.minimal.launcher.util.SystemActions
 
 @Composable
@@ -80,6 +81,7 @@ fun SearchScreen(
     onLongPress: (AppInfo) -> Unit,
     onContactsDenied: () -> Unit,
     onSetNote: (String) -> Unit,
+    onAddTask: (String, java.time.LocalDate?) -> Unit,
     onPinContact: (String, String) -> Unit,
     usage: Map<String, Double>,
     loadShortcuts: suspend () -> List<ShortcutInfo>,
@@ -193,6 +195,22 @@ fun SearchScreen(
                     ActionLine("📝  Als Notiz auf den Startbildschirm: „$noteText“") {
                         onSetNote(noteText)
                         Toast.makeText(context, "Notiz gespeichert", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            val taskCommand = Tasks.parseCommand(query, java.time.LocalDate.now())
+            if (taskCommand != null) {
+                item(key = "task") {
+                    val (title, due) = taskCommand
+                    val whenText = when (due) {
+                        null -> ""
+                        java.time.LocalDate.now() -> " (heute)"
+                        java.time.LocalDate.now().plusDays(1) -> " (morgen)"
+                        else -> " (übermorgen)"
+                    }
+                    ActionLine("☐  Aufgabe hinzufügen: „$title“$whenText") {
+                        onAddTask(title, due)
+                        Toast.makeText(context, "Aufgabe gespeichert", Toast.LENGTH_SHORT).show()
                     }
                 }
             }

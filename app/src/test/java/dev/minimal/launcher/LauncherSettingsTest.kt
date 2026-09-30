@@ -7,6 +7,7 @@ import dev.minimal.launcher.data.PageSchedule
 import dev.minimal.launcher.data.PageContext
 import dev.minimal.launcher.data.ContextType
 import dev.minimal.launcher.data.SearchEngine
+import dev.minimal.launcher.data.TaskItem
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.HomeFont
 import dev.minimal.launcher.data.HomeWeight
@@ -72,6 +73,12 @@ class LauncherSettingsTest {
         focusPauseSeconds = 12,
         showScreenTime = true,
         showWeather = true,
+        showTasks = false,
+        tasks = listOf(
+            TaskItem("t1", "Milch kaufen"),
+            TaskItem("t2", "Zahnarzt", due = java.time.LocalDate.of(2026, 10, 1)),
+            TaskItem("t3", "Erledigt", doneAt = 1_790_000_000_000),
+        ),
         weatherCity = "Zürich",
         note = "Milch kaufen \"bio\"",
         focusSchedule = PageSchedule(setOf(6, 7), 22 * 60, 7 * 60),
