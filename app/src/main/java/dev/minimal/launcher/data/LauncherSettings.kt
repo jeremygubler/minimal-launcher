@@ -164,6 +164,8 @@ data class LauncherSettings(
     /** Datum (ISO) der Absicht – gilt nur an diesem Tag. */
     val dailyIntentionDate: String = "",
     val dailyIntentionDone: Boolean = false,
+    /** Zuletzt gezeigte „Was ist neu“-Version (siehe WhatsNew.VERSION). */
+    val whatsNewSeen: Int = 0,
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -282,6 +284,7 @@ data class LauncherSettings(
         put("dailyIntention", dailyIntention)
         put("dailyIntentionDate", dailyIntentionDate)
         put("dailyIntentionDone", dailyIntentionDone)
+        put("whatsNewSeen", whatsNewSeen)
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -408,6 +411,7 @@ data class LauncherSettings(
                 dailyIntention = o.optString("dailyIntention", d.dailyIntention),
                 dailyIntentionDate = o.optString("dailyIntentionDate", d.dailyIntentionDate),
                 dailyIntentionDone = o.optBoolean("dailyIntentionDone", d.dailyIntentionDone),
+                whatsNewSeen = o.optInt("whatsNewSeen", d.whatsNewSeen),
                 digestTimes = o.optJSONArray("digestTimes")?.let { a ->
                     (0 until a.length()).map { a.optInt(it) }.filter { it in 0 until 24 * 60 }.distinct().sorted()
                 }?.takeIf { it.isNotEmpty() } ?: d.digestTimes,

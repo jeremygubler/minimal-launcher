@@ -87,6 +87,7 @@ class LauncherSettingsTest {
         dailyIntention = "Präsentation fertig",
         dailyIntentionDate = "2026-10-01",
         dailyIntentionDone = true,
+        whatsNewSeen = 3,
         showScreenTime = true,
         showWeather = true,
         showTasks = false,

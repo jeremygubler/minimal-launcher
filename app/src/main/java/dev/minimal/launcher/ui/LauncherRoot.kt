@@ -466,7 +466,10 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
 
     if (!settings.onboardingDone) {
-        OnboardingDialog(onDone = { vm.update { it.copy(onboardingDone = true) } })
+        // Neue Nutzer sehen alles im Einrichtungsassistenten – kein zusätzliches „Was ist neu“.
+        OnboardingDialog(onDone = { vm.update { it.copy(onboardingDone = true, whatsNewSeen = WhatsNew.VERSION) } })
+    } else if (settings.whatsNewSeen < WhatsNew.VERSION) {
+        WhatsNewDialog(pro = pro, onDismiss = { vm.update { it.copy(whatsNewSeen = WhatsNew.VERSION) } })
     }
 
     if (showScreenTimeDialog) {

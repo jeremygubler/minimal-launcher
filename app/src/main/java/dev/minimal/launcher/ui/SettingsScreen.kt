@@ -2,6 +2,10 @@ package dev.minimal.launcher.ui
 
 import dev.minimal.launcher.util.tr
 import android.Manifest
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.activity.compose.BackHandler
 import dev.minimal.launcher.data.KansoStyle
 import dev.minimal.launcher.data.NotificationDigest
 import dev.minimal.launcher.util.DigestScheduler
@@ -87,6 +91,21 @@ import dev.minimal.launcher.service.LauncherAccessibilityService
 import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.util.SystemActions
+
+/** Gliederung der Einstellungen in Unterseiten. */
+private enum class SettingsCategory(private val de: String, private val en: String, private val subDe: String, private val subEn: String) {
+    APPEARANCE("Darstellung", "Appearance", "Kanso-Stil, Schrift, Icons, Startbildschirm", "Kanso style, font, icons, home screen"),
+    FOCUS("Fokus & Wohlbefinden", "Focus & wellbeing", "Fokus-Modus, Absichtsfrage, Limits, Rückblick", "Focus mode, intentions, limits, recap"),
+    NOTIFICATIONS("Benachrichtigungen", "Notifications", "Punkte, Vorschau, Zusammenfassung", "Dots, preview, digest"),
+    PAGES("Favoriten & Seiten", "Favorites & pages", "Seiten, Zeitpläne, Kontext, Ordner", "Pages, schedules, context, folders"),
+    GESTURES("Gesten & Suche", "Gestures & search", "Doppeltippen, Wischen, Suchmaschine", "Double tap, swipes, search engine"),
+    APPS("Apps", "Apps", "Sperre, Ausblenden, Aufräumen, Umbenennen", "Lock, hide, declutter, rename"),
+    SETUP("Einrichtung", "Setup", "Standard-Launcher, Berechtigungen, Akku", "Default launcher, permissions, battery"),
+    DATA("Sicherung & Hilfe", "Backup & help", "Sicherung, Export, Fehlerprotokoll", "Backup, export, crash log");
+
+    val label: String get() = tr(de, en)
+    val subtitle: String get() = tr(subDe, subEn)
+}
 
 private enum class SettingsDialog { NONE, STYLE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE, FONT, WEIGHT, HOME_PRESS, ENGINE }
 
@@ -202,12 +221,30 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
         Toast.makeText(context, if (ok) tr("Einstellungen wiederhergestellt", "Settings restored") else tr("Datei ungültig", "Invalid file"), Toast.LENGTH_SHORT).show()
     }
 
+    var category by rememberSaveable { mutableStateOf<SettingsCategory?>(null) }
+    BackHandler(enabled = category != null) { category = null }
+    // Jede Kategorie beginnt oben.
+    val listState = remember(category) { LazyListState() }
+    // Übersicht: Hinweis, falls etwas Wichtiges fehlt, dann die Kategorien.
+    val overview: LazyListScope.() -> Unit = {
+        if (!isDefault) {
+            item {
+                StatusRow(tr("Kanso ist nicht der Standard-Launcher", "Kanso is not the default launcher"), false, tr("Festlegen", "Set")) {
+                    SystemActions.openHomeSettings(context)
+                }
+            }
+        }
+        SettingsCategory.entries.forEach { c ->
+            item(key = "cat_${c.name}") { ClickRow(c.label, c.subtitle) { category = c } }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(tr("Launcher-Einstellungen", "Launcher settings")) },
+                title = { Text(category?.label ?: tr("Launcher-Einstellungen", "Launcher settings")) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { if (category != null) category = null else onBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Zurück", "Back"))
                     }
                 },
@@ -216,18 +253,20 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     ) { padding ->
         LazyColumn(
             Modifier.fillMaxSize(),
+            state = listState,
             contentPadding = PaddingValues(
                 top = padding.calculateTopPadding(),
                 bottom = padding.calculateBottomPadding() + 32.dp,
             ),
         ) {
+            if (category == null) {
             if (BuildConfig.STORE_BUILD) {
                 item { Section("Pro") }
                 item {
                     if (pro) {
                         StatusRow(tr("Pro ist freigeschaltet – danke!", "Pro is unlocked – thank you!"), true, "") {}
                     } else {
-                        ClickRow(tr("Pro freischalten", "Unlock Pro"), tr("Einmalkauf – kontextbasierte Seiten, eigene Icons, Sicherung, Wochenbericht, Aufgaben", "One-time purchase – context pages, pop-up widgets, intentions, weekly report & more")) {
+                        ClickRow(tr("Pro freischalten", "Unlock Pro"), tr("Einmalkauf – Fokus-Sitzungen, Stile, Zusammenfassung, Wochenbericht & mehr", "One-time purchase – focus sessions, styles, digest, weekly report & more")) {
                             paywallFor = null
                             showPaywall = true
                         }
@@ -235,6 +274,9 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
                 if (!pro) item { ClickRow(tr("Käufe wiederherstellen", "Restore purchases"), null) { Pro.restore() } }
             }
+                overview(this)
+            }
+            if (category == SettingsCategory.SETUP) {
             item { Section(tr("Einrichtung", "Setup")) }
             item { ClickRow(tr("Einrichtungsassistent erneut zeigen", "Show setup assistant again"), null) { vm.update { it.copy(onboardingDone = false) } } }
             item {
@@ -288,6 +330,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 item { ClickRow(tr("App-Info öffnen", "Open app info"), tr("Um eingeschränkte Einstellungen zuzulassen", "To allow restricted settings")) { SystemActions.openAppDetails(context) } }
             }
 
+            }
+            if (category == SettingsCategory.APPEARANCE) {
             item { Section(tr("Darstellung", "Appearance")) }
             item {
                 ClickRow(
@@ -416,6 +460,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item { SwitchRow(tr("Buchstabenleiste links (Linkshänder)", "Letter bar on the left (left-handed)"), s.alphabetLeft) { v -> vm.update { it.copy(alphabetLeft = v) } } }
 
+            }
+            if (category == SettingsCategory.NOTIFICATIONS) {
             item { Section(tr("Benachrichtigungen", "Notifications")) }
             item { SwitchRow(tr("Benachrichtigungspunkte", "Notification dots"), s.notificationDots) { v -> vm.update { it.copy(notificationDots = v) } } }
             item {
@@ -471,6 +517,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
+            }
+            if (category == SettingsCategory.GESTURES) {
             item { Section(tr("Gesten", "Gestures")) }
             item { ClickRow(tr("Doppeltippen", "Double tap"), s.doubleTap.label) { dialog = SettingsDialog.DOUBLE_TAP } }
             item { ClickRow(tr("Nach unten wischen", "Swipe down"), s.swipeDown.label) { dialog = SettingsDialog.SWIPE_DOWN } }
@@ -488,6 +536,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
+            }
+            if (category == SettingsCategory.PAGES) {
             item { Section(tr("Favoriten & Seiten", "Favorites & pages")) }
             item { Hint(tr("Auf dem Startbildschirm nach links/rechts wischen oder den Seitennamen antippen, um die Seite zu wechseln.", "On the home screen, swipe left/right or tap the page name to switch pages.")) }
             if (s.pages.size > 1) {
@@ -567,6 +617,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             item { ClickRow(tr("Seite hinzufügen", "Add page"), tr("z. B. „Arbeit“ oder „Privat“", "e.g. “Work” or “Personal”")) { dialog = SettingsDialog.NEW_PAGE } }
             item { ClickRow(tr("Ordner erstellen", "Create folder"), tr("Mehrere Apps unter einem Favoriten", "Several apps under one favorite")) { dialog = SettingsDialog.NEW_FOLDER } }
 
+            }
+            if (category == SettingsCategory.FOCUS) {
             item { Section(tr("Fokus-Modus", "Focus mode")) }
             item {
                 Hint(
@@ -717,6 +769,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
+            }
+            if (category == SettingsCategory.APPS) {
             item { Section(tr("App-Sperre", "App lock")) }
             item {
                 Hint(
@@ -781,6 +835,8 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
             }
 
+            }
+            if (category == SettingsCategory.DATA) {
             item { Section(tr("Fehlerprotokoll", "Crash log")) }
             val log = crashLog
             if (log == null) {
@@ -849,6 +905,7 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item { ClickRow(tr("Einstellungen exportieren", "Export settings"), tr("Als JSON-Datei speichern", "Save as JSON file")) { exportLauncher.launch("kanso-backup.json") } }
             item { ClickRow(tr("Einstellungen importieren", "Import settings"), tr("Aus JSON-Datei wiederherstellen", "Restore from JSON file")) { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) } }
+            }
         }
     }
 
