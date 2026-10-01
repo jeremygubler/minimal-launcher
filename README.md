@@ -27,6 +27,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - **Wisch-Aktionen:** Favorit nach rechts wischen öffnet eine zweite App (z. B. WhatsApp → Signal), nach links einen App-Shortcut (z. B. „Neue Nachricht“)
 - **Pop-up-Widgets** (Pro): Favorit nach rechts wischen zeigt das Widget der App als Pop-up – z. B. Wetter, Kalender, Notizen. Festlegen im App-Menü
 - **Absichtsfrage** (Pro): vor ablenkenden Apps „Wozu öffnest du …?“ – mit Zähler für heute, Schnellauswahl und Timer, der danach an die Absicht erinnert. Im Wochenbericht: bewusste Öffnungen, Verzichte, häufigste Gründe
+- **Kanso-Stile** (Pro): Sumi (Tusche), Washi (Papier), Matcha, Yoru (Nacht), Sakura – ruhiger Volltonhintergrund mit feinem Ensō, abgestimmte Farben bis in Dialoge und Einstellungen; dazu die Schriften Cormorant und Inter
 - **Benachrichtigungs-Zusammenfassung** (Pro): Benachrichtigungen ablenkender Apps verschwinden aus der Leiste und kommen gesammelt (z. B. 12:00 · 18:00); Hinweis „✉ 7 zurückgehalten“ unter der Uhr. Anrufe, Wecker, Erinnerungen kommen immer sofort
 - **Fokus-Sitzung** (Pro): 25/50/90 min, ablenkende Apps sind bis zum Ende wirklich gesperrt, Restzeit unter der Uhr, Benachrichtigung am Ende, Auswertung im Wochenbericht und Abendrückblick. Start: leeren Bereich lange drücken
 - **Abendrückblick** (Pro): jeden Abend eine leise Benachrichtigung mit Bildschirmzeit, Tagesziel/Serie, Vergleich zum Schnitt, bewussten Öffnungen und erledigten Aufgaben – antippen öffnet den Wochenbericht

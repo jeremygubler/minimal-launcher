@@ -81,6 +81,8 @@ class LauncherSettingsTest {
         focusSessionEnd = 2_000L,
         digestEnabled = true,
         digestTimes = listOf(8 * 60, 18 * 60),
+        kansoStyle = dev.minimal.launcher.data.KansoStyle.WASHI,
+        kansoEnso = false,
         showScreenTime = true,
         showWeather = true,
         showTasks = false,

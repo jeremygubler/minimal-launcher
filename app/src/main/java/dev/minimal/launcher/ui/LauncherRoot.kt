@@ -1,5 +1,13 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.R
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import dev.minimal.launcher.util.tr
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetProviderInfo
@@ -258,11 +266,26 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         }
     }
 
+    val style = activeStyle(settings)
     Box(
         Modifier
             .fillMaxSize()
+            // Kanso-Stil: ruhiger Volltonhintergrund statt Hintergrundbild.
+            .then(if (style.active) Modifier.background(Color(style.background)) else Modifier)
             .background(homeColors.scrim.copy(alpha = dim))
     ) {
+        if (style.active && settings.kansoEnso) {
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(Color(style.text)),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 120.dp, y = 60.dp)
+                    .size(460.dp)
+                    .alpha(0.05f),
+            )
+        }
         AnimatedVisibility(overlay == Overlay.NONE, enter = fadeIn(), exit = fadeOut()) {
             HomeContent(
                 settings = settings,

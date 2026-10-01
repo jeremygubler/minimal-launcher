@@ -18,7 +18,12 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import dev.minimal.launcher.R
 import dev.minimal.launcher.data.HomeFont
+import dev.minimal.launcher.data.KansoStyle
+import androidx.compose.material3.ColorScheme
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.font.Font
 import dev.minimal.launcher.data.HomeWeight
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.ThemeMode
@@ -57,11 +62,54 @@ val ACCENT_COLORS: List<Pair<Int, String>> get() = listOf(
     0xFFFFFFFF.toInt() to tr("Weiß", "White"),
 )
 
+/** Aktiver Kanso-Stil (nur mit Pro wirksam). */
 @Composable
-fun isDark(settings: LauncherSettings): Boolean = when (settings.themeMode) {
-    ThemeMode.SYSTEM -> isSystemInDarkTheme()
-    ThemeMode.LIGHT -> false
-    ThemeMode.DARK -> true
+fun activeStyle(settings: LauncherSettings): KansoStyle =
+    if (settings.kansoStyle.active && isPro()) settings.kansoStyle else KansoStyle.NONE
+
+@Composable
+fun isDark(settings: LauncherSettings): Boolean {
+    val style = activeStyle(settings)
+    if (style.active) return style.dark
+    return when (settings.themeMode) {
+        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
+}
+
+/** Mitgelieferte Schriften (nur Light-Schnitt; andere Stärken werden angenähert). */
+private val CormorantFamily = FontFamily(Font(R.font.cormorant_light, FontWeight.Light))
+private val InterFamily = FontFamily(Font(R.font.inter_light, FontWeight.Light))
+
+/** Material-Farben passend zum Stil – Dialoge und Einstellungen wirken wie aus einem Guss. */
+private fun styleScheme(style: KansoStyle): ColorScheme {
+    val bg = Color(style.background)
+    val text = Color(style.text)
+    val accent = Color(style.accent)
+    val raised = lerp(bg, text, 0.06f)
+    val higher = lerp(bg, text, 0.10f)
+    return if (style.dark) {
+        darkColorScheme(
+            primary = accent, onPrimary = bg, secondary = accent, onSecondary = bg,
+            background = bg, onBackground = text, surface = bg, onSurface = text,
+            surfaceVariant = higher, onSurfaceVariant = text.copy(alpha = 0.7f),
+            surfaceContainerLowest = bg, surfaceContainerLow = raised, surfaceContainer = raised,
+            surfaceContainerHigh = higher, surfaceContainerHighest = lerp(bg, text, 0.14f),
+            outline = text.copy(alpha = 0.35f), outlineVariant = text.copy(alpha = 0.15f),
+            secondaryContainer = lerp(bg, accent, 0.25f), onSecondaryContainer = text,
+        )
+    } else {
+        lightColorScheme(
+            primary = accent, onPrimary = bg, secondary = accent, onSecondary = bg,
+            background = bg, onBackground = text, surface = bg, onSurface = text,
+            surfaceVariant = higher, onSurfaceVariant = text.copy(alpha = 0.7f),
+            surfaceContainerLowest = bg, surfaceContainerLow = raised, surfaceContainer = raised,
+            surfaceContainerHigh = higher, surfaceContainerHighest = lerp(bg, text, 0.14f),
+            outline = text.copy(alpha = 0.35f), outlineVariant = text.copy(alpha = 0.15f),
+            secondaryContainer = lerp(bg, accent, 0.2f), onSecondaryContainer = text,
+        )
+    }
 }
 
 @Composable
@@ -75,7 +123,12 @@ fun LauncherTheme(settings: LauncherSettings, content: @Composable () -> Unit) {
         dark -> darkColorScheme()
         else -> lightColorScheme()
     }
-    val scheme = if (settings.accent != 0) base.copy(primary = Color(settings.accent)) else base
+    val style = activeStyle(settings)
+    val scheme = when {
+        style.active -> styleScheme(style)
+        settings.accent != 0 -> base.copy(primary = Color(settings.accent))
+        else -> base
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -88,7 +141,11 @@ fun LauncherTheme(settings: LauncherSettings, content: @Composable () -> Unit) {
         }
     }
 
-    val homeColors = if (dark) {
+    val homeColors = if (style.active) {
+        // Volltonhintergrund: kein Schatten nötig, gedämpfte Zweitfarbe.
+        val text = Color(style.text)
+        HomeColors(text, text.copy(alpha = 0.62f), Color.Transparent, Color(style.background), style.dark)
+    } else if (dark) {
         HomeColors(Color.White, Color.White.copy(alpha = 0.72f), Color.Black.copy(alpha = 0.55f), Color.Black, true)
     } else {
         HomeColors(Color(0xFF111111), Color(0xFF111111).copy(alpha = 0.7f), Color.White.copy(alpha = 0.6f), Color.White, false)
@@ -101,6 +158,8 @@ fun LauncherTheme(settings: LauncherSettings, content: @Composable () -> Unit) {
                 HomeFont.SERIF -> FontFamily.Serif
                 HomeFont.MONO -> FontFamily.Monospace
                 HomeFont.CURSIVE -> FontFamily.Cursive
+                HomeFont.KANSO_SERIF -> if (isPro()) CormorantFamily else FontFamily.Serif
+                HomeFont.KANSO_SANS -> if (isPro()) InterFamily else FontFamily.Default
             },
             weight = when (settings.fontWeight) {
                 HomeWeight.LIGHT -> FontWeight.Light

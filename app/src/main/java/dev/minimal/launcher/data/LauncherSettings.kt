@@ -17,8 +17,11 @@ enum class SearchEngine(private val de: String, private val en: String, val url:
     val label: String get() = tr(de, en)
 }
 
-enum class HomeFont(private val de: String, private val en: String) {
-    SYSTEM("System", "System"), SERIF("Serif", "Serif"), MONO("Monospace", "Monospace"), CURSIVE("Handschrift", "Handwriting");
+enum class HomeFont(private val de: String, private val en: String, val pro: Boolean = false) {
+    SYSTEM("System", "System"), SERIF("Serif", "Serif"), MONO("Monospace", "Monospace"), CURSIVE("Handschrift", "Handwriting"),
+    /** Mitgelieferte Schriften (Pro). */
+    KANSO_SERIF("Cormorant (Kanso)", "Cormorant (Kanso)", pro = true),
+    KANSO_SANS("Inter (Kanso)", "Inter (Kanso)", pro = true);
 
     val label: String get() = tr(de, en)
 }
@@ -151,6 +154,10 @@ data class LauncherSettings(
     /** Benachrichtigungen ablenkender Apps zurückhalten und zu [digestTimes] gesammelt zustellen. */
     val digestEnabled: Boolean = false,
     val digestTimes: List<Int> = listOf(12 * 60, 18 * 60),
+    /** Kanso-Stil: Volltonhintergrund statt Hintergrundbild (Pro). */
+    val kansoStyle: KansoStyle = KansoStyle.NONE,
+    /** Feiner Ensō im Stil-Hintergrund. */
+    val kansoEnso: Boolean = true,
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -263,6 +270,8 @@ data class LauncherSettings(
         put("focusSessionEnd", focusSessionEnd)
         put("digestEnabled", digestEnabled)
         put("digestTimes", JSONArray(digestTimes))
+        put("kansoStyle", kansoStyle.name)
+        put("kansoEnso", kansoEnso)
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -383,6 +392,8 @@ data class LauncherSettings(
                 focusSessionStart = if (keepWidgets == null) o.optLong("focusSessionStart", 0L) else 0L,
                 focusSessionEnd = if (keepWidgets == null) o.optLong("focusSessionEnd", 0L) else 0L,
                 digestEnabled = o.optBoolean("digestEnabled", d.digestEnabled),
+                kansoStyle = enumOr(str("kansoStyle"), d.kansoStyle),
+                kansoEnso = o.optBoolean("kansoEnso", d.kansoEnso),
                 digestTimes = o.optJSONArray("digestTimes")?.let { a ->
                     (0 until a.length()).map { a.optInt(it) }.filter { it in 0 until 24 * 60 }.distinct().sorted()
                 }?.takeIf { it.isNotEmpty() } ?: d.digestTimes,

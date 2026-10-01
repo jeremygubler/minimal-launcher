@@ -2,6 +2,7 @@ package dev.minimal.launcher.ui
 
 import dev.minimal.launcher.util.tr
 import android.Manifest
+import dev.minimal.launcher.data.KansoStyle
 import dev.minimal.launcher.data.NotificationDigest
 import dev.minimal.launcher.util.DigestScheduler
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +88,7 @@ import dev.minimal.launcher.util.CalendarEvents
 import dev.minimal.launcher.util.DeviceCompat
 import dev.minimal.launcher.util.SystemActions
 
-private enum class SettingsDialog { NONE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE, FONT, WEIGHT, HOME_PRESS, ENGINE }
+private enum class SettingsDialog { NONE, STYLE, THEME, ACCENT, ICON_PACK, DOUBLE_TAP, SWIPE_DOWN, SWIPE_UP, NEW_FOLDER, NEW_PAGE, FONT, WEIGHT, HOME_PRESS, ENGINE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -288,6 +289,23 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
 
             item { Section(tr("Darstellung", "Appearance")) }
+            item {
+                ClickRow(
+                    tr("Kanso-Stil", "Kanso style") + if (pro) "" else " (Pro)",
+                    (if (pro) s.kansoStyle else KansoStyle.NONE).label,
+                ) { if (pro) dialog = SettingsDialog.STYLE else paywallFor = tr("Kanso-Stile", "Kanso styles") }
+            }
+            if (s.kansoStyle.active && pro) {
+                item { SwitchRow(tr("Ensō im Hintergrund", "Ensō in the background"), s.kansoEnso) { v -> vm.update { it.copy(kansoEnso = v) } } }
+                item {
+                    Hint(
+                        tr(
+                            "Der Stil ersetzt Hintergrundbild, Design und Akzentfarbe durch abgestimmte, ruhige Farben.",
+                            "The style replaces wallpaper, theme and accent color with calm, matching colors.",
+                        )
+                    )
+                }
+            }
             item {
                 ClickRow(tr("Design", "Theme"), when (s.themeMode) {
                     ThemeMode.SYSTEM -> tr("Wie System", "System default")
@@ -874,9 +892,16 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             onDismiss = { dialog = SettingsDialog.NONE },
         ) { v -> vm.update { it.copy(searchEngine = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.FONT -> ChoiceDialog(
-            tr("Schriftart", "Font"), HomeFont.entries.map { it to it.label }, s.font,
+            tr("Schriftart", "Font"), HomeFont.entries.map { it to it.label + if (it.pro && !pro) " (Pro)" else "" }, s.font,
             onDismiss = { dialog = SettingsDialog.NONE },
-        ) { v -> vm.update { it.copy(font = v) }; dialog = SettingsDialog.NONE }
+        ) { v ->
+            if (v.pro && !pro) paywallFor = tr("Kanso-Schriften", "Kanso fonts") else vm.update { it.copy(font = v) }
+            dialog = SettingsDialog.NONE
+        }
+        SettingsDialog.STYLE -> ChoiceDialog(
+            tr("Kanso-Stil", "Kanso style"), KansoStyle.entries.map { it to it.label }, s.kansoStyle,
+            onDismiss = { dialog = SettingsDialog.NONE },
+        ) { v -> vm.update { it.copy(kansoStyle = v) }; dialog = SettingsDialog.NONE }
         SettingsDialog.WEIGHT -> ChoiceDialog(
             tr("Schriftstärke", "Font weight"), HomeWeight.entries.map { it to it.label }, s.fontWeight,
             onDismiss = { dialog = SettingsDialog.NONE },
