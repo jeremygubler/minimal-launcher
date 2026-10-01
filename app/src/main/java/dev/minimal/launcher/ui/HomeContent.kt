@@ -82,6 +82,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.DailyIntention
 import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.NotificationDigest
 import dev.minimal.launcher.data.GestureAction
@@ -144,6 +145,7 @@ fun HomeContent(
     onAddFavorites: () -> Unit,
     heldCount: Int,
     onDigestClick: () -> Unit,
+    onDailyIntentionClick: () -> Unit,
 ) {
     val currentPageChange by rememberUpdatedState(onPageChange)
     val currentSettings by rememberUpdatedState(settings)
@@ -202,7 +204,7 @@ fun HomeContent(
                 .then(sidePadding)
         ) {
             Spacer(Modifier.height(32.dp))
-            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather, heldCount, onDigestClick)
+            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather, heldCount, onDigestClick, onDailyIntentionClick)
             if (settings.note.isNotBlank()) NoteLine(settings.note, onNoteClick)
             if (settings.showTasks) TasksBlock(settings.tasks, onToggleTask, onTaskLongPress)
             if (settings.showMedia) MediaBlock()
@@ -326,6 +328,7 @@ private fun ClockBlock(
     weather: WeatherInfo?,
     heldCount: Int,
     onDigestClick: () -> Unit,
+    onDailyIntentionClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val colors = LocalHomeColors.current
@@ -399,6 +402,28 @@ private fun ClockBlock(
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .clickable(noRipple, null, onClick = onScreenTimeClick),
+            )
+        }
+        // Tagesabsicht: morgens dezent fragen, danach den ganzen Tag zeigen.
+        val today = remember(now) { java.time.LocalDate.now() }
+        val intention = DailyIntention.today(settings, today)
+        val pro = isPro()
+        if (intention != null || DailyIntention.shouldAsk(settings, today, pro)) {
+            Text(
+                when {
+                    intention == null -> tr("☀ Was ist dir heute wichtig?", "☀ What matters to you today?")
+                    settings.dailyIntentionDone -> "✓ $intention"
+                    else -> "◎ $intention"
+                },
+                style = homeTextStyle(15.sp).copy(
+                    color = if (intention != null && !settings.dailyIntentionDone) MaterialTheme.colorScheme.primary else colors.secondary,
+                    textDecoration = if (settings.dailyIntentionDone) TextDecoration.LineThrough else null,
+                ),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null, onClick = onDailyIntentionClick),
             )
         }
         if (heldCount > 0) {

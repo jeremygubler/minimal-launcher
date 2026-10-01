@@ -158,6 +158,12 @@ data class LauncherSettings(
     val kansoStyle: KansoStyle = KansoStyle.NONE,
     /** Feiner Ensō im Stil-Hintergrund. */
     val kansoEnso: Boolean = true,
+    /** Tagesabsicht: morgens „Was ist dir heute wichtig?“ (Pro). */
+    val dailyIntentionEnabled: Boolean = false,
+    val dailyIntention: String = "",
+    /** Datum (ISO) der Absicht – gilt nur an diesem Tag. */
+    val dailyIntentionDate: String = "",
+    val dailyIntentionDone: Boolean = false,
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -272,6 +278,10 @@ data class LauncherSettings(
         put("digestTimes", JSONArray(digestTimes))
         put("kansoStyle", kansoStyle.name)
         put("kansoEnso", kansoEnso)
+        put("dailyIntentionEnabled", dailyIntentionEnabled)
+        put("dailyIntention", dailyIntention)
+        put("dailyIntentionDate", dailyIntentionDate)
+        put("dailyIntentionDone", dailyIntentionDone)
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -394,6 +404,10 @@ data class LauncherSettings(
                 digestEnabled = o.optBoolean("digestEnabled", d.digestEnabled),
                 kansoStyle = enumOr(str("kansoStyle"), d.kansoStyle),
                 kansoEnso = o.optBoolean("kansoEnso", d.kansoEnso),
+                dailyIntentionEnabled = o.optBoolean("dailyIntentionEnabled", d.dailyIntentionEnabled),
+                dailyIntention = o.optString("dailyIntention", d.dailyIntention),
+                dailyIntentionDate = o.optString("dailyIntentionDate", d.dailyIntentionDate),
+                dailyIntentionDone = o.optBoolean("dailyIntentionDone", d.dailyIntentionDone),
                 digestTimes = o.optJSONArray("digestTimes")?.let { a ->
                     (0 until a.length()).map { a.optInt(it) }.filter { it in 0 until 24 * 60 }.distinct().sorted()
                 }?.takeIf { it.isNotEmpty() } ?: d.digestTimes,

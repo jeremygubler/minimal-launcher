@@ -640,6 +640,19 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             }
             item { Hint(tr("Das Ziel erscheint im Wochenbericht (Bildschirmzeit unter der Uhr antippen) samt Serie.", "The goal appears in the weekly report (tap screen time below the clock) with your streak.")) }
             item {
+                SwitchRow(tr("Tagesabsicht am Morgen", "Daily intention in the morning") + if (pro) "" else " (Pro)", s.dailyIntentionEnabled && pro) { v ->
+                    if (!pro) paywallFor = tr("Tagesabsicht", "Daily intention") else vm.update { it.copy(dailyIntentionEnabled = v) }
+                }
+            }
+            item {
+                Hint(
+                    tr(
+                        "Unter der Uhr erscheint „Was ist dir heute wichtig?“ – eine Sache, die dich durch den Tag begleitet. Der Abendrückblick greift sie auf.",
+                        "Below the clock you'll see “What matters to you today?” – one thing that guides your day. The evening recap picks it up.",
+                    )
+                )
+            }
+            item {
                 SwitchRow(tr("Abendrückblick", "Evening recap") + if (pro) "" else " (Pro)", s.eveningRecap && pro) { v ->
                     if (!pro) {
                         paywallFor = tr("Abendrückblick", "Evening recap")

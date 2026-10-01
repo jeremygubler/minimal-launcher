@@ -15,6 +15,8 @@ data class RecapInput(
     val tasksDone: Int,
     val focusSessions: Int = 0,
     val focusMs: Long = 0L,
+    val dailyIntention: String? = null,
+    val dailyIntentionDone: Boolean = false,
 )
 
 /** Text des Abendrückblicks – ruhig, ohne Wertung (rein, daher testbar). */
@@ -24,6 +26,10 @@ object EveningRecap {
     fun compose(i: RecapInput): Pair<String, String> {
         val title = i.todayMs?.let { tr("Dein Tag · ${ScreenTime.format(it)} Bildschirmzeit", "Your day · ${ScreenTime.format(it)} screen time") } ?: tr("Dein Tag", "Your day")
         val lines = mutableListOf<String>()
+        i.dailyIntention?.let { intention ->
+            lines += tr("Deine Absicht: $intention", "Your intention: $intention") +
+                if (i.dailyIntentionDone) tr(" – erledigt ✓", " – done ✓") else ""
+        }
         val today = i.todayMs
         if (today != null && i.goalMs > 0) {
             lines += if (today <= i.goalMs) {

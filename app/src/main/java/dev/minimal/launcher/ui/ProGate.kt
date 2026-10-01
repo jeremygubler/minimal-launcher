@@ -51,6 +51,7 @@ fun PaywallDialog(feature: String?, onDismiss: () -> Unit) {
                         tr("• Pop-up-Widgets auf Favoriten\n", "• Pop-up widgets on favorites\n") +
                         tr("• Absichtsfrage mit Timer-Erinnerung\n", "• Intention prompt with timer reminder\n") +
                         tr("• Wochenbericht, Tagesziel, Kategorie-Limits & Abendrückblick\n", "• Weekly report, daily goal, category limits & evening recap\n") +
+                        tr("• Tagesabsicht am Morgen\n", "• Daily intention in the morning\n") +
                         tr("• Kanso-Stile & Schriften\n", "• Kanso styles & fonts\n") +
                         tr("• Eigene Icons pro App\n", "• Custom icons per app\n") +
                         tr("• Aufgabenliste auf dem Startbildschirm\n", "• Task list on the home screen\n") +

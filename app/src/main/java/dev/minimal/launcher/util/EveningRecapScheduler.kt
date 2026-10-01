@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import dev.minimal.launcher.MainActivity
 import dev.minimal.launcher.R
+import dev.minimal.launcher.data.DailyIntention
 import dev.minimal.launcher.data.EveningRecap
 import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.IntentionStats
@@ -74,6 +75,8 @@ object EveningRecapScheduler {
                 skipped = intentions.skipped,
                 tasksDone = s.tasks.count { (it.doneAt ?: 0L) >= startOfToday },
                 focusSessions = sessions.completed,
+                dailyIntention = DailyIntention.today(s, LocalDate.now(zone)),
+                dailyIntentionDone = s.dailyIntentionDone,
                 focusMs = sessions.focusedMs,
             )
         )

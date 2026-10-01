@@ -10,6 +10,7 @@ import android.os.Process
 import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import dev.minimal.launcher.data.DailyIntention
 import dev.minimal.launcher.data.Declutter
 import dev.minimal.launcher.data.HeldNotification
 import dev.minimal.launcher.data.FocusSessions
@@ -508,6 +509,16 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun logIntention(appInfo: AppInfo, intention: String?) = viewModelScope.launch(Dispatchers.IO) {
         app.intentions.add(IntentionEntry(System.currentTimeMillis(), appInfo.packageName, intention))
     }
+
+    fun setDailyIntention(text: String) = store.update { s ->
+        if (text.isBlank()) {
+            s.copy(dailyIntention = "", dailyIntentionDate = java.time.LocalDate.now().toString(), dailyIntentionDone = false)
+        } else {
+            DailyIntention.set(s, text, java.time.LocalDate.now())
+        }
+    }
+
+    fun setDailyIntentionDone(done: Boolean) = store.update { it.copy(dailyIntentionDone = done) }
 
     fun startFocusSession(minutes: Int) = FocusSessionTimer.start(getApplication(), minutes)
     fun stopFocusSession() = FocusSessionTimer.stop(getApplication())

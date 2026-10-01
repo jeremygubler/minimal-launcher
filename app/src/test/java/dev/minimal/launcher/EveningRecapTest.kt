@@ -43,6 +43,8 @@ class EveningRecapTest {
         assertTrue(text.contains("1 Aufgabe erledigt"))
         val (_, withSessions) = EveningRecap.compose(base.copy(focusSessions = 2, focusMs = 50 * min))
         assertTrue(withSessions.contains("2 Fokus-Sitzungen (50 min)"))
+        val (_, withIntention) = EveningRecap.compose(base.copy(dailyIntention = "Steuern", dailyIntentionDone = true))
+        assertTrue(withIntention.startsWith("Deine Absicht: Steuern – erledigt ✓"))
     }
 
     @Test

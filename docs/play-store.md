@@ -44,7 +44,7 @@
 > • App-Sperre per Fingerabdruck, vertrauliches Profil, Arbeitsprofil
 > • Icon-Packs, Designsymbole, Schriftarten, Material You
 >
-> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Fokus-Sitzungen, Benachrichtigungs-Zusammenfassung, Kanso-Stile & Schriften, Pop-up-Widgets, Absichtsfrage, Abendrückblick, eigene Icons, automatische
+> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Fokus-Sitzungen, Benachrichtigungs-Zusammenfassung, Kanso-Stile & Schriften, Pop-up-Widgets, Absichtsfrage, Tagesabsicht, Abendrückblick, eigene Icons, automatische
 > Sicherung, Wochenbericht mit Tagesziel und Kategorie-Limits, Aufgabenliste.
 
 **Kategorie:** Personalisierung · **Einstufung:** ohne Altersbeschränkung
@@ -72,7 +72,7 @@
 > • Icon packs, themed icons, fonts, Material You
 >
 > **Pro (one-time purchase, no subscription):** focus sessions, notification digest, Kanso styles & fonts, context-based pages (car, headphones, Wi-Fi), pop-up widgets,
-> intention prompt, evening recap, custom icons, automatic backup, weekly report with daily goal and category
+> intention prompt, daily intention, evening recap, custom icons, automatic backup, weekly report with daily goal and category
 > limits, task list.
 
 ## 3. Datensicherheit (Formular „Data safety“)

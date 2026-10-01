@@ -30,6 +30,7 @@ Alle Funktionen sind enthalten, es gibt keine kostenpflichtige Version.
 - **Kanso-Stile** (Pro): Sumi (Tusche), Washi (Papier), Matcha, Yoru (Nacht), Sakura – ruhiger Volltonhintergrund mit feinem Ensō, abgestimmte Farben bis in Dialoge und Einstellungen; dazu die Schriften Cormorant und Inter
 - **Benachrichtigungs-Zusammenfassung** (Pro): Benachrichtigungen ablenkender Apps verschwinden aus der Leiste und kommen gesammelt (z. B. 12:00 · 18:00); Hinweis „✉ 7 zurückgehalten“ unter der Uhr. Anrufe, Wecker, Erinnerungen kommen immer sofort
 - **Fokus-Sitzung** (Pro): 25/50/90 min, ablenkende Apps sind bis zum Ende wirklich gesperrt, Restzeit unter der Uhr, Benachrichtigung am Ende, Auswertung im Wochenbericht und Abendrückblick. Start: leeren Bereich lange drücken
+- **Tagesabsicht** (Pro): morgens „Was ist dir heute wichtig?“ unter der Uhr – eine Sache für den Tag, abhakbar, im Abendrückblick aufgegriffen
 - **Abendrückblick** (Pro): jeden Abend eine leise Benachrichtigung mit Bildschirmzeit, Tagesziel/Serie, Vergleich zum Schnitt, bewussten Öffnungen und erledigten Aufgaben – antippen öffnet den Wochenbericht
 
 **Alle Apps**

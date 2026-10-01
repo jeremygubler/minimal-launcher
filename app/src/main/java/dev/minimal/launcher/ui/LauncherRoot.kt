@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.LauncherViewModel
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
+import dev.minimal.launcher.data.DailyIntention
 import dev.minimal.launcher.data.Focus
 import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.TaskItem
@@ -94,6 +95,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     }
     var showScreenTimeDialog by remember { mutableStateOf(false) }
     var showDigest by remember { mutableStateOf(false) }
+    var editingIntention by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskItem?>(null) }
     var addingTask by remember { mutableStateOf(false) }
@@ -319,6 +321,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 onAddFavorites = { addingFavorites = true },
                 heldCount = held.size,
                 onDigestClick = { showDigest = true },
+                onDailyIntentionClick = { editingIntention = true },
                 perform = perform,
             )
         }
@@ -389,6 +392,16 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             seconds = settings.focusPauseSeconds,
             onOpen = { openChecked(app) },
             onDismiss = { focusPauseFor = null },
+        )
+    }
+
+    if (editingIntention) {
+        DailyIntentionDialog(
+            current = DailyIntention.today(settings, java.time.LocalDate.now()),
+            done = settings.dailyIntentionDone,
+            onSave = { vm.setDailyIntention(it) },
+            onToggleDone = { vm.setDailyIntentionDone(!settings.dailyIntentionDone) },
+            onDismiss = { editingIntention = false },
         )
     }
 
