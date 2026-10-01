@@ -220,7 +220,7 @@ fun HomeContent(
                 .then(sidePadding)
         ) {
             Spacer(Modifier.height(32.dp))
-            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather, heldCount, onDigestClick, onDailyIntentionClick)
+            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather, heldCount, onDigestClick, onDailyIntentionClick, onHomeLongPress)
             if (settings.note.isNotBlank()) NoteLine(settings.note, onNoteClick)
             if (settings.showTasks) TasksBlock(settings.tasks, onToggleTask, onTaskLongPress)
             if (settings.showMedia) MediaBlock()
@@ -345,6 +345,7 @@ private fun ClockBlock(
     heldCount: Int,
     onDigestClick: () -> Unit,
     onDailyIntentionClick: () -> Unit,
+    onFocusClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val colors = LocalHomeColors.current
@@ -408,7 +409,10 @@ private fun ClockBlock(
             Text(
                 if (sessionLeft > 0) tr("Fokus · noch $sessionLeft min", "Focus · $sessionLeft min left") else tr("Fokus aktiv", "Focus on"),
                 style = homeTextStyle(15.sp).copy(color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium),
-                modifier = Modifier.padding(top = 4.dp),
+                // Antippen öffnet das Menü mit „Sitzung beenden“ / „Fokus-Modus ausschalten“.
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null, onClick = onFocusClick),
             )
         }
         if (screenTimeTotal != null) {
@@ -896,6 +900,7 @@ private fun FavoriteEntry(
     onLeftSwipe: () -> Unit,
 ) {
     val threshold = with(LocalDensity.current) { 96.dp.toPx() }
+    val haptics = LocalHapticFeedback.current
     var dragX by remember { mutableFloatStateOf(0f) }
     var dragging by remember { mutableStateOf(false) }
     val shownX by animateFloatAsState(
@@ -987,10 +992,15 @@ private fun FavoriteEntry(
                             },
                         ) { change, dx ->
                             change.consume()
+                            val before = dragX
                             dragX = (dragX + dx).coerceIn(
                                 if (canLeft) -threshold * 1.6f else 0f,
                                 if (canRight) threshold * 1.6f else 0f,
                             )
+                            // Spürbarer „Klick“, sobald Loslassen die Aktion auslöst.
+                            if (abs(before) < threshold && abs(dragX) >= threshold) {
+                                haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            }
                         }
                     },
             )
