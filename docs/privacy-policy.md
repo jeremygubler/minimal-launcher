@@ -42,7 +42,7 @@ löscht alle lokal gespeicherten Daten. Sicherungsdateien in einem von dir gewä
 
 ## Kontakt
 
-Fragen zum Datenschutz: *[deine E-Mail-Adresse eintragen]*
+Fragen zum Datenschutz: kanso@gubler-gang.ch
 
 ---
 
@@ -54,4 +54,4 @@ location, accessibility) are optional and used only for the features described a
 device. The only network connection is to **Open-Meteo** for the optional weather feature (off by default), sending
 coordinates rounded to ~1 km or the place name you entered. The accessibility service is used solely to lock the
 screen on double tap and to open the notification/quick settings shade; it does not read screen content or collect
-data. Purchases are processed by Google Play. Contact: *[your email]*
+data. Purchases are processed by Google Play. Contact: kanso@gubler-gang.ch

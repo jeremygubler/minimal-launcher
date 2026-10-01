@@ -3,6 +3,11 @@
 ## 1. Was du selbst erledigen musst
 
 1. **Google-Play-Entwicklerkonto** anlegen (einmalig 25 USD): https://play.google.com/console
+   - Eigenes Google-Konto mit `jeremy@gubler-gang.ch` (accounts.google.com/signup → „Stattdessen meine aktuelle
+     E-Mail-Adresse verwenden“) – getrennt vom privaten Konto.
+   - Kontotyp: **persönlich**. Danach unter *Nutzer und Berechtigungen* das private Gmail als Admin hinzufügen.
+   - Öffentliche Entwickler-E-Mail: **`kanso@gubler-gang.ch`** (Weiterleitung einrichten!).
+   - Wegen des Pro-Kaufs als **Händler (EU-DSA)** deklarieren – Google zeigt EU-Nutzern dann Adresse und Telefon.
 2. **Namen & Paketnamen festlegen** – in `gradle.properties`:
    - `launcherName=…` (Anzeigename, gesetzt: `Kanso`)
    - `playApplicationId=…` (gesetzt: `ch.hazzar.kanso` – nach dem ersten Upload nicht mehr änderbar)
@@ -21,6 +26,18 @@
    - Produkt-ID: **`pro_lifetime`** (genau so, sie steht im Code)
    - Typ: einmalig, Preis z. B. CHF 6.–
 6. **Test**: interne Testspur anlegen, dich als Lizenztester eintragen, AAB hochladen, Kauf testen.
+
+## 1b. Pflicht-Test für neue persönliche Konten
+
+Vor der ersten Veröffentlichung verlangt Google einen **geschlossenen Test mit mindestens 12 Testern über
+14 Tage am Stück** (Stand meines Wissens – in der Play Console prüfen):
+
+1. *Testen → Geschlossener Test → Track erstellen*, AAB hochladen (Artefakt „kanso-play-aab“).
+2. Tester als E-Mail-Liste anlegen (Google-Konten der Tester), Opt-in-Link verschicken.
+3. Alle 12 müssen dem Test beitreten **und die App installiert lassen** – 14 Tage lang.
+4. Danach *Zugang zur Produktion beantragen* (Fragen zum Test beantworten: was wurde getestet, Feedback).
+
+Tipp: Familie/Freunde mit Android. Wer Pro testen soll, als **Lizenztester** eintragen (Kauf ohne Belastung).
 
 ## 2. Store-Eintrag
 
