@@ -1,5 +1,11 @@
 package dev.minimal.launcher.ui
 
+import dev.minimal.launcher.util.tr
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -71,6 +77,15 @@ fun AlphabetScroller(
                 .width(barWidth)
                 .fillMaxHeight()
                 .onSizeChanged { heightPx = max(1, it.height) }
+                // Für TalkBack: ein Knopf „Alle Apps“ statt 27 einzelner Buchstaben.
+                .clearAndSetSemantics {
+                    contentDescription = tr("Buchstabenleiste – alle Apps", "Letter bar – all apps")
+                    role = Role.Button
+                    onClick(label = tr("Alle Apps öffnen", "Open all apps")) {
+                        currentLetters.firstOrNull()?.let(currentOnLetter)
+                        true
+                    }
+                }
                 .pointerInput(Unit) {
                     fun update(y: Float) {
                         touchY = y

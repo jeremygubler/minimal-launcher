@@ -21,6 +21,7 @@ import dev.minimal.launcher.launcherApp
 object FocusSessionTimer {
     private const val CHANNEL = "focus_session"
     private const val NOTIFICATION_ID = 4713
+    private const val LATE_MS = 10 * 60_000L
     private val handler = Handler(Looper.getMainLooper())
     private var pending: Runnable? = null
 
@@ -73,7 +74,8 @@ object FocusSessionTimer {
         context.launcherApp.focusSessions.add(FocusSessionEntry(s.focusSessionStart, s.focusSessionEnd, completed = true))
         clear(context)
         val minutes = ((s.focusSessionEnd - s.focusSessionStart) / 60_000).toInt()
-        notifyDone(context, minutes)
+        // War der Prozess beendet, wird die Sitzung erst später abgeschlossen – dann keine verspätete Meldung.
+        if (System.currentTimeMillis() - s.focusSessionEnd < LATE_MS) notifyDone(context, minutes)
     }
 
     private fun notifyDone(context: Context, minutes: Int) {

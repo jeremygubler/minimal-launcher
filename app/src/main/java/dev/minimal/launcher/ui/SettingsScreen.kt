@@ -674,7 +674,15 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
                 }
                 item {
                     ClickRow(tr("Rückblick jetzt anzeigen", "Show recap now"), tr("Vorschau mit den Zahlen von heute", "Preview with today's numbers")) {
-                        scope.launch(Dispatchers.IO) { EveningRecapScheduler.show(context) }
+                        if (!IntentionReminder.canNotify(context)) {
+                            Toast.makeText(
+                                context,
+                                tr("Bitte zuerst Benachrichtigungen für Kanso erlauben", "Please allow notifications for Kanso first"),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        } else {
+                            scope.launch(Dispatchers.IO) { EveningRecapScheduler.show(context) }
+                        }
                     }
                 }
             }

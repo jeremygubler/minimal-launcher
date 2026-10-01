@@ -1,5 +1,8 @@
 package dev.minimal.launcher.ui
 
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import dev.minimal.launcher.util.tr
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -161,6 +164,19 @@ fun HomeContent(
     Box(
         Modifier
             .fillMaxSize()
+            // Für TalkBack: Gesten des Startbildschirms als Aktionen.
+            .semantics {
+                customActions = listOf(
+                    CustomAccessibilityAction(tr("Startbildschirm-Menü", "Home screen menu")) {
+                        currentHomeLongPress()
+                        true
+                    },
+                    CustomAccessibilityAction(tr("Suche öffnen", "Open search")) {
+                        currentPerform(GestureAction.SEARCH)
+                        true
+                    },
+                )
+            }
             .pointerInput(settings.doubleTap) {
                 detectTapGestures(
                     onDoubleTap = { currentPerform(settings.doubleTap) },
@@ -938,6 +954,21 @@ private fun FavoriteEntry(
                 onLongClick = null,
                 modifier = Modifier
                     .offset { IntOffset(shownX.roundToInt(), 0) }
+                    // Für TalkBack: Wisch-Aktionen ohne Wischen erreichbar.
+                    .semantics {
+                        customActions = listOfNotNull(
+                            if (hasWidget) {
+                                CustomAccessibilityAction(tr("Widget zeigen", "Show widget")) { onWidget(); true }
+                            } else {
+                                swipeApp?.let { other ->
+                                    CustomAccessibilityAction(tr("${other.label} öffnen", "Open ${other.label}")) { onLaunch(other); true }
+                                }
+                            },
+                            leftShortcutLabel?.let { label ->
+                                CustomAccessibilityAction(label) { onLeftSwipe(); true }
+                            },
+                        )
+                    }
                     .pointerInput(canRight, canLeft) {
                         if (!canRight && !canLeft) return@pointerInput
                         detectHorizontalDragGestures(

@@ -60,6 +60,8 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     private val app = application.launcherApp
     private val store = app.settings
     private val collator = Collator.getInstance().apply { strength = Collator.PRIMARY }
+    /** Tag der letzten Aufgaben-Bereinigung (vor dem init-Block deklariert, damit er dort gesetzt bleibt). */
+    private var lastPurgeDay: java.time.LocalDate? = null
 
     val settings: StateFlow<LauncherSettings> = store.state
 
@@ -140,10 +142,7 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
 
     init {
         // Gestern erledigte Aufgaben aufräumen.
-        store.update { s ->
-            val purged = Tasks.purge(s.tasks, java.time.LocalDate.now())
-            if (purged.size == s.tasks.size) s else s.copy(tasks = purged)
-        }
+        purgeTasks()
         // Kontextänderungen (Kopfhörer, Laden, Bluetooth, WLAN) sofort auswerten.
         viewModelScope.launch {
             ContextMonitor.state.collect { checkSchedule() }
@@ -152,6 +151,9 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             while (true) {
                 checkSchedule()
+                // Läuft der Launcher über Mitternacht, auch dann aufräumen.
+                val today = java.time.LocalDate.now()
+                if (today != lastPurgeDay) purgeTasks()
                 delay(60_000 - System.currentTimeMillis() % 60_000)
             }
         }
@@ -315,6 +317,15 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
      * Wechselt automatisch die Seite, sobald ein Zeitfenster beginnt oder endet.
      * Manuelles Wechseln bleibt dazwischen möglich.
      */
+    private fun purgeTasks() {
+        val today = java.time.LocalDate.now()
+        lastPurgeDay = today
+        store.update { s ->
+            val purged = Tasks.purge(s.tasks, today)
+            if (purged.size == s.tasks.size) s else s.copy(tasks = purged)
+        }
+    }
+
     fun checkSchedule(now: LocalDateTime = LocalDateTime.now()) {
         val s = store.value
         if (!s.autoPages || s.pages.size < 2) {
