@@ -129,5 +129,8 @@
         <receiver
             android:name=".util.EveningRecapReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".util.DigestReceiver"
+            android:exported="false" />
     </application>
 </manifest>

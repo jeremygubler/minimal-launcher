@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.minimal.launcher.ui.HomeCallbacks
 import dev.minimal.launcher.ui.LauncherRoot
 import dev.minimal.launcher.ui.LauncherTheme
+import dev.minimal.launcher.util.DigestScheduler
 import dev.minimal.launcher.util.EveningRecapScheduler
 import dev.minimal.launcher.util.FocusSessionTimer
 import dev.minimal.launcher.util.IntentionReminder
@@ -136,6 +137,7 @@ class MainActivity : ComponentActivity() {
         IntentionReminder.cancel()
         EveningRecapScheduler.sync(this)
         FocusSessionTimer.sync(this)
+        DigestScheduler.sync(this)
         vm.checkSchedule()
         DeviceCompat.rebindNotificationListener(this)
         // Tägliche Sicherung (nur wenn ein Ordner gewählt ist).
@@ -162,6 +164,10 @@ class MainActivity : ComponentActivity() {
         if (intent?.getBooleanExtra(EveningRecapScheduler.EXTRA_SHOW_REPORT, false) == true) {
             intent.removeExtra(EveningRecapScheduler.EXTRA_SHOW_REPORT)
             vm.requestReport()
+        }
+        if (intent?.getBooleanExtra(DigestScheduler.EXTRA_SHOW_DIGEST, false) == true) {
+            intent.removeExtra(DigestScheduler.EXTRA_SHOW_DIGEST)
+            vm.requestDigest()
         }
     }
 

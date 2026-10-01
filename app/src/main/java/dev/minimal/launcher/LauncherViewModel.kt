@@ -11,6 +11,7 @@ import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.minimal.launcher.data.Declutter
+import dev.minimal.launcher.data.HeldNotification
 import dev.minimal.launcher.data.FocusSessions
 import dev.minimal.launcher.data.FocusSummary
 import dev.minimal.launcher.util.FocusSessionTimer
@@ -94,6 +95,43 @@ class LauncherViewModel(application: Application) : AndroidViewModel(application
     fun reportShown() {
         _showReport.value = false
     }
+
+    /** Zusammenfassung öffnen (nach Tippen auf die gesammelte Benachrichtigung). */
+    private val _showDigest = MutableStateFlow(false)
+    val showDigest: StateFlow<Boolean> = _showDigest
+    fun requestDigest() {
+        _showDigest.value = true
+    }
+    fun digestShown() {
+        _showDigest.value = false
+    }
+
+    val heldNotifications: StateFlow<List<HeldNotification>> = app.digest.held
+
+    /** Zurückgehaltene Benachrichtigung öffnen: ursprünglicher Intent, sonst die App selbst. */
+    fun openHeld(item: HeldNotification) {
+        val context = getApplication<Application>()
+        val intent = app.digest.intent(item.key)
+        val opened = intent != null && runCatching {
+            val options = if (android.os.Build.VERSION.SDK_INT >= 34) {
+                android.app.ActivityOptions.makeBasic()
+                    .setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                    .toBundle()
+            } else {
+                null
+            }
+            intent.send(context, 0, null, null, null, null, options)
+        }.isSuccess
+        if (!opened) {
+            context.packageManager.getLaunchIntentForPackage(item.pkg)?.let {
+                runCatching { context.startActivity(it.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            }
+        }
+        app.digest.remove(listOf(item.key))
+    }
+
+    fun dismissHeld(keys: Collection<String>) = app.digest.remove(keys)
+    fun clearHeld() = app.digest.clear()
 
     /** true = Home gedrückt, während der Startbildschirm schon im Vordergrund war. */
     private val _homePressed = MutableSharedFlow<Boolean>(extraBufferCapacity = 1)

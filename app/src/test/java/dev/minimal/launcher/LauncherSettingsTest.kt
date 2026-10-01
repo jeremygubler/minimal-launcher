@@ -79,6 +79,8 @@ class LauncherSettingsTest {
         eveningRecapMinute = 22 * 60 + 30,
         focusSessionStart = 1_000L,
         focusSessionEnd = 2_000L,
+        digestEnabled = true,
+        digestTimes = listOf(8 * 60, 18 * 60),
         showScreenTime = true,
         showWeather = true,
         showTasks = false,

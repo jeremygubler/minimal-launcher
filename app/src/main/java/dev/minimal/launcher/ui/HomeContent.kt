@@ -83,6 +83,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import dev.minimal.launcher.data.AppInfo
 import dev.minimal.launcher.data.Favorite
 import dev.minimal.launcher.data.FocusSessions
+import dev.minimal.launcher.data.NotificationDigest
 import dev.minimal.launcher.data.GestureAction
 import dev.minimal.launcher.data.LauncherSettings
 import dev.minimal.launcher.data.NotificationPreview
@@ -141,6 +142,8 @@ fun HomeContent(
     onRemoveFavorite: (String) -> Unit,
     perform: (GestureAction) -> Unit,
     onAddFavorites: () -> Unit,
+    heldCount: Int,
+    onDigestClick: () -> Unit,
 ) {
     val currentPageChange by rememberUpdatedState(onPageChange)
     val currentSettings by rememberUpdatedState(settings)
@@ -199,7 +202,7 @@ fun HomeContent(
                 .then(sidePadding)
         ) {
             Spacer(Modifier.height(32.dp))
-            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather)
+            ClockBlock(settings, screenTimeTotal, onScreenTimeClick, weather, heldCount, onDigestClick)
             if (settings.note.isNotBlank()) NoteLine(settings.note, onNoteClick)
             if (settings.showTasks) TasksBlock(settings.tasks, onToggleTask, onTaskLongPress)
             if (settings.showMedia) MediaBlock()
@@ -321,6 +324,8 @@ private fun ClockBlock(
     screenTimeTotal: Long?,
     onScreenTimeClick: () -> Unit,
     weather: WeatherInfo?,
+    heldCount: Int,
+    onDigestClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val colors = LocalHomeColors.current
@@ -394,6 +399,18 @@ private fun ClockBlock(
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .clickable(noRipple, null, onClick = onScreenTimeClick),
+            )
+        }
+        if (heldCount > 0) {
+            // Zusammenfassung: dezenter Hinweis statt einzelner Benachrichtigungen.
+            val next = NotificationDigest.nextTrigger(java.time.ZonedDateTime.now(), settings.digestTimes)
+            Text(
+                tr("✉ $heldCount zurückgehalten", "✉ $heldCount held back") +
+                    (next?.takeIf { settings.digestEnabled }?.let { tr(" · um ", " · at ") + NotificationDigest.format(it.hour * 60 + it.minute) } ?: ""),
+                style = homeTextStyle(15.sp).copy(color = colors.secondary),
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable(noRipple, null, onClick = onDigestClick),
             )
         }
         if (settings.showBattery) BatteryLine()

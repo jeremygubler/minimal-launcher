@@ -2,6 +2,8 @@ package dev.minimal.launcher.ui
 
 import dev.minimal.launcher.util.tr
 import android.Manifest
+import dev.minimal.launcher.data.NotificationDigest
+import dev.minimal.launcher.util.DigestScheduler
 import kotlinx.coroutines.Dispatchers
 import dev.minimal.launcher.util.IntentionReminder
 import dev.minimal.launcher.util.EveningRecapScheduler
@@ -119,6 +121,10 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     var resumeTick by remember { mutableIntStateOf(0) }
     var showDeclutter by remember { mutableStateOf(false) }
     var pickingRecapTime by remember { mutableStateOf(false) }
+    var pickingDigestTimes by remember { mutableStateOf(false) }
+    val requestDigestNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        DigestScheduler.sync(context)
+    }
     val requestRecapNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (!granted) {
             vm.update { it.copy(eveningRecap = false) }
@@ -394,6 +400,53 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
 
             item { Section(tr("Benachrichtigungen", "Notifications")) }
             item { SwitchRow(tr("Benachrichtigungspunkte", "Notification dots"), s.notificationDots) { v -> vm.update { it.copy(notificationDots = v) } } }
+            item {
+                SwitchRow(tr("Zusammenfassung ablenkender Apps", "Digest for distracting apps") + if (pro) "" else " (Pro)", s.digestEnabled && pro) { v ->
+                    if (!pro) {
+                        paywallFor = tr("Benachrichtigungs-Zusammenfassung", "Notification digest")
+                    } else {
+                        vm.update { it.copy(digestEnabled = v) }
+                        if (v && !NotificationStore.hasAccess(context)) {
+                            Toast.makeText(
+                                context,
+                                tr("Dafür bitte den Benachrichtigungszugriff erlauben", "Please allow notification access for this"),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                            SystemActions.openNotificationAccess(context)
+                        }
+                        if (v && !IntentionReminder.canNotify(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            requestDigestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            DigestScheduler.sync(context)
+                        }
+                    }
+                }
+            }
+            if (s.digestEnabled && pro) {
+                item {
+                    ClickRow(tr("Zustellung", "Delivery"), NotificationDigest.describe(s.digestTimes)) { pickingDigestTimes = true }
+                }
+                if (s.focusApps.isEmpty()) {
+                    item {
+                        Hint(
+                            tr(
+                                "Noch keine ablenkenden Apps markiert – App lange drücken → „Als ablenkend markieren“.",
+                                "No distracting apps marked yet – long-press an app → “Mark as distracting”.",
+                            )
+                        )
+                    }
+                }
+            }
+            item {
+                Hint(
+                    tr(
+                        "Benachrichtigungen deiner ablenkenden Apps verschwinden aus der Leiste und kommen gesammelt zu festen " +
+                            "Zeiten. Anrufe, Wecker und Erinnerungen kommen immer sofort.",
+                        "Notifications from your distracting apps leave the shade and arrive bundled at set times. " +
+                            "Calls, alarms and reminders always come through immediately.",
+                    )
+                )
+            }
             item {
                 SwitchRow(tr("Vorschau unter Favoriten", "Preview below favorites"), s.notificationPreview) { v ->
                     vm.update { it.copy(notificationPreview = v) }
@@ -761,6 +814,18 @@ fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
     }
 
     if (showDeclutter) DeclutterDialog(vm = vm, onDismiss = { showDeclutter = false })
+    if (pickingDigestTimes) {
+        ChoiceDialog(
+            title = tr("Zusammenfassung um", "Digest at"),
+            options = NotificationDigest.PRESETS.map { it to NotificationDigest.describe(it) },
+            selected = s.digestTimes,
+            onDismiss = { pickingDigestTimes = false },
+        ) { times ->
+            vm.update { it.copy(digestTimes = times) }
+            DigestScheduler.sync(context)
+            pickingDigestTimes = false
+        }
+    }
     if (pickingRecapTime) {
         ChoiceDialog(
             title = tr("Abendrückblick um", "Evening recap at"),

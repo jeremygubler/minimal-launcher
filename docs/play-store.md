@@ -44,7 +44,7 @@
 > • App-Sperre per Fingerabdruck, vertrauliches Profil, Arbeitsprofil
 > • Icon-Packs, Designsymbole, Schriftarten, Material You
 >
-> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Fokus-Sitzungen, Pop-up-Widgets, Absichtsfrage, Abendrückblick, eigene Icons, automatische
+> **Pro (Einmalkauf, kein Abo):** kontextbasierte Seiten (Auto, Kopfhörer, WLAN), Fokus-Sitzungen, Benachrichtigungs-Zusammenfassung, Pop-up-Widgets, Absichtsfrage, Abendrückblick, eigene Icons, automatische
 > Sicherung, Wochenbericht mit Tagesziel und Kategorie-Limits, Aufgabenliste.
 
 **Kategorie:** Personalisierung · **Einstufung:** ohne Altersbeschränkung
@@ -71,7 +71,7 @@
 > • App lock with fingerprint, private space, work profile
 > • Icon packs, themed icons, fonts, Material You
 >
-> **Pro (one-time purchase, no subscription):** focus sessions, context-based pages (car, headphones, Wi-Fi), pop-up widgets,
+> **Pro (one-time purchase, no subscription):** focus sessions, notification digest, context-based pages (car, headphones, Wi-Fi), pop-up widgets,
 > intention prompt, evening recap, custom icons, automatic backup, weekly report with daily goal and category
 > limits, task list.
 
@@ -90,7 +90,7 @@
 | **Bedienungshilfe (AccessibilityService)** | Kernfunktion eines Launchers: Bildschirm per Doppeltipp sperren (`GLOBAL_ACTION_LOCK_SCREEN`) und Benachrichtigungsleiste per Wischgeste öffnen. Keine Inhalte werden gelesen. In-App-Hinweis vor der Aktivierung vorhanden. Video der Funktion für die Prüfung aufnehmen. |
 | **Nutzungszugriff (PACKAGE_USAGE_STATS)** | Bildschirmzeit, Tageslimits, Wochenbericht (Digital Wellbeing). Daten bleiben lokal. |
 | **Standort (grob/fein)** | Grob: Wetter am aktuellen Ort (gerundet). Fein: Android verlangt ihn, um den WLAN-Namen für Seitenregeln zu lesen. Beides optional, mit In-App-Hinweis vor der Anfrage; kein Hintergrundstandort. |
-| **Benachrichtigungszugriff** | Benachrichtigungspunkte, Vorschau, Mediensteuerung auf dem Startbildschirm. |
+| **Benachrichtigungszugriff** | Benachrichtigungspunkte, Vorschau, Mediensteuerung auf dem Startbildschirm; optional die Zusammenfassung (Benachrichtigungen ablenkender Apps werden zurückgehalten und gesammelt zugestellt – nur lokal). |
 | **Pakete sehen** | Über `<queries>` (kein QUERY_ALL_PACKAGES) – Launcher-Kernfunktion. |
 | **REQUEST_DELETE_PACKAGES** | „Deinstallieren“ im App-Menü des Launchers. |
 | **POST_NOTIFICATIONS** | Nur für die optionale Timer-Erinnerung der Absichtsfrage („10 min sind um“) und den optionalen Abendrückblick. Wird erst angefragt, wenn man eine dieser Funktionen einschaltet. |

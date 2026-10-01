@@ -85,6 +85,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
         value = if (settings.showWeather) vm.weather() else null
     }
     var showScreenTimeDialog by remember { mutableStateOf(false) }
+    var showDigest by remember { mutableStateOf(false) }
     var editingNote by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskItem?>(null) }
     var addingTask by remember { mutableStateOf(false) }
@@ -132,6 +133,15 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
 
     val currentSettings by rememberUpdatedState(settings)
     LaunchedEffect(Unit) {
+        vm.showDigest.collect { show ->
+            if (show) {
+                closeAll()
+                showDigest = true
+                vm.digestShown()
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
         vm.showReport.collect { show ->
             if (show) {
                 closeAll()
@@ -166,6 +176,7 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
     var focusPauseFor by remember { mutableStateOf<AppInfo?>(null) }
     var intentionFor by remember { mutableStateOf<AppInfo?>(null) }
     var addingFavorites by remember { mutableStateOf(false) }
+    val held by vm.heldNotifications.collectAsStateWithLifecycle()
     var startingSession by remember { mutableStateOf(false) }
     var sessionPaywall by remember { mutableStateOf(false) }
     var sessionBlockedFor by remember { mutableStateOf<AppInfo?>(null) }
@@ -283,6 +294,8 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
                 },
                 onRemoveFavorite = vm::removeFavorite,
                 onAddFavorites = { addingFavorites = true },
+                heldCount = held.size,
+                onDigestClick = { showDigest = true },
                 perform = perform,
             )
         }
@@ -353,6 +366,14 @@ fun LauncherRoot(vm: LauncherViewModel, widgetHost: AppWidgetHost, callbacks: Ho
             seconds = settings.focusPauseSeconds,
             onOpen = { openChecked(app) },
             onDismiss = { focusPauseFor = null },
+        )
+    }
+
+    if (showDigest) {
+        DigestSheet(
+            vm = vm,
+            appsByPackage = remember(allApps) { allApps.filter { !it.isWork }.associateBy { it.packageName } },
+            onDismiss = { showDigest = false },
         )
     }
 

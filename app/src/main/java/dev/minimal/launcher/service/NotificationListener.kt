@@ -4,6 +4,10 @@ import android.app.Notification
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import dev.minimal.launcher.data.AppInfo
+import dev.minimal.launcher.data.HeldNotification
+import dev.minimal.launcher.data.NotificationDigest
+import dev.minimal.launcher.launcherApp
+import dev.minimal.launcher.pro.Pro
 import dev.minimal.launcher.data.NotificationPreview
 import dev.minimal.launcher.data.NotificationStore
 import dev.minimal.launcher.data.NowPlaying
@@ -22,7 +26,35 @@ class NotificationListener : NotificationListenerService() {
         NowPlaying.stop()
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification?) = publish()
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        if (sbn != null && hold(sbn)) return
+        publish()
+    }
+
+    /** Zusammenfassung: Benachrichtigung einer ablenkenden App zurückhalten (aus der Leiste nehmen). */
+    private fun hold(sbn: StatusBarNotification): Boolean {
+        val app = applicationContext.launcherApp
+        val n = sbn.notification
+        if (!NotificationDigest.shouldHold(app.settings.value, Pro.isPro.value, sbn.packageName, n.category, sbn.isOngoing, sbn.isClearable)) {
+            return false
+        }
+        val isSummary = n.flags and Notification.FLAG_GROUP_SUMMARY != 0
+        if (!isSummary) {
+            val extras = n.extras
+            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+            val text = (extras.getCharSequence(Notification.EXTRA_TEXT)
+                ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT))?.toString().orEmpty()
+            if (title.isNotBlank() || text.isNotBlank()) {
+                app.digest.add(HeldNotification(sbn.key, sbn.packageName, title, text, sbn.postTime), n.contentIntent)
+            }
+        }
+        try {
+            cancelNotification(sbn.key)
+        } catch (_: Exception) {
+            return false
+        }
+        return true
+    }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) = publish()
 

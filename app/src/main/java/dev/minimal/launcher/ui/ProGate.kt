@@ -46,6 +46,7 @@ fun PaywallDialog(feature: String?, onDismiss: () -> Unit) {
                 Text(
                     tr("Einmal kaufen, für immer nutzen – kein Abo:\n", "Buy once, use forever – no subscription:\n") +
                         tr("• Fokus-Sitzungen mit echter App-Sperre\n", "• Focus sessions with real app blocking\n") +
+                        tr("• Benachrichtigungs-Zusammenfassung zu festen Zeiten\n", "• Notification digest at set times\n") +
                         tr("• Kontextbasierte Seiten (Auto, Kopfhörer, WLAN, Laden)\n", "• Context-based pages (car, headphones, Wi-Fi, charging)\n") +
                         tr("• Pop-up-Widgets auf Favoriten\n", "• Pop-up widgets on favorites\n") +
                         tr("• Absichtsfrage mit Timer-Erinnerung\n", "• Intention prompt with timer reminder\n") +

@@ -148,6 +148,9 @@ data class LauncherSettings(
     /** Laufende Fokus-Sitzung (Epoch-Millis, 0 = keine). */
     val focusSessionStart: Long = 0L,
     val focusSessionEnd: Long = 0L,
+    /** Benachrichtigungen ablenkender Apps zurückhalten und zu [digestTimes] gesammelt zustellen. */
+    val digestEnabled: Boolean = false,
+    val digestTimes: List<Int> = listOf(12 * 60, 18 * 60),
     val showScreenTime: Boolean = false,
     /** Wetter ist opt-in: nur dann greift der Launcher aufs Internet zu. */
     val showWeather: Boolean = false,
@@ -258,6 +261,8 @@ data class LauncherSettings(
         put("eveningRecapMinute", eveningRecapMinute)
         put("focusSessionStart", focusSessionStart)
         put("focusSessionEnd", focusSessionEnd)
+        put("digestEnabled", digestEnabled)
+        put("digestTimes", JSONArray(digestTimes))
         put("showScreenTime", showScreenTime)
         put("showWeather", showWeather)
         put("weatherCity", weatherCity)
@@ -377,6 +382,10 @@ data class LauncherSettings(
                 // Eine laufende Sitzung gehört zum Gerät – beim Import nicht übernehmen.
                 focusSessionStart = if (keepWidgets == null) o.optLong("focusSessionStart", 0L) else 0L,
                 focusSessionEnd = if (keepWidgets == null) o.optLong("focusSessionEnd", 0L) else 0L,
+                digestEnabled = o.optBoolean("digestEnabled", d.digestEnabled),
+                digestTimes = o.optJSONArray("digestTimes")?.let { a ->
+                    (0 until a.length()).map { a.optInt(it) }.filter { it in 0 until 24 * 60 }.distinct().sorted()
+                }?.takeIf { it.isNotEmpty() } ?: d.digestTimes,
                 showScreenTime = o.optBoolean("showScreenTime", d.showScreenTime),
                 showWeather = o.optBoolean("showWeather", d.showWeather),
                 weatherCity = o.optString("weatherCity", ""),
